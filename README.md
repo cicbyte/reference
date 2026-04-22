@@ -109,9 +109,22 @@ flowchart LR
     Source -->|按需补读关键文件| Main
 ```
 
-- **reference-explorer** — 探索特定问题（"X 是怎么实现的"），输出主题知识文件
-- **reference-analyzer** — 全面分析架构，输出 `reference.md`（全局只需执行一次）
+- **reference-explorer** — 探索特定问题（"X 是怎么实现的"），输出主题知识文件。先检查已有知识，命中则直接复用，未命中才深入源码，探索结果写入知识目录供后续跨项目复用
+- **reference-analyzer** — 全面分析架构，输出 `reference.md`（全局只需执行一次）。覆盖分层架构、核心数据结构、关键流程（含 Mermaid 图）、设计决策等
 - **主 Agent** 先加载知识文件快速理解全貌，仅在需要时按需读取少量关键源码
+
+### 知识文件结构
+
+每个仓库的知识目录下自动生成以下文件：
+
+```
+<wiki>/<仓库名>/
+├── reference.md        # 架构总览（analyzer 生成，全局一次）
+├── scc.md              # 代码统计（CLI 自动生成）
+└── <主题>.md           # 主题知识文件（explorer 按需生成）
+```
+
+所有文件为纯 Markdown + Mermaid，一次生成，跨项目复用。
 
 ## 平台支持
 
