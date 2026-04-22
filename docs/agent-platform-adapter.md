@@ -679,17 +679,6 @@ func InjectForPlatform(projectDir string, platform string) error
 2. **Pre-computed 方式**: `reference analyze` 预先完成深度分析，生成轻量知识文件供任何平台使用
 3. **CLI 脚本方式**: 提供 `reference explore <仓库> <主题>` 命令，用户手动运行后将结果粘贴给 Agent
 
-### 命令行扩展
-
-```bash
-# 注入指定平台的配置
-reference inject --platform cursor
-reference inject --platform all          # 全部平台
-
-# 查看支持的平台
-reference inject --list
-```
-
 ***
 
 ## 五、总结
