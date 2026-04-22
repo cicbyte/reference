@@ -1,0 +1,432 @@
+package repo
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"text/template"
+
+	"github.com/cicbyte/reference/internal/embed"
+	"github.com/cicbyte/reference/internal/log"
+	"github.com/cicbyte/reference/internal/models"
+	"github.com/cicbyte/reference/internal/utils"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+)
+
+type repoData struct {
+	LinkName    string
+	RefName     string
+	WikiSubPath string
+	Type        string
+	Platform    string
+	FullName    string
+	Description string
+}
+
+type mapRepoEntry struct {
+	RefName   string `json:"ref_name"`
+	Type      string `json:"type"`
+	Platform  string `json:"platform,omitempty"`
+	FullName  string `json:"full_name"`
+	Desc      string `json:"description,omitempty"`
+	RepoPath  string `json:"repo_path"`
+	WikiPath  string `json:"wiki_path"`
+}
+
+type referenceMap struct {
+	Repos []mapRepoEntry `json:"repos"`
+}
+
+type InjectConfig struct {
+	ProjectDir string
+}
+
+type InjectProcessor struct {
+	config *InjectConfig
+	db     *gorm.DB
+}
+
+func NewInjectProcessor(config *InjectConfig, db *gorm.DB) *InjectProcessor {
+	return &InjectProcessor{config: config, db: db}
+}
+
+func (p *InjectProcessor) Execute(ctx context.Context) (string, error) {
+	indexer := NewRepoIndexer(p.db)
+	repos, err := indexer.List(p.config.ProjectDir)
+	if err != nil {
+		return "", err
+	}
+
+	refDir := filepath.Join(p.config.ProjectDir, ".reference")
+	reposDir := filepath.Join(refDir, "repos")
+	wikiJunctionDir := filepath.Join(refDir, "wiki")
+
+	os.MkdirAll(reposDir, 0755)
+	os.MkdirAll(wikiJunctionDir, 0755)
+
+	repairCount := p.repairSymlinks(reposDir, repos)
+
+	var repoDataList []repoData
+	for _, r := range repos {
+		refName := r.RefName
+		if refName == "" {
+			refName = r.LinkName
+		}
+		linkPath := filepath.Join(reposDir, refName)
+		rd := repoData{
+			LinkName:    r.LinkName,
+			RefName:     refName,
+			WikiSubPath: r.WikiSubPath,
+			Type:        string(r.RefType),
+		}
+
+		if r.RefType == models.RefTypeRemote {
+			rd.Platform = r.Host
+			rd.FullName = r.Namespace + "/" + r.RepoName
+		} else {
+			rd.Platform = "local"
+			rd.FullName = filepath.Base(r.LocalPath)
+		}
+
+		wikiBase := filepath.Join(utils.ConfigInstance.GetAppDir(), "wiki")
+		wikiDir := filepath.Join(wikiBase, r.WikiSubPath)
+		wikiFile := filepath.Join(wikiDir, "reference.md")
+		if _, err := os.Stat(wikiFile); os.IsNotExist(err) {
+			if genErr := generateWikiReference(wikiDir, linkPath, &r); genErr != nil {
+				log.Warn("生成 wiki 内容失败", zap.String("repo", r.LinkName), zap.Error(genErr))
+			}
+		}
+
+		rd.Description = detectDescription(linkPath, &r)
+		repoDataList = append(repoDataList, rd)
+	}
+
+	sort.Slice(repoDataList, func(i, j int) bool {
+		return repoDataList[i].RefName < repoDataList[j].RefName
+	})
+
+	if err := generateReferenceMap(refDir, repoDataList); err != nil {
+		log.Warn("生成 reference.map.json 失败", zap.Error(err))
+	}
+
+	wikiFiles := p.injectWikiJunctions(wikiJunctionDir, repoDataList)
+
+	var agentFiles, skillFiles []string
+	settings := models.LoadProjectSettings(p.config.ProjectDir)
+	if settings.Agent == "claude" {
+		claudeDir := filepath.Join(p.config.ProjectDir, ".claude")
+		agentFiles = p.injectAgents(claudeDir)
+		skillFiles = p.injectSkill(claudeDir)
+	}
+
+	total := len(agentFiles) + len(skillFiles) + len(wikiFiles)
+	if total == 0 && repairCount == 0 {
+		return "配置已是最新。", nil
+	}
+
+	var sb strings.Builder
+	if len(wikiFiles) > 0 {
+		sb.WriteString(fmt.Sprintf("已链接 %d 个仓库知识", len(wikiFiles)))
+	}
+	if len(agentFiles)+len(skillFiles) > 0 {
+		if sb.Len() > 0 {
+			sb.WriteString("，")
+		}
+		sb.WriteString(fmt.Sprintf("已更新 %d 个 AI 配置文件", len(agentFiles)+len(skillFiles)))
+	}
+	if repairCount > 0 {
+		if sb.Len() > 0 {
+			sb.WriteString("，")
+		}
+		sb.WriteString(fmt.Sprintf("已修复 %d 个引用链接", repairCount))
+	}
+	sb.WriteString("。")
+
+	return sb.String(), nil
+}
+
+func (p *InjectProcessor) repairSymlinks(reposDir string, repos []models.Repo) int {
+	fixed := 0
+	for _, r := range repos {
+		refName := r.RefName
+		if refName == "" {
+			refName = r.LinkName
+		}
+		linkPath := filepath.Join(reposDir, refName)
+		if _, err := os.Stat(linkPath); err != nil {
+			target := r.CachePath
+			if r.RefType == models.RefTypeLocal {
+				target = r.LocalPath
+			}
+			if target != "" {
+				if err := CreateLink(target, linkPath); err != nil {
+					log.Warn("修复软链接失败", zap.String("repo", r.LinkName), zap.Error(err))
+					continue
+				}
+				fixed++
+			}
+		}
+	}
+	return fixed
+}
+
+func (p *InjectProcessor) injectAgents(claudeDir string) []string {
+	agentsDir := filepath.Join(claudeDir, "agents")
+	if err := os.MkdirAll(agentsDir, 0755); err != nil {
+		log.Warn("创建 agents 目录失败", zap.Error(err))
+		return nil
+	}
+
+	var updated []string
+	for _, agentName := range []string{"reference-explorer", "reference-analyzer"} {
+		dst := filepath.Join(agentsDir, agentName+".md")
+		if err := extractEmbedded("prompts/agents/"+agentName+".md", dst); err != nil {
+			log.Warn("复制 agent 文件失败", zap.String("agent", agentName), zap.Error(err))
+		} else {
+			updated = append(updated, agentName+".md")
+		}
+	}
+	return updated
+}
+
+func (p *InjectProcessor) injectSkill(claudeDir string) []string {
+	skillsDir := filepath.Join(claudeDir, "skills", "reference")
+	if err := os.MkdirAll(skillsDir, 0755); err != nil {
+		log.Warn("创建 skills 目录失败", zap.Error(err))
+		return nil
+	}
+
+	data, err := readEmbedded("prompts/skills/reference/SKILL.md")
+	if err != nil {
+		log.Warn("读取 SKILL.md 模板失败", zap.Error(err))
+		return nil
+	}
+
+	skillPath := filepath.Join(skillsDir, "SKILL.md")
+	if err := renderSkill(data, skillPath); err != nil {
+		log.Warn("生成 SKILL.md 失败", zap.Error(err))
+		return nil
+	}
+	return []string{"SKILL.md"}
+}
+
+func (p *InjectProcessor) injectWikiJunctions(wikiJunctionDir string, repos []repoData) []string {
+	cleanStaleJunctions(wikiJunctionDir, repos)
+
+	wikiBase := filepath.Join(utils.ConfigInstance.GetAppDir(), "wiki")
+
+	var linked []string
+	for _, rd := range repos {
+		wikiDir := filepath.Join(wikiBase, rd.WikiSubPath)
+		linkDir := filepath.Join(wikiJunctionDir, rd.RefName)
+
+		if _, err := os.Lstat(linkDir); err == nil {
+			removeLink(linkDir)
+		}
+
+		if _, err := os.Stat(wikiDir); err == nil {
+			if err := CreateLink(wikiDir, linkDir); err != nil {
+				log.Warn("创建 wiki 链接失败", zap.String("repo", rd.RefName), zap.Error(err))
+			} else {
+				linked = append(linked, rd.RefName)
+			}
+		}
+	}
+	return linked
+}
+
+func generateReferenceMap(refDir string, repos []repoData) error {
+	m := referenceMap{Repos: make([]mapRepoEntry, 0, len(repos))}
+	for _, r := range repos {
+		m.Repos = append(m.Repos, mapRepoEntry{
+			RefName:  r.RefName,
+			Type:     r.Type,
+			Platform: r.Platform,
+			FullName: r.FullName,
+			Desc:     r.Description,
+			RepoPath: filepath.Join(".reference", "repos", r.RefName),
+			WikiPath: filepath.Join(".reference", "wiki", r.RefName),
+		})
+	}
+
+	data, err := json.MarshalIndent(m, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(filepath.Join(refDir, "reference.map.json"), data, 0644)
+}
+
+func generateWikiReference(wikiDir, repoPath string, r *models.Repo) error {
+	if err := os.MkdirAll(wikiDir, 0755); err != nil {
+		return err
+	}
+
+	sccPath := repoPath
+	if r.RefType == models.RefTypeRemote && r.CachePath != "" {
+		sccPath = r.CachePath
+	} else if r.RefType == models.RefTypeLocal && r.LocalPath != "" {
+		sccPath = r.LocalPath
+	}
+
+	langStats, fileStats, sccErr := RunSCC(sccPath)
+	if sccErr != nil {
+		log.Warn("运行 scc 失败", zap.String("path", sccPath), zap.Error(sccErr))
+	} else {
+		wikiTopFiles := FormatTopFilesForWiki(langStats, fileStats, 15)
+		if wikiTopFiles != "" {
+			if err := os.WriteFile(filepath.Join(wikiDir, "scc.md"), []byte(wikiTopFiles), 0644); err != nil {
+				log.Warn("写入 scc.md 失败", zap.String("repo", r.LinkName), zap.Error(err))
+			}
+		}
+	}
+
+	refFile := filepath.Join(wikiDir, "reference.md")
+	if _, err := os.Stat(refFile); os.IsNotExist(err) {
+		description := detectDescription(repoPath, r)
+		language := detectLanguage(repoPath)
+
+		var sb strings.Builder
+		refName := r.RefName
+		if refName == "" {
+			refName = r.LinkName
+		}
+		sb.WriteString(fmt.Sprintf("# %s\n\n", refName))
+		if r.RefType == models.RefTypeRemote {
+			sb.WriteString(fmt.Sprintf("- **仓库**: %s/%s\n", r.Host, r.Namespace+"/"+r.RepoName))
+		} else {
+			sb.WriteString(fmt.Sprintf("- **路径**: %s\n", r.LocalPath))
+		}
+		sb.WriteString(fmt.Sprintf("- **描述**: %s\n", description))
+		sb.WriteString(fmt.Sprintf("- **语言**: %s\n", language))
+		sb.WriteString(fmt.Sprintf("- **分支**: %s\n", r.Branch))
+		sb.WriteString(fmt.Sprintf("- **Commit**: %s\n", r.Commit))
+		if r.CommitAt != nil {
+			sb.WriteString(fmt.Sprintf("- **更新**: %s\n", r.CommitAt.Format("2006-01-02")))
+		}
+		return os.WriteFile(refFile, []byte(sb.String()), 0644)
+	}
+
+	return nil
+}
+
+func detectLanguage(repoPath string) string {
+	indicators := map[string]string{
+		"go.mod":           "Go",
+		"package.json":     "JavaScript/TypeScript",
+		"pom.xml":          "Java",
+		"build.gradle":     "Java/Kotlin",
+		"Cargo.toml":       "Rust",
+		"pyproject.toml":   "Python",
+		"requirements.txt": "Python",
+		"setup.py":         "Python",
+		"Gemfile":          "Ruby",
+		"composer.json":    "PHP",
+		"CMakeLists.txt":   "C/C++",
+		"Makefile":         "C/C++",
+	}
+
+	for file, lang := range indicators {
+		if _, err := os.Stat(filepath.Join(repoPath, file)); err == nil {
+			return lang
+		}
+	}
+	return "Unknown"
+}
+
+func renderSkill(templateData []byte, outputPath string) error {
+	tmpl, err := template.New("skill").Parse(string(templateData))
+	if err != nil {
+		return err
+	}
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, struct{}{}); err != nil {
+		return err
+	}
+	return os.WriteFile(outputPath, buf.Bytes(), 0644)
+}
+
+func renderSkillToBytes(templateData []byte, repos []repoData) ([]byte, error) {
+	tmpl, err := template.New("skill").Parse(string(templateData))
+	if err != nil {
+		return nil, err
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, struct{ Repos []repoData }{Repos: repos}); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+func readEmbedded(embedPath string) ([]byte, error) {
+	data, err := embed.PromptsFS.ReadFile(embedPath)
+	if err == nil {
+		return data, nil
+	}
+	fallback := filepath.Join(utils.GetExeDir(), "..", "..", embedPath)
+	return os.ReadFile(fallback)
+}
+
+func extractEmbedded(embedPath, dstPath string) error {
+	data, err := readEmbedded(embedPath)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(dstPath, data, 0644)
+}
+
+func detectDescription(repoPath string, r *models.Repo) string {
+	readmePath := filepath.Join(repoPath, "README.md")
+	data, err := os.ReadFile(readmePath)
+	if err != nil {
+		return ""
+	}
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" && !strings.HasPrefix(line, "#") && !strings.HasPrefix(line, "!") && !strings.HasPrefix(line, "[") && !strings.HasPrefix(line, "<") {
+			if len(line) > 100 {
+				return line[:100] + "..."
+			}
+			return line
+		}
+	}
+	return ""
+}
+
+func cleanStaleJunctions(dir string, activeRepos []repoData) {
+	activeSet := make(map[string]bool, len(activeRepos))
+	for _, r := range activeRepos {
+		activeSet[r.RefName] = true
+	}
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name(), ".") {
+			continue
+		}
+		fullPath := filepath.Join(dir, e.Name())
+		info, err := os.Lstat(fullPath)
+		if err != nil || (!info.IsDir() && info.Mode()&os.ModeSymlink == 0) {
+			continue
+		}
+		if !activeSet[e.Name()] {
+			removeLink(fullPath)
+			log.Info("清理残留 junction", zap.String("name", e.Name()))
+		}
+	}
+}
+
+var _ = fs.FS(embed.PromptsFS)
