@@ -7,7 +7,7 @@
 ![License](https://img.shields.io/github/license/cicbyte/reference)
 ![Last Commit](https://img.shields.io/github/last-commit/cicbyte/reference)
 
-<!-- screenshot: 在此处添加终端录屏或截图 -->
+![添加仓库示例](images/repo_add.png)
 
 ## 功能特性
 
