@@ -7,8 +7,16 @@
 ![License](https://img.shields.io/github/license/cicbyte/reference)
 ![Last Commit](https://img.shields.io/github/last-commit/cicbyte/reference)
 
+**添加仓库** — 一条命令将远程或本地 Git 仓库链接到项目中，自动生成代码统计和架构知识
+
 ![添加仓库示例](images/repo_add.png)
+
+**探索知识** — AI 子代理自动阅读源码，将探索结果沉淀为 Markdown 知识文件，一次探索、跨项目复用
+
 ![探索仓库示例](images/reference_explorer.png)
+
+**知识复用** — 探索结果沉淀为全局知识文件，新项目添加同一仓库后直接命中已有知识，无需重复探索
+
 ![缓存与知识复用](images/cache_knowledge.png)
 
 ## 功能特性
