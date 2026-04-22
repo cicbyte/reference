@@ -8,6 +8,8 @@
 ![Last Commit](https://img.shields.io/github/last-commit/cicbyte/reference)
 
 ![添加仓库示例](images/repo_add.png)
+![探索仓库示例](images/reference_explorer.png)
+![缓存与知识复用](images/cache_knowledge.png)
 
 ## 功能特性
 
