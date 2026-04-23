@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/cicbyte/reference/cmd/global"
 	"github.com/cicbyte/reference/cmd/proxy"
 	"github.com/cicbyte/reference/cmd/repo"
 	cmdwiki "github.com/cicbyte/reference/cmd/wiki"
@@ -127,6 +128,7 @@ func init() {
 		logicwiki.EnsureAutoPull(wikiDir)
 	}
 
+	rootCmd.AddCommand(global.GetGlobalCommand())
 	rootCmd.AddCommand(repo.GetRepoCommand())
 	rootCmd.AddCommand(repo.GetDoctorCommand())
 	rootCmd.AddCommand(proxy.GetProxyCommand())

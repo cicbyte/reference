@@ -30,6 +30,9 @@ reference repo list [-f json|jsonl]    # 列出所有引用
 reference repo update [name]           # 更新远程仓库
 reference repo scc [name] [--top] [-f json|jsonl]  # 查看代码统计
 reference doctor [-f json|jsonl]       # 诊断并修复引用健康状态
+reference global list [-f json|jsonl] # 列出所有项目及其引用关系
+reference global gc [--dry-run] [-y] [--cache]  # 清理过期 DB 记录（--cache 额外清理孤立缓存）
+reference global stats [-f json|jsonl] # 显示全局统计信息
 reference proxy set <url|port>        # 设置代理
 reference proxy info                  # 查看代理
 reference proxy clear                 # 清除代理
@@ -50,12 +53,14 @@ reference wiki restore <path>         # 从 Git 历史恢复文件
 
 ### CMD/Logic 分层（cobra-app 规范）
 
-- **cmd/root.go** — 唯一根命令，注册 repo/proxy/wiki/version 模块，无参数时首次运行交互式引导、后续自动注入
+- **cmd/root.go** — 唯一根命令，注册 global/repo/proxy/wiki/version 模块，无参数时首次运行交互式引导、后续自动注入
 - **cmd/version/** — 版本变量包（供 ldflags 注入 Version/GitCommit/BuildTime）
+- **cmd/global/** — global 模块 CMD 层（list、gc、stats，跨项目全局管理）
 - **cmd/repo/** — repo 模块 CMD 层（参数绑定、验证、调用 Logic）
 - **cmd/proxy/** — proxy 模块 CMD 层
 - **cmd/wiki/** — wiki 模块 CMD 层（commit、sync、remote、watch、trash、restore）
-- **internal/logic/repo/** — repo 模块 Logic 层（纯业务逻辑，不依赖 cobra）
+- **internal/logic/repo/** — repo 模块 Logic 层（纯业务逻辑，不依赖 cobra），含 global_* 全局查询扩展
+- **internal/logic/global/** — global 模块 Logic 层（全局管理：跨项目列表、GC、统计）
 
 两层通过 `*Config` 结构体交互，Logic 层通过工厂方法创建 Processor，入口为 `Execute(ctx)`。
 
