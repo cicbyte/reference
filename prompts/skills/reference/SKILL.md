@@ -91,6 +91,11 @@ allowed-tools: Bash(git:*), Read, Grep, Glob, Task
   - **仓库路径**：`.reference/repos/<仓库名>/`
   - **知识目录**：`.reference/wiki/<仓库名>/`（实际指向全局 wiki）
 
+## 当前项目引用信息
+
+可以查看`.reference/reference.map.jsonl`(包含topics索引) 或者运行`reference.exe repo list --format jsonl`获取当前项目的引用信息(不包含topic索引)。
+
+
 ## 知识目录结构
 
 每个仓库通过 junction 链接到 `.reference/wiki/<仓库名>/`，包含以下知识文件：
@@ -98,7 +103,7 @@ allowed-tools: Bash(git:*), Read, Grep, Glob, Task
 | 文件 | 内容 | 生成方式 |
 | :--- | :--- | :--- |
 | `reference.md` | 项目知识总览：定位、架构、设计决策等 | 首次添加时生成元数据骨架，AI 深度分析后覆盖为完整知识文件 |
-| ~~`scc.md`~~ | 已移除，改为运行 `reference repo scc <name> -f jsonl` 获取实时统计 | — |
+| `scc 代码统计`| 运行 `reference repo scc <name> -f jsonl` 获取实时统计 | — |
 | `<主题>.md` | 特定问题的完整探索结果（自包含，读后可直接回答） | 子代理探索或参考实现时按需生成 |
 
 所有文件均为全局共享，一次生成，跨项目复用。

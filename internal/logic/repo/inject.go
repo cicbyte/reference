@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -13,7 +12,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/cicbyte/reference/internal/embed"
+	"github.com/cicbyte/reference/internal/common"
 	"github.com/cicbyte/reference/internal/log"
 	"github.com/cicbyte/reference/internal/models"
 	"github.com/cicbyte/reference/internal/utils"
@@ -436,7 +435,7 @@ func renderSkillToBytes(templateData []byte, repos []repoData) ([]byte, error) {
 }
 
 func readEmbedded(embedPath string) ([]byte, error) {
-	data, err := embed.PromptsFS.ReadFile(embedPath)
+	data, err := common.PromptsFS.ReadFile(embedPath)
 	if err == nil {
 		return data, nil
 	}
@@ -496,5 +495,3 @@ func cleanStaleJunctions(dir string, activeRepos []repoData) {
 		}
 	}
 }
-
-var _ = fs.FS(embed.PromptsFS)
