@@ -89,9 +89,10 @@ func ParseGitURL(rawURL string, reposBase string) (*GitURLInfo, error) {
 	}
 
 	if isKnown {
-		info.CachePath = filepath.Join(reposBase, host, namespace, repoName)
-		info.LinkName = fmt.Sprintf("%s-%s-%s", host, namespace, repoName)
-		info.WikiSubPath = PlatformShortName(host) + "/" + namespace + "/" + repoName
+		shortHost := PlatformShortName(host)
+		info.CachePath = filepath.Join(reposBase, shortHost, namespace, repoName)
+		info.LinkName = fmt.Sprintf("%s-%s-%s", shortHost, namespace, repoName)
+		info.WikiSubPath = shortHost + "/" + namespace + "/" + repoName
 	} else {
 		sanitized := strings.ReplaceAll(strings.ReplaceAll(host+"/"+repoPath, "/", "-"), ":", "-")
 		info.CachePath = filepath.Join(reposBase, "other", sanitized)
