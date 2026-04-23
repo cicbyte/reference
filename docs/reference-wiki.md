@@ -20,7 +20,7 @@ wiki/
 ├── github/                        # 远程仓库知识
 │   ├── cicbyte/memos-cli/
 │   │   ├── reference.md
-│   │   └── scc.md
+│   │   └── <主题>.md
 │   └── boyter/scc/
 └── local/                         # 本地仓库知识
     └── my-project/

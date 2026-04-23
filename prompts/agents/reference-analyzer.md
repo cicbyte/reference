@@ -1,6 +1,6 @@
 ---
 name: reference-analyzer
-description: 专用于深度分析仓库并生成完整 reference.md 的子代理。仅在用户显式要求深度分析时使用，全局每个仓库只需执行一次。
+description: 专用于深度分析仓库并生成完整 reference.md 的子代理。仅在用户显式要求深度分析时使用，全局每个仓库只需执行一次,再次执行视为优化reference.md
 tools: Read, Grep, Glob, Bash, Write
 ---
 
@@ -18,12 +18,17 @@ tools: Read, Grep, Glob, Bash, Write
 
 按顺序执行以下步骤：
 
-1. **已有知识**：Read 现有的 `reference.md` 和 `scc.md`，检查 frontmatter 中的 commit：
+1. **已有知识**：Read 现有的 `reference.md`，检查 frontmatter 中的 commit：
+   - 同时运行 `reference repo scc <仓库名> -f jsonl` 获取实时代码统计
    - 运行 `git -C <仓库路径> rev-parse --short HEAD` 获取当前 commit
    - **commit 一致** → 已有知识是最新的，基于已知信息继续，避免重复探索
    - **commit 不一致且变更量大**（>= 5 条 commit）→ 告知用户知识可能已过时，询问是否重新分析
-   - **无 frontmatter** → 视为旧格式文件，直接使用
-2. **项目概览**：Read `README.md`（前 80 行）提取项目定位和描述，补充已有知识中缺失的内容。
+   - **无 frontmatter** → 视为手动新增文件，直接使用，并以当前状态补上frontmatter
+2. **项目上下文**：优先检查并 Read 仓库根目录下的项目文档（按优先级）：
+   - `CLAUDE.md` — AI 编程上下文文件（最重要，包含架构、命令、开发约定）
+   - `AGENTS.md` — Agent 行为规范
+   - `README.md`（前 80 行）— 项目定位和描述
+   - 若以上均不存在，则 Read 项目根目录下其他 `.md` 文件的开头部分
 3. **语言与依赖**：检查包管理文件（go.mod、package.json、pyproject.toml 等）确认语言和主要依赖。
 4. **目录结构**：Glob 遍历顶层目录，识别各目录职责。
 5. **入口分析**：找到并 Read 项目入口文件（main.go、index.ts、app.py 等）。
@@ -36,7 +41,7 @@ tools: Read, Grep, Glob, Bash, Write
 
 ### reference.md 定位
 
-reference.md 是 AI 理解项目的入口知识文件（相当于项目的 CLAUDE.md），**不包含代码统计**（代码统计在 scc.md 中）。
+reference.md 是 AI 理解项目的入口知识文件（相当于项目的 CLAUDE.md），**不包含代码统计**（代码统计通过 `reference repo scc` 命令实时获取）。
 
 ### reference.md 格式
 
@@ -88,7 +93,7 @@ explored_at: 2026-04-23            # 当天日期（YYYY-MM-DD）
 - **核心流程**：涉及多模块协作、状态流转、分层调用等重要逻辑时，必须使用 Mermaid 流程图/时序图说明，降低理解成本
 - **示例**：若存在则标注路径，没有则删除该章节
 - **注意事项**：仅有值得注意的内容时才添加，没有则删除该章节
-- **不包含代码统计**：语言分布、文件数、代码行数、复杂度等信息在 scc.md 中
+- **不包含代码统计**：语言分布、文件数、代码行数、复杂度等信息通过 `reference repo scc` 命令实时获取
 - 不确定的信息不要猜测，直接省略
 
 ## 约束

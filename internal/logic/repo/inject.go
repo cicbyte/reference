@@ -348,27 +348,6 @@ func generateWikiReference(wikiDir, repoPath string, r *models.Repo) error {
 	repoID := repoIdentifier(r)
 	today := time.Now().Format("2006-01-02")
 
-	sccPath := repoPath
-	if r.RefType == models.RefTypeRemote && r.CachePath != "" {
-		sccPath = r.CachePath
-	} else if r.RefType == models.RefTypeLocal && r.LocalPath != "" {
-		sccPath = r.LocalPath
-	}
-
-	langStats, fileStats, sccErr := RunSCC(sccPath)
-	if sccErr != nil {
-		log.Warn("运行 scc 失败", zap.String("path", sccPath), zap.Error(sccErr))
-	} else {
-		wikiTopFiles := FormatTopFilesForWiki(langStats, fileStats, 15)
-		if wikiTopFiles != "" {
-			sccFrontmatter := fmt.Sprintf("---\nrepo: %s\ncommit: %s\nbranch: %s\ndescription: 代码统计\nexplored_at: %s\n---\n\n",
-				repoID, shortCommit, r.Branch, today)
-			if err := os.WriteFile(filepath.Join(wikiDir, "scc.md"), []byte(sccFrontmatter+wikiTopFiles), 0644); err != nil {
-				log.Warn("写入 scc.md 失败", zap.String("repo", r.LinkName), zap.Error(err))
-			}
-		}
-	}
-
 	refFile := filepath.Join(wikiDir, "reference.md")
 	if _, err := os.Stat(refFile); os.IsNotExist(err) {
 		description := detectDescription(repoPath, r)

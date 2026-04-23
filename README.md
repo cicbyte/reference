@@ -125,14 +125,15 @@ flowchart LR
 
 ### 知识文件结构
 
-每个仓库的知识目录下自动生成以下文件：
+每个仓库的知识目录下包含以下文件：
 
 ```
 <wiki>/<仓库名>/
 ├── reference.md        # 架构总览（analyzer 生成，全局一次）
-├── scc.md              # 代码统计（CLI 自动生成）
 └── <主题>.md           # 主题知识文件（explorer 按需生成）
 ```
+
+代码统计通过 `reference repo scc <name>` 命令实时获取，不生成静态文件。
 
 所有文件为纯 Markdown + Mermaid，一次生成，跨项目复用。
 
