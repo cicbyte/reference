@@ -16,7 +16,8 @@ import (
 var sccOnce sync.Once
 
 type SCCLanguageStat struct {
-	Language   string `json:"language"`
+	Type       string `json:"type,omitempty"`
+	Language   string `json:"languages"`
 	Files      int64  `json:"files"`
 	Lines      int64  `json:"lines"`
 	Code       int64  `json:"code"`
@@ -26,6 +27,7 @@ type SCCLanguageStat struct {
 }
 
 type SCCFileStat struct {
+	Type       string `json:"type,omitempty"`
 	Filename   string `json:"filename"`
 	Language   string `json:"language"`
 	Location   string `json:"location"`
@@ -119,11 +121,12 @@ func RunSCC(repoPath string) ([]SCCLanguageStat, []SCCFileStat, error) {
 			}
 			processor.CountStats(job)
 
+			relPath, _ := filepath.Rel(cleanPath, fp)
 			mu.Lock()
 			results = append(results, fileResult{
 				language:   lang,
 				filename:   filepath.Base(fp),
-				location:   fp,
+				location:   filepath.ToSlash(relPath),
 				lines:      job.Lines,
 				code:       job.Code,
 				comment:    job.Comment,

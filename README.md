@@ -157,8 +157,7 @@ reference repo remove <name>          # 移除引用
 reference repo remove --all           # 移除全部引用
 reference repo list                   # 列出所有引用
 reference repo update [name]          # 更新远程仓库
-reference repo scc [name]             # 代码统计（语言分布、复杂度）
-reference repo scc [name] --top       # Top 文件排名
+reference repo scc [name] [-n 15]    # 代码统计（语言分布、复杂度、Top 文件）
 ```
 
 所有支持 `--format` 标志的命令均可使用 `-f json` 或 `-f jsonl` 输出结构化数据。

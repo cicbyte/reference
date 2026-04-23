@@ -28,7 +28,7 @@ reference repo remove --all            # 移除当前项目全部引用
 reference repo remove <name> --purge   # 同时删除缓存（需确认）
 reference repo list [-f json|jsonl]    # 列出所有引用
 reference repo update [name]           # 更新远程仓库
-reference repo scc [name] [--top] [-f json|jsonl]  # 查看代码统计
+reference repo scc [name] [-n 15] [-f json|jsonl]  # 查看代码统计
 reference doctor [-f json|jsonl]       # 诊断并修复引用健康状态
 reference global list [-f json|jsonl] # 列出所有项目及其引用关系
 reference global gc [--dry-run] [-y] [--cache]  # 清理过期 DB 记录（--cache 额外清理孤立缓存）

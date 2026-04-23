@@ -16,10 +16,10 @@ reference repo scc [name] [flags]
 
 ## 标志
 
-| 标志 | 简写 | 说明 |
-|:---|:---|:---|
-| `--top` | `-t` | 显示 Top 文件排名（按代码行数） |
-| `--format` | `-f` | 输出格式：`table`（默认）、`json`、`jsonl` |
+| 标志 | 简写 | 默认值 | 说明 |
+|:---|:---|:---|:---|
+| `--top` | `-n` | `15` | Top 文件排名数量 |
+| `--format` | `-f` | `table` | 输出格式：`table`、`json`、`jsonl` |
 
 ## 示例
 
@@ -30,13 +30,13 @@ reference repo scc
 # 指定仓库的详细统计
 reference repo scc memos-cli
 
-# Top 文件排名
-reference repo scc memos-cli --top
+# 自定义 Top 文件数量
+reference repo scc memos-cli -n 5
 
 # JSON 格式
 reference repo scc memos-cli -f json
 
-# JSONL 格式（每行一条语言记录）
+# JSONL 格式
 reference repo scc memos-cli -f jsonl
 ```
 
@@ -51,6 +51,12 @@ reference repo scc memos-cli -f jsonl
 | Go                    |     71 |   7747 |   1457 |
 | Markdown              |     15 |   1118 |      0 |
 +-----------------------+--------+--------+--------+
+
++---+-------------+----------+--------+--------+
+| # | 文件        | 语言     | 代码行 | 复杂度 |
++---+-------------+----------+--------+--------+
+| 1 | tools.go    | Go       |    418 |    109 |
++---+-------------+----------+--------+--------+
 ```
 
 **JSON 格式：**
@@ -58,12 +64,20 @@ reference repo scc memos-cli -f jsonl
 ```json
 {
   "repo": "memos-cli",
-  "path": "C:\\Users\\zhyj\\.cicbyte\\reference\\repos\\github.com\\cicbyte\\memos-cli",
   "languages": [
-    { "language": "Go", "files": 71, "lines": 9797, "code": 7747, "comments": 631, "blanks": 1419, "complexity": 1457 }
+    { "languages": "Go", "files": 71, "code": 7747, "complexity": 1457 }
   ],
-  "files": []
+  "topFiles": [
+    { "filename": "tools.go", "languages": "Go", "location": "internal/ai/tools.go", "code": 418, "complexity": 109 }
+  ]
 }
+```
+
+**JSONL 格式：**
+
+```jsonl
+{"type":"language","languages":"Go","files":71,"code":7747,"complexity":1457}
+{"type":"topFiles","filename":"tools.go","languages":"Go","location":"internal/ai/tools.go","code":418,"complexity":109}
 ```
 
 ## 排除目录
