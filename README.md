@@ -84,7 +84,7 @@ reference repo add --local ~/projects/my-lib
 │   ├── wiki/                   # 知识库（→ 全局 wiki）
 │   │   ├── gin/
 │   │   └── go-git/
-│   ├── reference.map.json      # AI 读取的仓库导航
+│   ├── reference.map.jsonl    # AI 读取的仓库导航（JSONL 格式）
 │   └── reference.settings.json # 项目配置
 ```
 

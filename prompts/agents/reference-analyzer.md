@@ -18,7 +18,11 @@ tools: Read, Grep, Glob, Bash, Write
 
 按顺序执行以下步骤：
 
-1. **已有知识**：Read 现有的 `reference.md` 和 `scc.md`，了解已知信息，避免重复探索。
+1. **已有知识**：Read 现有的 `reference.md` 和 `scc.md`，检查 frontmatter 中的 commit：
+   - 运行 `git -C <仓库路径> rev-parse --short HEAD` 获取当前 commit
+   - **commit 一致** → 已有知识是最新的，基于已知信息继续，避免重复探索
+   - **commit 不一致且变更量大**（>= 5 条 commit）→ 告知用户知识可能已过时，询问是否重新分析
+   - **无 frontmatter** → 视为旧格式文件，直接使用
 2. **项目概览**：Read `README.md`（前 80 行）提取项目定位和描述，补充已有知识中缺失的内容。
 3. **语言与依赖**：检查包管理文件（go.mod、package.json、pyproject.toml 等）确认语言和主要依赖。
 4. **目录结构**：Glob 遍历顶层目录，识别各目录职责。
@@ -35,6 +39,17 @@ tools: Read, Grep, Glob, Bash, Write
 reference.md 是 AI 理解项目的入口知识文件（相当于项目的 CLAUDE.md），**不包含代码统计**（代码统计在 scc.md 中）。
 
 ### reference.md 格式
+
+文件最开头必须包含 YAML frontmatter（`---` 包裹）：
+```yaml
+---
+repo: github.com/go-git/go-git    # 运行 git -C <仓库路径> remote get-url origin 解析得到
+commit: 9e8be38                    # 运行 git -C <仓库路径> rev-parse --short HEAD
+branch: main                       # 运行 git -C <仓库路径> rev-parse --abbrev-ref HEAD
+description: 仓库架构总览           # 固定值
+explored_at: 2026-04-23            # 当天日期（YYYY-MM-DD）
+---
+```
 
 ```markdown
 # <仓库名>

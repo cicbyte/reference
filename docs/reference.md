@@ -27,7 +27,7 @@ reference
 ## 执行内容
 
 1. **修复软链接** — 检测 `.reference/repos/` 下的 Junction/Symlink，若被手动删除则静默重建
-2. **生成 reference.map.json** — 将仓库列表写入 `.reference/reference.map.json`，供 AI Agent 读取
+2. **生成 reference.map.jsonl** — 将仓库列表写入 `.reference/reference.map.jsonl`，供 AI Agent 读取
 3. **创建 Wiki Junction** — 为每个仓库创建 Junction 链接到 `.reference/wiki/`
 4. **注入 Agent 配置**（仅 Claude Code 用户）— 复制 Agent 文件和 SKILL.md 到 `.claude/`
 

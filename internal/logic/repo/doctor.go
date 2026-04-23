@@ -264,7 +264,7 @@ func (p *DoctorProcessor) checkWikiJunctions() checkResult {
 
 func (p *DoctorProcessor) checkReferenceMap() checkResult {
 	refDir := filepath.Join(p.config.ProjectDir, ".reference")
-	mapPath := filepath.Join(refDir, "reference.map.json")
+	mapPath := filepath.Join(refDir, "reference.map.jsonl")
 
 	indexer := NewRepoIndexer(p.db)
 	repos, err := indexer.List(p.config.ProjectDir)
@@ -274,10 +274,6 @@ func (p *DoctorProcessor) checkReferenceMap() checkResult {
 			return checkResult{Name: "Reference Map", Status: "ok", Details: "已清理（无仓库记录）"}
 		}
 		return checkResult{Name: "Reference Map", Status: "ok", Details: "正常（无仓库记录）"}
-	}
-
-	if _, err := os.Stat(mapPath); err == nil {
-		return checkResult{Name: "Reference Map", Status: "ok", Details: "正常"}
 	}
 
 	if err := refreshReferenceMap(p.config.ProjectDir, refDir, indexer); err != nil {

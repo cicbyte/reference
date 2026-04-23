@@ -13,13 +13,14 @@ allowed-tools: Bash(git:*), Read, Grep, Glob, Task
 
 ## 发现仓库
 
-**Read `.reference/reference.map.json`** 获取当前项目的仓库列表。该文件包含每个仓库的：
+**Read `.reference/reference.map.jsonl`** 获取当前项目的仓库列表。该文件为 JSONL 格式（每行一个仓库），每个仓库包含：
 - `ref_name`：引用名
 - `type`：remote 或 local
 - `platform` / `full_name`：平台和仓库全名
 - `description`：仓库描述
 - `repo_path`：仓库代码路径（`.reference/repos/<name>/`）
 - `wiki_path`：知识目录路径（`.reference/wiki/<name>/`）
+- `topics`：已有主题文件列表，每项含 `file`（文件名）、`description`（主题描述）、`commit`（基于的 commit）
 
 ## 前置动作：阅读仓库知识（必须优先执行）
 

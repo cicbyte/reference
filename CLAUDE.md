@@ -74,7 +74,7 @@ reference wiki restore <path>         # 从 Git 历史恢复文件
 | indexer.go | SQLite 仓库索引 CRUD（GORM） |
 | gitignore.go | 确保 .reference/ 在 .gitignore 中 |
 | proxy.go | 代理解析（git_proxy > proxy > 无代理） |
-| inject.go | 生成 reference.map.json + 创建 Wiki Junction + 静默修复软链接 + 注入 Agent 文件（仅 Claude Code 用户） |
+| inject.go | 生成 reference.map.jsonl + 创建 Wiki Junction + 静默修复软链接 + 注入 Agent 文件（仅 Claude Code 用户） |
 | scc.go | 内置 scc 库封装（代码统计 + Top 文件排名），无外部依赖 |
 | doctor.go | 诊断检查：软链接、Wiki Junction、Reference Map、数据库一致性、Wiki Git、Agent 配置 |
 
@@ -101,7 +101,7 @@ reference wiki restore <path>         # 从 Git 历史恢复文件
 所有引用数据统一在 `.reference/` 下管理：
 - `repos/<refName>` — 仓库源码 Junction（→ 全局缓存）
 - `wiki/<refName>` — 知识库 Junction（→ 全局 wiki）
-- `reference.map.json` — AI 导航数据（仓库列表，供 Agent 读取）
+- `reference.map.jsonl` — AI 导航数据（仓库列表，供 Agent 读取）
 - `reference.settings.json` — 项目配置（agent 选择、initialized 标志）
 
 `.claude/` 下仅存放 AI 配置（仅 Claude Code 用户）：
@@ -119,7 +119,7 @@ reference wiki restore <path>         # 从 Git 历史恢复文件
 
 ### AI Agent 配置体系
 
-- `prompts/skills/reference/SKILL.md` — Skill 模板（通过读取 `reference.map.json` 发现仓库）
+- `prompts/skills/reference/SKILL.md` — Skill 模板（通过读取 `reference.map.jsonl` 发现仓库）
 - `prompts/agents/reference-explorer.md` — 知识探索子代理提示词
 - `prompts/agents/reference-analyzer.md` — 深度分析子代理提示词
 - `reference` 命令（无参数）和 `doctor` 命令都会将上述文件注入到 `.claude/`（仅 Claude Code 用户）

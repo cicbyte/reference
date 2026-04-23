@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/cicbyte/reference/internal/embed"
 	"github.com/cicbyte/reference/internal/log"
@@ -24,6 +25,7 @@ type repoData struct {
 	LinkName    string
 	RefName     string
 	WikiSubPath string
+	WikiDir     string
 	Type        string
 	Platform    string
 	FullName    string
@@ -31,17 +33,21 @@ type repoData struct {
 }
 
 type mapRepoEntry struct {
-	RefName   string `json:"ref_name"`
-	Type      string `json:"type"`
-	Platform  string `json:"platform,omitempty"`
-	FullName  string `json:"full_name"`
-	Desc      string `json:"description,omitempty"`
-	RepoPath  string `json:"repo_path"`
-	WikiPath  string `json:"wiki_path"`
+	RefName   string             `json:"ref_name"`
+	Type      string             `json:"type"`
+	Platform  string             `json:"platform,omitempty"`
+	FullName  string             `json:"full_name"`
+	Desc      string             `json:"description,omitempty"`
+	RepoPath  string             `json:"repo_path"`
+	WikiPath  string             `json:"wiki_path"`
+	Commit    string             `json:"commit,omitempty"`
+	Topics    []mapTopicEntry    `json:"topics,omitempty"`
 }
 
-type referenceMap struct {
-	Repos []mapRepoEntry `json:"repos"`
+type mapTopicEntry struct {
+	File        string `json:"file"`
+	Description string `json:"description"`
+	Commit      string `json:"commit"`
 }
 
 type InjectConfig struct {
@@ -80,10 +86,13 @@ func (p *InjectProcessor) Execute(ctx context.Context) (string, error) {
 			refName = r.LinkName
 		}
 		linkPath := filepath.Join(reposDir, refName)
+		wikiBase := filepath.Join(utils.ConfigInstance.GetAppDir(), "wiki")
+		wikiDir := filepath.Join(wikiBase, r.WikiSubPath)
 		rd := repoData{
 			LinkName:    r.LinkName,
 			RefName:     refName,
 			WikiSubPath: r.WikiSubPath,
+			WikiDir:     wikiDir,
 			Type:        string(r.RefType),
 		}
 
@@ -95,8 +104,6 @@ func (p *InjectProcessor) Execute(ctx context.Context) (string, error) {
 			rd.FullName = filepath.Base(r.LocalPath)
 		}
 
-		wikiBase := filepath.Join(utils.ConfigInstance.GetAppDir(), "wiki")
-		wikiDir := filepath.Join(wikiBase, r.WikiSubPath)
 		wikiFile := filepath.Join(wikiDir, "reference.md")
 		if _, err := os.Stat(wikiFile); os.IsNotExist(err) {
 			if genErr := generateWikiReference(wikiDir, linkPath, &r); genErr != nil {
@@ -113,7 +120,7 @@ func (p *InjectProcessor) Execute(ctx context.Context) (string, error) {
 	})
 
 	if err := generateReferenceMap(refDir, repoDataList); err != nil {
-		log.Warn("生成 reference.map.json 失败", zap.Error(err))
+		log.Warn("生成 reference.map.jsonl 失败", zap.Error(err))
 	}
 
 	wikiFiles := p.injectWikiJunctions(wikiJunctionDir, repoDataList)
@@ -242,10 +249,72 @@ func (p *InjectProcessor) injectWikiJunctions(wikiJunctionDir string, repos []re
 	return linked
 }
 
+func scanWikiTopics(wikiDir string) ([]mapTopicEntry, string) {
+	var topics []mapTopicEntry
+	var refCommit string
+
+	entries, err := os.ReadDir(wikiDir)
+	if err != nil {
+		return nil, ""
+	}
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".md") {
+			continue
+		}
+		name := e.Name()
+		data, err := os.ReadFile(filepath.Join(wikiDir, name))
+		if err != nil {
+			continue
+		}
+		text := string(data)
+		desc, commit := parseFrontmatter(text)
+		if commit != "" && refCommit == "" {
+			refCommit = commit
+		}
+
+		topicName := strings.TrimSuffix(name, ".md")
+		if topicName == "reference" || topicName == "scc" {
+			continue
+		}
+		if desc == "" {
+			desc = topicName
+		}
+		topics = append(topics, mapTopicEntry{
+			File:        topicName + ".md",
+			Description: desc,
+			Commit:      commit,
+		})
+	}
+	return topics, refCommit
+}
+
+func parseFrontmatter(text string) (description, commit string) {
+	if !strings.HasPrefix(text, "---") {
+		return "", ""
+	}
+	end := strings.Index(text[3:], "\n---")
+	if end < 0 {
+		return "", ""
+	}
+	fm := text[3 : 3+end]
+	for _, line := range strings.Split(fm, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "description:") {
+			description = strings.TrimPrefix(line, "description:")
+			description = strings.TrimSpace(description)
+		}
+		if strings.HasPrefix(line, "commit:") {
+			commit = strings.TrimPrefix(line, "commit:")
+			commit = strings.TrimSpace(commit)
+		}
+	}
+	return description, commit
+}
+
 func generateReferenceMap(refDir string, repos []repoData) error {
-	m := referenceMap{Repos: make([]mapRepoEntry, 0, len(repos))}
+	var buf bytes.Buffer
 	for _, r := range repos {
-		m.Repos = append(m.Repos, mapRepoEntry{
+		entry := mapRepoEntry{
 			RefName:  r.RefName,
 			Type:     r.Type,
 			Platform: r.Platform,
@@ -253,21 +322,31 @@ func generateReferenceMap(refDir string, repos []repoData) error {
 			Desc:     r.Description,
 			RepoPath: filepath.Join(".reference", "repos", r.RefName),
 			WikiPath: filepath.Join(".reference", "wiki", r.RefName),
-		})
+		}
+		entry.Topics, entry.Commit = scanWikiTopics(r.WikiDir)
+		line, err := json.Marshal(entry)
+		if err != nil {
+			return err
+		}
+		buf.Write(line)
+		buf.WriteByte('\n')
 	}
 
-	data, err := json.MarshalIndent(m, "", "  ")
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(filepath.Join(refDir, "reference.map.json"), data, 0644)
+	return os.WriteFile(filepath.Join(refDir, "reference.map.jsonl"), buf.Bytes(), 0644)
 }
 
 func generateWikiReference(wikiDir, repoPath string, r *models.Repo) error {
 	if err := os.MkdirAll(wikiDir, 0755); err != nil {
 		return err
 	}
+
+	shortCommit := r.Commit
+	if len(shortCommit) > 7 {
+		shortCommit = shortCommit[:7]
+	}
+
+	repoID := repoIdentifier(r)
+	today := time.Now().Format("2006-01-02")
 
 	sccPath := repoPath
 	if r.RefType == models.RefTypeRemote && r.CachePath != "" {
@@ -282,7 +361,9 @@ func generateWikiReference(wikiDir, repoPath string, r *models.Repo) error {
 	} else {
 		wikiTopFiles := FormatTopFilesForWiki(langStats, fileStats, 15)
 		if wikiTopFiles != "" {
-			if err := os.WriteFile(filepath.Join(wikiDir, "scc.md"), []byte(wikiTopFiles), 0644); err != nil {
+			sccFrontmatter := fmt.Sprintf("---\nrepo: %s\ncommit: %s\nbranch: %s\ndescription: 代码统计\nexplored_at: %s\n---\n\n",
+				repoID, shortCommit, r.Branch, today)
+			if err := os.WriteFile(filepath.Join(wikiDir, "scc.md"), []byte(sccFrontmatter+wikiTopFiles), 0644); err != nil {
 				log.Warn("写入 scc.md 失败", zap.String("repo", r.LinkName), zap.Error(err))
 			}
 		}
@@ -292,6 +373,9 @@ func generateWikiReference(wikiDir, repoPath string, r *models.Repo) error {
 	if _, err := os.Stat(refFile); os.IsNotExist(err) {
 		description := detectDescription(repoPath, r)
 		language := detectLanguage(repoPath)
+
+		refFrontmatter := fmt.Sprintf("---\nrepo: %s\ncommit: %s\nbranch: %s\ndescription: 仓库架构总览\nexplored_at: %s\n---\n\n",
+			repoID, shortCommit, r.Branch, today)
 
 		var sb strings.Builder
 		refName := r.RefName
@@ -306,15 +390,20 @@ func generateWikiReference(wikiDir, repoPath string, r *models.Repo) error {
 		}
 		sb.WriteString(fmt.Sprintf("- **描述**: %s\n", description))
 		sb.WriteString(fmt.Sprintf("- **语言**: %s\n", language))
-		sb.WriteString(fmt.Sprintf("- **分支**: %s\n", r.Branch))
-		sb.WriteString(fmt.Sprintf("- **Commit**: %s\n", r.Commit))
 		if r.CommitAt != nil {
 			sb.WriteString(fmt.Sprintf("- **更新**: %s\n", r.CommitAt.Format("2006-01-02")))
 		}
-		return os.WriteFile(refFile, []byte(sb.String()), 0644)
+		return os.WriteFile(refFile, []byte(refFrontmatter+sb.String()), 0644)
 	}
 
 	return nil
+}
+
+func repoIdentifier(r *models.Repo) string {
+	if r.RefType == models.RefTypeRemote {
+		return fmt.Sprintf("%s/%s/%s", r.Host, r.Namespace, r.RepoName)
+	}
+	return fmt.Sprintf("local/%s", filepath.Base(r.LocalPath))
 }
 
 func detectLanguage(repoPath string) string {

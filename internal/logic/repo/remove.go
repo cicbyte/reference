@@ -52,7 +52,7 @@ func (p *RemoveProcessor) removeAll() error {
 
 	if len(repos) == 0 {
 		cleaned := p.cleanOrphanedJunctions(reposLinkDir, wikiLinkDir)
-		os.Remove(filepath.Join(refDir, "reference.map.json"))
+		os.Remove(filepath.Join(refDir, "reference.map.jsonl"))
 		if cleaned > 0 {
 			fmt.Printf("数据库无记录，已清理 %d 个残留链接\n", cleaned)
 		} else {
@@ -103,7 +103,7 @@ func (p *RemoveProcessor) removeAll() error {
 	}
 
 	removed += p.cleanOrphanedJunctions(reposLinkDir, wikiLinkDir)
-	os.Remove(filepath.Join(refDir, "reference.map.json"))
+	os.Remove(filepath.Join(refDir, "reference.map.jsonl"))
 
 	fmt.Printf("已移除 %d 个引用\n", removed)
 	return nil
@@ -193,9 +193,9 @@ func (p *RemoveProcessor) removeOne() error {
 		removeLink(wikiJunctionPath)
 	}
 
-	// 更新 reference.map.json
+	// 更新 reference.map.jsonl
 	if err := refreshReferenceMap(p.config.ProjectDir, refDir, indexer); err != nil {
-		log.Warn("更新 reference.map.json 失败", zap.Error(err))
+		log.Warn("更新 reference.map.jsonl 失败", zap.Error(err))
 	}
 
 	fmt.Printf("引用 '%s' 已移除\n", refName)
@@ -205,7 +205,7 @@ func (p *RemoveProcessor) removeOne() error {
 func refreshReferenceMap(projectDir, refDir string, indexer *RepoIndexer) error {
 	repos, err := indexer.List(projectDir)
 	if err != nil || len(repos) == 0 {
-		return os.Remove(filepath.Join(refDir, "reference.map.json"))
+		return os.Remove(filepath.Join(refDir, "reference.map.jsonl"))
 	}
 	var rdList []repoData
 	for _, r := range repos {
@@ -217,6 +217,7 @@ func refreshReferenceMap(projectDir, refDir string, indexer *RepoIndexer) error 
 			LinkName: r.LinkName,
 			RefName:  refName,
 			Type:     string(r.RefType),
+			WikiDir: filepath.Join(utils.ConfigInstance.GetAppDir(), "wiki", r.WikiSubPath),
 		}
 		if r.RefType == models.RefTypeRemote {
 			rd.Platform = r.Host

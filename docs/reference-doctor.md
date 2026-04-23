@@ -45,7 +45,7 @@ reference doctor -f jsonl
 |:---|:---|:---|
 | 软链接完整性 | `.reference/repos/` 下的 Junction 是否存在 | 重建缺失的链接 |
 | Wiki Junction | `.reference/wiki/` 下的 Junction 链接是否正确 | 重建缺失的链接 |
-| Reference Map | `.reference/reference.map.json` 是否存在且最新 | 自动重新生成 |
+| Reference Map | `.reference/reference.map.jsonl` 是否存在且最新 | 自动重新生成 |
 | 数据库一致性 | 数据库记录与实际链接是否匹配 | 标记孤立记录和未跟踪链接 |
 | Wiki Git | 全局知识库 Git 状态是否正常 | 自动初始化 |
 

@@ -13,13 +13,14 @@ allowed-tools: Bash(git:*), Read, Grep, Glob, Task
 
 ## 发现仓库
 
-**Read `.reference/reference.map.json`** 获取当前项目的仓库列表。该文件包含每个仓库的：
+**Read `.reference/reference.map.jsonl`** 获取当前项目的仓库列表。该文件为 JSONL 格式（每行一个仓库），每个仓库包含：
 - `ref_name`：引用名
 - `type`：remote 或 local
 - `platform` / `full_name`：平台和仓库全名
 - `description`：仓库描述
 - `repo_path`：仓库代码路径（`.reference/repos/<name>/`）
 - `wiki_path`：知识目录路径（`.reference/wiki/<name>/`）
+- `topics`：已有主题文件列表，每项含 `file`（文件名）、`description`（主题描述）、`commit`（基于的 commit）
 
 ## 前置动作：阅读仓库知识（必须优先执行）
 
@@ -27,7 +28,9 @@ allowed-tools: Bash(git:*), Read, Grep, Glob, Task
 
 ### 执行步骤
 1. 确定目标仓库（从用户输入或上下文中识别）。
-2. **Read `reference.md`** — 了解项目定位、架构、设计决策等知识。
+2. **Read `reference.md`** — 了解项目定位、架构、设计决策等知识。同时检查 frontmatter 中的 `commit`：
+   - 运行 `git -C <repo_path> rev-parse --short HEAD` 获取当前 commit
+   - 若 commit 不一致，按 explorer 的过时检测规则处理（少量变更自动更新，大量变更询问用户）
 3. **Read `scc.md`** — 了解代码统计、语言分布、核心文件。
 4. 扫描目录下其他 `.md` 文件，判断是否有与用户意图相关的已有主题文件。
 
