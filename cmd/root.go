@@ -53,7 +53,10 @@ func runDefault(cmd *cobra.Command, args []string) error {
 	}
 
 	config := &logicrepo.InjectConfig{ProjectDir: projectDir}
-	db, _ := utils.GetGormDB()
+	db, err := utils.GetGormDB()
+	if err != nil {
+		return fmt.Errorf("数据库连接失败: %w", err)
+	}
 	processor := logicrepo.NewInjectProcessor(config, db)
 	result, err := processor.Execute(ctx)
 	if err != nil {

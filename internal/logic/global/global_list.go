@@ -62,10 +62,7 @@ func (p *GlobalListProcessor) Execute(ctx context.Context) (*GlobalListResult, e
 
 		repoItems := make([]GlobalRepoItem, 0, len(repos))
 		for _, r := range repos {
-			refName := r.RefName
-			if refName == "" {
-				refName = r.LinkName
-			}
+			refName := r.GetRefName()
 			typeStr := "local"
 			if r.RefType == models.RefTypeRemote {
 				typeStr = "remote"

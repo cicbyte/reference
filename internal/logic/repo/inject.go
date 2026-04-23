@@ -73,17 +73,18 @@ func (p *InjectProcessor) Execute(ctx context.Context) (string, error) {
 	reposDir := filepath.Join(refDir, "repos")
 	wikiJunctionDir := filepath.Join(refDir, "wiki")
 
-	os.MkdirAll(reposDir, 0755)
-	os.MkdirAll(wikiJunctionDir, 0755)
+	if err := os.MkdirAll(reposDir, 0755); err != nil {
+		return "", fmt.Errorf("创建 repos 目录失败: %w", err)
+	}
+	if err := os.MkdirAll(wikiJunctionDir, 0755); err != nil {
+		return "", fmt.Errorf("创建 wiki 目录失败: %w", err)
+	}
 
 	repairCount := p.repairSymlinks(reposDir, repos)
 
 	var repoDataList []repoData
 	for _, r := range repos {
-		refName := r.RefName
-		if refName == "" {
-			refName = r.LinkName
-		}
+		refName := r.GetRefName()
 		linkPath := filepath.Join(reposDir, refName)
 		wikiBase := filepath.Join(utils.ConfigInstance.GetAppDir(), "wiki")
 		wikiDir := filepath.Join(wikiBase, r.WikiSubPath)
@@ -161,10 +162,7 @@ func (p *InjectProcessor) Execute(ctx context.Context) (string, error) {
 func (p *InjectProcessor) repairSymlinks(reposDir string, repos []models.Repo) int {
 	fixed := 0
 	for _, r := range repos {
-		refName := r.RefName
-		if refName == "" {
-			refName = r.LinkName
-		}
+		refName := r.GetRefName()
 		linkPath := filepath.Join(reposDir, refName)
 		if _, err := os.Stat(linkPath); err != nil {
 			target := r.CachePath
@@ -234,7 +232,7 @@ func (p *InjectProcessor) injectWikiJunctions(wikiJunctionDir string, repos []re
 		linkDir := filepath.Join(wikiJunctionDir, rd.RefName)
 
 		if _, err := os.Lstat(linkDir); err == nil {
-			removeLink(linkDir)
+			RemoveLink(linkDir)
 		}
 
 		if _, err := os.Stat(wikiDir); err == nil {
@@ -356,10 +354,7 @@ func generateWikiReference(wikiDir, repoPath string, r *models.Repo) error {
 			repoID, shortCommit, r.Branch, today)
 
 		var sb strings.Builder
-		refName := r.RefName
-		if refName == "" {
-			refName = r.LinkName
-		}
+		refName := r.GetRefName()
 		sb.WriteString(fmt.Sprintf("# %s\n\n", refName))
 		if r.RefType == models.RefTypeRemote {
 			sb.WriteString(fmt.Sprintf("- **仓库**: %s/%s\n", r.Host, r.Namespace+"/"+r.RepoName))
@@ -420,19 +415,6 @@ func renderSkill(templateData []byte, outputPath string) error {
 	return os.WriteFile(outputPath, buf.Bytes(), 0644)
 }
 
-func renderSkillToBytes(templateData []byte, repos []repoData) ([]byte, error) {
-	tmpl, err := template.New("skill").Parse(string(templateData))
-	if err != nil {
-		return nil, err
-	}
-
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, struct{ Repos []repoData }{Repos: repos}); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-}
 
 func readEmbedded(embedPath string) ([]byte, error) {
 	data, err := common.PromptsFS.ReadFile(embedPath)
@@ -490,7 +472,7 @@ func cleanStaleJunctions(dir string, activeRepos []repoData) {
 			continue
 		}
 		if !activeSet[e.Name()] {
-			removeLink(fullPath)
+			RemoveLink(fullPath)
 			log.Info("清理残留 junction", zap.String("name", e.Name()))
 		}
 	}

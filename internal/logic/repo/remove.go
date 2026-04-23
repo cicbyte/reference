@@ -75,17 +75,14 @@ func (p *RemoveProcessor) removeAll() error {
 	removed := 0
 
 	for _, r := range repos {
-		refName := r.RefName
-		if refName == "" {
-			refName = r.LinkName
-		}
+		refName := r.GetRefName()
 
 		linkPath := filepath.Join(reposLinkDir, refName)
 		RemoveLink(linkPath)
 
 		junctionPath := filepath.Join(wikiLinkDir, refName)
 		if _, err := os.Lstat(junctionPath); err == nil {
-			removeLink(junctionPath)
+			RemoveLink(junctionPath)
 		}
 
 		if p.config.Purge && r.RefType == models.RefTypeRemote && r.CachePath != "" {
@@ -150,10 +147,7 @@ func (p *RemoveProcessor) removeOne() error {
 		repo = &models.Repo{RefName: p.config.Identifier}
 	}
 
-	refName := repo.RefName
-	if refName == "" {
-		refName = repo.LinkName
-	}
+	refName := repo.GetRefName()
 
 	linkPath := filepath.Join(reposLinkDir, refName)
 	if err := RemoveLink(linkPath); err != nil {
@@ -190,7 +184,7 @@ func (p *RemoveProcessor) removeOne() error {
 
 	wikiJunctionPath := filepath.Join(wikiLinkDir, refName)
 	if _, err := os.Lstat(wikiJunctionPath); err == nil {
-		removeLink(wikiJunctionPath)
+		RemoveLink(wikiJunctionPath)
 	}
 
 	// 更新 reference.map.jsonl
@@ -209,10 +203,7 @@ func RefreshReferenceMap(projectDir, refDir string, indexer *RepoIndexer) error 
 	}
 	var rdList []repoData
 	for _, r := range repos {
-		refName := r.RefName
-		if refName == "" {
-			refName = r.LinkName
-		}
+		refName := r.GetRefName()
 		rd := repoData{
 			LinkName: r.LinkName,
 			RefName:  refName,

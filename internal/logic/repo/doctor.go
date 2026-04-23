@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -112,13 +113,6 @@ func (p *DoctorProcessor) Execute(ctx context.Context) (*DoctorResult, error) {
 	return result, nil
 }
 
-func repoRefName(r *models.Repo) string {
-	if r.RefName != "" {
-		return r.RefName
-	}
-	return r.LinkName
-}
-
 func (p *DoctorProcessor) checkSymlinks() checkResult {
 	indexer := NewRepoIndexer(p.db)
 	repos, err := indexer.List(p.config.ProjectDir)
@@ -131,11 +125,11 @@ func (p *DoctorProcessor) checkSymlinks() checkResult {
 	var fixed []string
 
 	for _, r := range repos {
-		refName := repoRefName(&r)
+		refName := r.GetRefName()
 		linkPath := filepath.Join(reposDir, refName)
 		if _, err := os.Stat(linkPath); err != nil {
 			var target string
-			if r.RefType == "remote" {
+			if r.RefType == models.RefTypeRemote {
 				target = r.CachePath
 			} else {
 				target = r.LocalPath
@@ -178,7 +172,7 @@ func (p *DoctorProcessor) checkAgentFiles() checkResult {
 			log.Warn("读取 agent 模板失败", zap.String("agent", name), zap.Error(err))
 			continue
 		}
-		if oldData, err := os.ReadFile(dst); err == nil && string(oldData) == string(newData) {
+		if oldData, err := os.ReadFile(dst); err == nil && bytes.Equal(oldData, newData) {
 			continue
 		}
 		if err := os.WriteFile(dst, newData, 0644); err != nil {
@@ -229,7 +223,7 @@ func (p *DoctorProcessor) checkWikiJunctions() checkResult {
 	var fixed []string
 
 	for _, r := range repos {
-		refName := repoRefName(&r)
+		refName := r.GetRefName()
 		linkDir := filepath.Join(wikiLinkDir, refName)
 		wikiDir := filepath.Join(wikiBase, r.WikiSubPath)
 		linkPath := filepath.Join(reposDir, refName)
@@ -293,7 +287,7 @@ func (p *DoctorProcessor) checkDatabaseConsistency() checkResult {
 	var orphaned []string
 
 	for _, r := range repos {
-		refName := repoRefName(&r)
+		refName := r.GetRefName()
 		linkPath := filepath.Join(reposDir, refName)
 		if _, err := os.Stat(linkPath); os.IsNotExist(err) {
 			orphaned = append(orphaned, refName)
@@ -315,7 +309,7 @@ func (p *DoctorProcessor) checkDatabaseConsistency() checkResult {
 
 	repoSet := make(map[string]bool, len(repos))
 	for _, r := range repos {
-		repoSet[repoRefName(&r)] = true
+		repoSet[r.GetRefName()] = true
 	}
 
 	var untracked []string

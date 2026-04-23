@@ -10,7 +10,6 @@ import (
 	"github.com/cicbyte/reference/internal/log"
 	"github.com/cicbyte/reference/internal/logic/repo"
 	"github.com/cicbyte/reference/internal/models"
-	"github.com/cicbyte/reference/internal/utils"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -48,7 +47,7 @@ func (p *GlobalRemoveProcessor) Execute(ctx context.Context) (*GlobalRemoveResul
 		return p.removeByProject(ctx)
 	}
 	if p.config.RepoName != "" {
-		return p.removeByRepoGlobal()
+		return p.removeByRepoGlobal(ctx)
 	}
 	return nil, fmt.Errorf("请指定 --project <路径> 或 --repo <仓库名>")
 }
@@ -75,28 +74,23 @@ func (p *GlobalRemoveProcessor) removeByProject(ctx context.Context) (*GlobalRem
 	return &GlobalRemoveResult{RemovedCount: -1}, nil
 }
 
-func (p *GlobalRemoveProcessor) removeByRepoGlobal() (*GlobalRemoveResult, error) {
+func (p *GlobalRemoveProcessor) removeByRepoGlobal(ctx context.Context) (*GlobalRemoveResult, error) {
 	indexer := repo.NewRepoIndexer(p.db)
 	allRepos, err := indexer.ListAll()
 	if err != nil {
 		return nil, err
 	}
 
-	var targets []struct {
+	type target struct {
 		projectDir string
 		repo       models.Repo
 	}
+	var targets []target
 	for projectDir, repos := range allRepos {
 		for _, r := range repos {
-			refName := r.RefName
-			if refName == "" {
-				refName = r.LinkName
-			}
+			refName := r.GetRefName()
 			if refName == p.config.RepoName || r.LinkName == p.config.RepoName {
-				targets = append(targets, struct {
-					projectDir string
-					repo       models.Repo
-				}{projectDir, r})
+				targets = append(targets, target{projectDir, r})
 			}
 		}
 	}
@@ -120,46 +114,22 @@ func (p *GlobalRemoveProcessor) removeByRepoGlobal() (*GlobalRemoveResult, error
 	}
 
 	result := &GlobalRemoveResult{}
-	reposBase := utils.ConfigInstance.GetReposDirFromConfig(p.appConfig)
-
 	for _, t := range targets {
-		refName := t.repo.RefName
-		if refName == "" {
-			refName = t.repo.LinkName
+		removeCfg := &repo.RemoveConfig{
+			ProjectDir: t.projectDir,
+			Identifier: t.repo.GetRefName(),
+			Purge:      p.config.Purge,
+			Yes:        true,
 		}
-
-		refDir := filepath.Join(t.projectDir, ".reference")
-		reposLinkDir := filepath.Join(refDir, "repos")
-		wikiLinkDir := filepath.Join(refDir, "wiki")
-
-		linkPath := filepath.Join(reposLinkDir, refName)
-		repo.RemoveLink(linkPath)
-
-		junctionPath := filepath.Join(wikiLinkDir, refName)
-		if _, err := os.Lstat(junctionPath); err == nil {
-			repo.RemoveLink(junctionPath)
+		processor := repo.NewRemoveProcessor(removeCfg, p.appConfig, p.db)
+		if err := processor.Execute(ctx); err != nil {
+			log.Warn("移除失败", zap.String("project", t.projectDir), zap.String("repo", t.repo.GetRefName()), zap.Error(err))
+			continue
 		}
-
-		if p.config.Purge && t.repo.RefType == models.RefTypeRemote && t.repo.CachePath != "" {
-			if strings.HasPrefix(t.repo.CachePath, reposBase) {
-				if err := repo.PurgeCache(t.repo.CachePath); err != nil {
-					log.Warn("删除缓存失败", zap.String("repo", refName), zap.Error(err))
-				}
-			}
-		}
-
-		if err := indexer.Remove(t.projectDir, t.repo.LinkName); err != nil {
-			log.Warn("删除数据库记录失败", zap.String("repo", refName), zap.Error(err))
-		}
-
-		if err := repo.RefreshReferenceMap(t.projectDir, refDir, indexer); err != nil {
-			log.Warn("更新 reference.map.jsonl 失败", zap.String("project", t.projectDir), zap.Error(err))
-		}
-
 		result.RemovedCount++
 		result.Details = append(result.Details, RemoveDetail{
 			ProjectDir: t.projectDir,
-			RepoName:   refName,
+			RepoName:   t.repo.GetRefName(),
 		})
 	}
 

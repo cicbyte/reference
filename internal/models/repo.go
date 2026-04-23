@@ -39,3 +39,10 @@ type Repo struct {
 	Commit    string `json:"commit,omitempty"`
 	CommitAt  *time.Time `json:"commit_at,omitempty"`
 }
+
+func (r *Repo) GetRefName() string {
+	if r.RefName != "" {
+		return r.RefName
+	}
+	return r.LinkName
+}

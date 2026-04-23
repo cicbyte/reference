@@ -45,10 +45,7 @@ func (p *ListProcessor) Execute(ctx context.Context) (*ListResult, error) {
 	refDir := filepath.Join(p.config.ProjectDir, ".reference", "repos")
 
 	for _, r := range repos {
-		refName := r.RefName
-		if refName == "" {
-			refName = r.LinkName
-		}
+		refName := r.GetRefName()
 		linkPath := filepath.Join(refDir, refName)
 		target := resolveTarget(linkPath, &r)
 		cachePath := r.CachePath
