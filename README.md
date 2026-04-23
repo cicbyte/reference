@@ -1,5 +1,7 @@
 # reference
 
+[English](README.en.md) | 简体中文
+
 > 一个命令，把任意 Git 仓库的源码和知识链接到当前项目中，让 AI 即时查阅。
 
 ![Release](https://img.shields.io/github/v/release/cicbyte/reference?style=flat)
