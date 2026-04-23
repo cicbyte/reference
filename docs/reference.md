@@ -50,5 +50,6 @@ reference
 ## 相关命令
 
 - `reference doctor` — 诊断并修复引用健康状态（包含更多检查项）
+- `reference global` — 全局引用管理（跨项目列表、GC、统计）
 - `reference wiki` — 知识库 Git 管理（commit、sync、watch、trash、restore）
 - `reference repo inject` — 已合并到默认行为中，无需单独调用

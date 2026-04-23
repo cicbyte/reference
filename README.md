@@ -176,6 +176,16 @@ reference wiki trash                  # 查看被删除的知识文件
 reference wiki restore <path>         # 从 Git 历史恢复文件
 ```
 
+### 全局管理
+
+```bash
+reference global list               # 列出所有项目及其引用关系
+reference global stats              # 查看全局统计信息
+reference global gc                 # 清理过期 DB 记录（项目目录已不存在的残留）
+reference global gc --cache         # 额外清理无引用的缓存目录
+reference global gc --dry-run       # 预览可清理项，不实际删除
+```
+
 ### 诊断与配置
 
 ```bash
