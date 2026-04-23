@@ -1,9 +1,9 @@
 package wiki
 
 import (
-	"fmt"
+
 	"os"
-	"path/filepath"
+
 	"strings"
 
 	"github.com/cicbyte/reference/internal/log"
@@ -27,13 +27,7 @@ func EnsureGitInit(wikiDir string) error {
 	if err != nil {
 		return err
 	}
-	// 写入 .gitignore
-	gitignorePath := filepath.Join(wikiDir, ".gitignore")
-	if _, err := os.Stat(gitignorePath); os.IsNotExist(err) {
-		if err := os.WriteFile(gitignorePath, []byte(".watch.pid\n"), 0644); err != nil {
-			return fmt.Errorf("写入 .gitignore 失败: %w", err)
-		}
-	}
+
 	log.Info("wiki 仓库已初始化", zap.String("path", wikiDir))
 	return nil
 }

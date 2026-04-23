@@ -40,9 +40,6 @@ reference wiki                         # 查看 wiki 状态
 reference wiki commit                  # 提交知识库更改
 reference wiki sync                   # 同步知识库（pull + commit + push）
 reference wiki remote [url]           # 查看/设置远程仓库
-reference wiki watch                   # 监听文件变化自动提交
-reference wiki watch --daemon         # 后台守护进程
-reference wiki watch --stop           # 停止守护进程
 reference wiki trash                   # 查看被删除的文件
 reference wiki restore <path>         # 从 Git 历史恢复文件
 ```

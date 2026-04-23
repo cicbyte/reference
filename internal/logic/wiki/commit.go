@@ -3,6 +3,8 @@ package wiki
 import (
 	"fmt"
 	"os/exec"
+	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -19,6 +21,10 @@ type CommitResult struct {
 }
 
 func StageAndCommit(wikiDir, message string) (*CommitResult, error) {
+	if HasRemote(wikiDir) {
+		pullBeforeCommit(wikiDir)
+	}
+
 	repo, err := git.PlainOpen(wikiDir)
 	if err != nil {
 		return nil, fmt.Errorf("wiki 仓库无效: %w", err)
@@ -26,11 +32,6 @@ func StageAndCommit(wikiDir, message string) (*CommitResult, error) {
 	wt, err := repo.Worktree()
 	if err != nil {
 		return nil, fmt.Errorf("获取工作树失败: %w", err)
-	}
-
-	_, err = wt.Add(".")
-	if err != nil {
-		return nil, fmt.Errorf("暂存失败: %w", err)
 	}
 
 	status, err := wt.Status()
@@ -42,7 +43,15 @@ func StageAndCommit(wikiDir, message string) (*CommitResult, error) {
 	}
 
 	if message == "" {
-		message = fmt.Sprintf("wiki: auto-commit %s", time.Now().Format("2006-01-02 15:04:05"))
+		message = buildAutoMessage(status, wikiDir)
+		if message == "" {
+			return &CommitResult{HasChanges: false}, nil
+		}
+	}
+
+	_, err = wt.Add(".")
+	if err != nil {
+		return nil, fmt.Errorf("暂存失败: %w", err)
 	}
 
 	name, email := getGitUser(wikiDir)
@@ -101,4 +110,62 @@ func getGitUser(wikiDir string) (name, email string) {
 func isAlreadyUpToDate(output string) bool {
 	return strings.Contains(output, "Already up to date") ||
 		strings.Contains(output, "Everything up-to-date")
+}
+
+func pullBeforeCommit(wikiDir string) {
+	branch := getDefaultBranch(wikiDir)
+	output, err := gitExec(wikiDir, "pull", "origin", branch)
+	if err != nil {
+		if !isAlreadyUpToDate(output) {
+			log.Warn("wiki commit: 拉取失败", zap.String("output", output))
+		}
+		return
+	}
+	log.Info("wiki commit: 已同步远程更新")
+}
+
+func buildAutoMessage(status git.Status, baseDir string) string {
+	var added, modified, deleted []string
+	for path, fs := range status {
+		rel, err := filepath.Rel(baseDir, path)
+		if err != nil {
+			rel = path
+		}
+		clean := filepath.ToSlash(rel)
+		switch fs.Worktree {
+		case git.Untracked, git.Added:
+			added = append(added, clean)
+		case git.Modified:
+			modified = append(modified, clean)
+		case git.Deleted:
+			deleted = append(deleted, clean)
+		}
+	}
+	sort.Strings(added)
+	sort.Strings(modified)
+	sort.Strings(deleted)
+
+	if len(added) == 0 && len(modified) == 0 && len(deleted) == 0 {
+		return ""
+	}
+
+	var parts []string
+	if len(added) > 0 {
+		parts = append(parts, fmt.Sprintf("add %s", joinPaths(added)))
+	}
+	if len(modified) > 0 {
+		parts = append(parts, fmt.Sprintf("update %s", joinPaths(modified)))
+	}
+	if len(deleted) > 0 {
+		parts = append(parts, fmt.Sprintf("delete %s", joinPaths(deleted)))
+	}
+	return "wiki: " + strings.Join(parts, ", ")
+
+}
+
+func joinPaths(paths []string) string {
+	if len(paths) <= 3 {
+		return strings.Join(paths, ", ")
+	}
+	return strings.Join(paths[:3], ", ") + fmt.Sprintf(" and %d more", len(paths)-3)
 }

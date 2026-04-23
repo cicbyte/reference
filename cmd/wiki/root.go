@@ -20,7 +20,6 @@ func GetWikiCommand() *cobra.Command {
 	cmd.AddCommand(getSyncCommand())
 	cmd.AddCommand(getRemoteCommand())
 	cmd.AddCommand(getCommitCommand())
-	cmd.AddCommand(getWatchCommand())
 	cmd.AddCommand(getTrashCommand())
 	cmd.AddCommand(getRestoreCommand())
 	return cmd

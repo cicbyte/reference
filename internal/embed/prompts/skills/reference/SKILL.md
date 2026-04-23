@@ -108,4 +108,4 @@ allowed-tools: Bash(git:*), Read, Grep, Glob, Task
 - 只有需要生成可复用知识文件时，才委托 `reference-explorer` 子代理。
 - 只有用户显式要求深度分析时，才委托 `reference-analyzer` 子代理。
 - 若用户请求参考的仓库不在本地，你有义务主动获取。
-- 子代理完成知识文件写入后，执行 `reference wiki commit` 提交更改到知识库 Git 仓库。
+- 子代理完成知识文件写入或修改后，执行 `reference wiki commit` 提交更改。

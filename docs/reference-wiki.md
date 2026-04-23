@@ -16,7 +16,7 @@
 ```
 wiki/
 ├── .git/                          # Git 仓库（自动初始化）
-├── .gitignore                     # 排除 .watch.pid
+├── .gitignore                     # Git 忽略规则
 ├── github/                        # 远程仓库知识
 │   ├── cicbyte/memos-cli/
 │   │   ├── reference.md
@@ -60,30 +60,6 @@ reference wiki sync
 reference wiki remote                    # 查看当前远程
 reference wiki remote https://github.com/user/wiki.git  # 设置远程
 ```
-
-### `reference wiki watch`
-
-监听 wiki 目录变化，自动提交到 Git。
-
-```bash
-# 前台运行（阻塞终端）
-reference wiki watch
-
-# 后台守护进程
-reference wiki watch --daemon
-
-# 停止后台守护进程
-reference wiki watch --stop
-
-# 自动提交后推送
-reference wiki watch --push
-```
-
-**工作原理**：
-- 使用 fsnotify 递归监听 wiki 目录
-- 文件创建、修改、删除后自动 stage + commit
-- 3 秒防抖，避免频繁提交
-- 后台模式通过隐藏窗口运行，无需管理员权限
 
 ### `reference wiki trash`
 
