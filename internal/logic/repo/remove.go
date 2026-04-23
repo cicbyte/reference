@@ -194,7 +194,7 @@ func (p *RemoveProcessor) removeOne() error {
 	}
 
 	// 更新 reference.map.jsonl
-	if err := refreshReferenceMap(p.config.ProjectDir, refDir, indexer); err != nil {
+	if err := RefreshReferenceMap(p.config.ProjectDir, refDir, indexer); err != nil {
 		log.Warn("更新 reference.map.jsonl 失败", zap.Error(err))
 	}
 
@@ -202,7 +202,7 @@ func (p *RemoveProcessor) removeOne() error {
 	return nil
 }
 
-func refreshReferenceMap(projectDir, refDir string, indexer *RepoIndexer) error {
+func RefreshReferenceMap(projectDir, refDir string, indexer *RepoIndexer) error {
 	repos, err := indexer.List(projectDir)
 	if err != nil || len(repos) == 0 {
 		return os.Remove(filepath.Join(refDir, "reference.map.jsonl"))

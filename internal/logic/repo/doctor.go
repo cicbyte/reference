@@ -276,7 +276,7 @@ func (p *DoctorProcessor) checkReferenceMap() checkResult {
 		return checkResult{Name: "Reference Map", Status: "ok", Details: "正常（无仓库记录）"}
 	}
 
-	if err := refreshReferenceMap(p.config.ProjectDir, refDir, indexer); err != nil {
+	if err := RefreshReferenceMap(p.config.ProjectDir, refDir, indexer); err != nil {
 		return checkResult{Name: "Reference Map", Status: "warn", Details: "重新生成失败: " + err.Error()}
 	}
 	return checkResult{Name: "Reference Map", Status: "fixed", Details: "已重新生成"}
