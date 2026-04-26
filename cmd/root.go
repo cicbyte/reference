@@ -9,12 +9,12 @@ import (
 	"github.com/cicbyte/reference/cmd/global"
 	"github.com/cicbyte/reference/cmd/proxy"
 	"github.com/cicbyte/reference/cmd/repo"
-	cmdwiki "github.com/cicbyte/reference/cmd/wiki"
 	"github.com/cicbyte/reference/cmd/version"
-	logicrepo "github.com/cicbyte/reference/internal/logic/repo"
-	logicwiki "github.com/cicbyte/reference/internal/logic/wiki"
+	cmdwiki "github.com/cicbyte/reference/cmd/wiki"
 	"github.com/cicbyte/reference/internal/common"
 	"github.com/cicbyte/reference/internal/log"
+	logicrepo "github.com/cicbyte/reference/internal/logic/repo"
+	logicwiki "github.com/cicbyte/reference/internal/logic/wiki"
 	"github.com/cicbyte/reference/internal/models"
 	"github.com/cicbyte/reference/internal/utils"
 	"github.com/spf13/cobra"
@@ -32,6 +32,12 @@ var rootCmd = &cobra.Command{
 无参数运行时自动注入 AI Agent 配置（agent 文件 + SKILL.md + wiki 链接）。`,
 	RunE: runDefault,
 }
+
+func init() {
+	rootCmd.PersistentFlags().StringVarP(&globalFormat, "format", "f", "table", "输出格式 (table|json|jsonl)")
+}
+
+var globalFormat string
 
 func Execute() {
 	err := rootCmd.Execute()

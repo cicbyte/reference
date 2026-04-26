@@ -32,15 +32,15 @@ type repoData struct {
 }
 
 type mapRepoEntry struct {
-	RefName   string             `json:"ref_name"`
-	Type      string             `json:"type"`
-	Platform  string             `json:"platform,omitempty"`
-	FullName  string             `json:"full_name"`
-	Desc      string             `json:"description,omitempty"`
-	RepoPath  string             `json:"repo_path"`
-	WikiPath  string             `json:"wiki_path"`
-	Commit    string             `json:"commit,omitempty"`
-	Topics    []mapTopicEntry    `json:"topics,omitempty"`
+	RefName  string          `json:"ref_name"`
+	Type     string          `json:"type"`
+	Platform string          `json:"platform,omitempty"`
+	FullName string          `json:"full_name"`
+	Desc     string          `json:"description,omitempty"`
+	RepoPath string          `json:"repo_path"`
+	WikiPath string          `json:"wiki_path"`
+	Commit   string          `json:"commit,omitempty"`
+	Topics   []mapTopicEntry `json:"topics,omitempty"`
 }
 
 type mapTopicEntry struct {
@@ -72,6 +72,10 @@ func (p *InjectProcessor) Execute(ctx context.Context) (string, error) {
 	refDir := filepath.Join(p.config.ProjectDir, ".reference")
 	reposDir := filepath.Join(refDir, "repos")
 	wikiJunctionDir := filepath.Join(refDir, "wiki")
+
+	if err := EnsureGitignore(p.config.ProjectDir); err != nil {
+		log.Warn("创建 .gitignore 失败", zap.Error(err))
+	}
 
 	if err := os.MkdirAll(reposDir, 0755); err != nil {
 		return "", fmt.Errorf("创建 repos 目录失败: %w", err)
@@ -414,7 +418,6 @@ func renderSkill(templateData []byte, outputPath string) error {
 	}
 	return os.WriteFile(outputPath, buf.Bytes(), 0644)
 }
-
 
 func readEmbedded(embedPath string) ([]byte, error) {
 	data, err := common.PromptsFS.ReadFile(embedPath)

@@ -14,7 +14,6 @@ import (
 )
 
 func getListCommand() *cobra.Command {
-	var format string
 
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -39,7 +38,8 @@ func getListCommand() *cobra.Command {
 				return
 			}
 
-			switch utils.ParseFormat(format) {
+			f, _ := cmd.Flags().GetString("format")
+			switch utils.ParseFormat(f) {
 			case utils.FormatJSON:
 				utils.OutputJSON(result)
 			case utils.FormatJSONL:
@@ -49,8 +49,6 @@ func getListCommand() *cobra.Command {
 			}
 		},
 	}
-
-	cmd.Flags().StringVarP(&format, "format", "f", "table", "输出格式: table, json, jsonl")
 	return cmd
 }
 

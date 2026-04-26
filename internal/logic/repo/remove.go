@@ -154,28 +154,8 @@ func (p *RemoveProcessor) removeOne() error {
 		return fmt.Errorf("删除链接失败: %w", err)
 	}
 
-	if repo.RefType == models.RefTypeLocal {
-		fmt.Println("本地引用源目录不会被删除")
-	} else if p.config.Purge && repo.CachePath != "" {
-		reposBase := utils.ConfigInstance.GetReposDirFromConfig(p.appConfig)
-		if strings.HasPrefix(repo.CachePath, reposBase) {
-			confirmed := p.config.Yes
-			if !confirmed {
-				fmt.Printf("确认删除缓存目录? %s [y/N]: ", repo.CachePath)
-				var input string
-				fmt.Scanln(&input)
-				confirmed = strings.ToLower(input) == "y"
-				if !confirmed {
-					fmt.Println("已取消")
-				}
-			}
-			if confirmed {
-				if err := PurgeCache(repo.CachePath); err != nil {
-					return fmt.Errorf("删除缓存失败: %w", err)
-				}
-				log.Info("缓存已清除", zap.String("path", repo.CachePath))
-			}
-		}
+	if err := p.purgeCacheIfNeeded(repo); err != nil {
+		return err
 	}
 
 	if err := indexer.Remove(p.config.ProjectDir, repo.LinkName); err != nil {
@@ -187,12 +167,42 @@ func (p *RemoveProcessor) removeOne() error {
 		RemoveLink(wikiJunctionPath)
 	}
 
-	// 更新 reference.map.jsonl
 	if err := RefreshReferenceMap(p.config.ProjectDir, refDir, indexer); err != nil {
 		log.Warn("更新 reference.map.jsonl 失败", zap.Error(err))
 	}
 
 	fmt.Printf("引用 '%s' 已移除\n", refName)
+	return nil
+}
+
+func (p *RemoveProcessor) purgeCacheIfNeeded(repo *models.Repo) error {
+	if repo.RefType == models.RefTypeLocal {
+		fmt.Println("本地引用源目录不会被删除")
+		return nil
+	}
+	if !p.config.Purge || repo.CachePath == "" {
+		return nil
+	}
+	reposBase := utils.ConfigInstance.GetReposDirFromConfig(p.appConfig)
+	if !strings.HasPrefix(repo.CachePath, reposBase) {
+		return nil
+	}
+	confirmed := p.config.Yes
+	if !confirmed {
+		fmt.Printf("确认删除缓存目录? %s [y/N]: ", repo.CachePath)
+		var input string
+		fmt.Scanln(&input)
+		confirmed = strings.ToLower(input) == "y"
+		if !confirmed {
+			fmt.Println("已取消")
+		}
+	}
+	if confirmed {
+		if err := PurgeCache(repo.CachePath); err != nil {
+			return fmt.Errorf("删除缓存失败: %w", err)
+		}
+		log.Info("缓存已清除", zap.String("path", repo.CachePath))
+	}
 	return nil
 }
 

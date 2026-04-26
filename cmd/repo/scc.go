@@ -14,7 +14,6 @@ const defaultTopN = 15
 
 func getSccCommand() *cobra.Command {
 	var topN int
-	var format string
 
 	cmd := &cobra.Command{
 		Use:   "scc [name]",
@@ -48,7 +47,8 @@ func getSccCommand() *cobra.Command {
 
 			if len(args) == 0 {
 				for _, r := range repos {
-					printRepoSCC(&r, projectDir, topN, format)
+					f, _ := cmd.Flags().GetString("format")
+					printRepoSCC(&r, projectDir, topN, f)
 				}
 				return
 			}
@@ -56,7 +56,8 @@ func getSccCommand() *cobra.Command {
 			name := args[0]
 			for _, r := range repos {
 				if r.RefName == name || r.LinkName == name || r.RepoName == name || r.Namespace+"/"+r.RepoName == name {
-					printRepoSCC(&r, projectDir, topN, format)
+					f, _ := cmd.Flags().GetString("format")
+					printRepoSCC(&r, projectDir, topN, f)
 					return
 				}
 			}
@@ -65,15 +66,14 @@ func getSccCommand() *cobra.Command {
 	}
 
 	cmd.Flags().IntVarP(&topN, "top", "n", defaultTopN, "Top 文件排名数量")
-	cmd.Flags().StringVarP(&format, "format", "f", "table", "输出格式: table, json, jsonl")
 	return cmd
 }
 
 type sccResult struct {
-	Repo     string                       `json:"repo"`
-	Path     string                       `json:"path"`
-	Langs    []logicrepo.SCCLanguageStat  `json:"languages"`
-	TopFiles []logicrepo.SCCFileStat      `json:"topFiles"`
+	Repo     string                      `json:"repo"`
+	Path     string                      `json:"path"`
+	Langs    []logicrepo.SCCLanguageStat `json:"languages"`
+	TopFiles []logicrepo.SCCFileStat     `json:"topFiles"`
 }
 
 func printRepoSCC(r *models.Repo, projectDir string, topN int, format string) {

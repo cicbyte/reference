@@ -41,6 +41,8 @@ func initSCC() {
 	})
 }
 
+var sccSkipDirs = map[string]bool{".git": true, "vendor": true, "node_modules": true, ".svn": true, ".hg": true}
+
 // RunSCC 对指定路径运行代码统计，返回按语言的汇总和文件级统计
 func RunSCC(repoPath string) ([]SCCLanguageStat, []SCCFileStat, error) {
 	initSCC()
@@ -54,16 +56,24 @@ func RunSCC(repoPath string) ([]SCCLanguageStat, []SCCFileStat, error) {
 		return nil, nil, fmt.Errorf("不是目录: %s", cleanPath)
 	}
 
-	// 收集文件
-	var filePaths []string
-	skipDirs := map[string]bool{".git": true, "vendor": true, "node_modules": true, ".svn": true, ".hg": true}
+	filePaths, err := collectFiles(cleanPath)
+	if err != nil {
+		return nil, nil, err
+	}
 
-	err = filepath.WalkDir(cleanPath, func(path string, d os.DirEntry, err error) error {
+	results := processFiles(cleanPath, filePaths)
+	langStats, fileStats := aggregateResults(results)
+	return langStats, fileStats, nil
+}
+
+func collectFiles(root string) ([]string, error) {
+	var filePaths []string
+	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return nil
 		}
 		if d.IsDir() {
-			if skipDirs[d.Name()] {
+			if sccSkipDirs[d.Name()] {
 				return filepath.SkipDir
 			}
 			return nil
@@ -72,21 +82,23 @@ func RunSCC(repoPath string) ([]SCCLanguageStat, []SCCFileStat, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, nil, fmt.Errorf("遍历目录失败: %w", err)
+		return nil, fmt.Errorf("遍历目录失败: %w", err)
 	}
+	return filePaths, nil
+}
 
-	// 并发统计
-	type fileResult struct {
-		language   string
-		filename   string
-		location   string
-		lines      int64
-		code       int64
-		comment    int64
-		blank      int64
-		complexity int64
-	}
+type fileResult struct {
+	language   string
+	filename   string
+	location   string
+	lines      int64
+	code       int64
+	comment    int64
+	blank      int64
+	complexity int64
+}
 
+func processFiles(cleanPath string, filePaths []string) []fileResult {
 	results := make([]fileResult, 0, len(filePaths))
 	var mu sync.Mutex
 	var wg sync.WaitGroup
@@ -138,8 +150,10 @@ func RunSCC(repoPath string) ([]SCCLanguageStat, []SCCFileStat, error) {
 	}
 
 	wg.Wait()
+	return results
+}
 
-	// 聚合语言统计
+func aggregateResults(results []fileResult) ([]SCCLanguageStat, []SCCFileStat) {
 	langMap := make(map[string]*SCCLanguageStat)
 	for _, r := range results {
 		s, ok := langMap[r.language]
@@ -174,7 +188,7 @@ func RunSCC(repoPath string) ([]SCCLanguageStat, []SCCFileStat, error) {
 		})
 	}
 
-	return langStats, fileStats, nil
+	return langStats, fileStats
 }
 
 // FormatSummaryForWiki 生成 reference.md 中的代码概览

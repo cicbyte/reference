@@ -19,20 +19,20 @@ python scripts/build.py           # 三平台全量编译
 ## 命令行用法
 
 ```bash
-reference                              # 无参数：首次运行交互式引导，后续自动注入 + 修复
+reference [-f table|json|jsonl]        # 全局 --format/-f 标志，适用于所有输出类子命令
 reference version                      # 显示版本信息
 reference repo add <url>               # 添加远程仓库（支持 owner/repo 简写）
 reference repo add --local <path>      # 添加本地仓库
 reference repo remove <name>           # 移除引用（按名称）
 reference repo remove --all            # 移除当前项目全部引用
 reference repo remove <name> --purge   # 同时删除缓存（需确认）
-reference repo list [-f json|jsonl]    # 列出所有引用
+reference repo list                    # 列出所有引用
 reference repo update [name]           # 更新远程仓库
-reference repo scc [name] [-n 15] [-f json|jsonl]  # 查看代码统计
-reference doctor [-f json|jsonl]       # 诊断并修复引用健康状态
-reference global list [-f json|jsonl] # 列出所有项目及其引用关系
+reference repo scc [name] [-n 15]      # 查看代码统计
+reference doctor                       # 诊断并修复引用健康状态
+reference global list                  # 列出所有项目及其引用关系
 reference global gc [--dry-run] [-y] [--cache]  # 清理过期 DB 记录（--cache 额外清理孤立缓存）
-reference global stats [-f json|jsonl] # 显示全局统计信息
+reference global stats                 # 显示全局统计信息
 reference proxy set <url|port>        # 设置代理
 reference proxy info                  # 查看代理
 reference proxy clear                 # 清除代理
@@ -40,7 +40,7 @@ reference wiki                         # 查看 wiki 状态
 reference wiki commit                  # 提交知识库更改
 reference wiki sync                   # 同步知识库（pull + commit + push）
 reference wiki remote [url]           # 查看/设置远程仓库
-reference wiki trash                   # 查看被删除的文件
+reference wiki trash [-n 20]          # 查看被删除的文件
 reference wiki restore <path>         # 从 Git 历史恢复文件
 ```
 

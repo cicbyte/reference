@@ -22,9 +22,7 @@ reference global list [flags]
 
 ### 标志
 
-| 标志 | 简写 | 说明 |
-|:---|:---|:---|
-| `--format` | `-f` | 输出格式：`table`（默认）、`json`、`jsonl` |
+> `--format` / `-f` 为全局标志，详见 `reference --help`。
 
 ### 示例
 
@@ -61,9 +59,7 @@ reference global stats [flags]
 
 ### 标志
 
-| 标志 | 简写 | 说明 |
-|:---|:---|:---|
-| `--format` | `-f` | 输出格式：`table`（默认）、`json`、`jsonl` |
+> `--format` / `-f` 为全局标志，详见 `reference --help`。
 
 ### 输出示例
 

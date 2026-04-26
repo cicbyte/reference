@@ -93,7 +93,7 @@ allowed-tools: Bash(git:*), Read, Grep, Glob, Task
 
 ## 当前项目引用信息
 
-可以查看`.reference/reference.map.jsonl`(包含topics索引) 或者运行`reference.exe repo list --format jsonl`获取当前项目的引用信息(不包含topic索引)。
+可以查看`.reference/reference.map.jsonl`(包含topics索引) 或者运行`reference.exe repo list -f jsonl`获取当前项目的引用信息(不包含topic索引)。
 
 
 ## 知识目录结构

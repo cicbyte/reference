@@ -19,7 +19,8 @@ reference repo scc [name] [flags]
 | 标志 | 简写 | 默认值 | 说明 |
 |:---|:---|:---|:---|
 | `--top` | `-n` | `15` | Top 文件排名数量 |
-| `--format` | `-f` | `table` | 输出格式：`table`、`json`、`jsonl` |
+
+> `--format` / `-f` 为全局标志，详见 `reference --help`。
 
 ## 示例
 

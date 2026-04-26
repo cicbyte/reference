@@ -163,7 +163,7 @@ reference repo update [name]          # 更新远程仓库
 reference repo scc [name] [-n 15]    # 代码统计（语言分布、复杂度、Top 文件）
 ```
 
-所有支持 `--format` 标志的命令均可使用 `-f json` 或 `-f jsonl` 输出结构化数据。
+所有输出类命令均支持全局 `--format` / `-f` 标志，可使用 `-f json` 或 `-f jsonl` 输出结构化数据。
 
 ### 知识库管理
 

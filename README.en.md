@@ -163,7 +163,7 @@ reference repo update [name]          # Update remote repository
 reference repo scc [name] [-n 15]    # Code statistics (language distribution, complexity, top files)
 ```
 
-All commands that support `--format` can output structured data via `-f json` or `-f jsonl`.
+All output commands support the global `--format` / `-f` flag for structured output via `-f json` or `-f jsonl`.
 
 ### Knowledge Base Management
 

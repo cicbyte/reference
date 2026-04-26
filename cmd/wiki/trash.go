@@ -12,7 +12,6 @@ import (
 
 func getTrashCommand() *cobra.Command {
 	var limit int
-	var format string
 
 	cmd := &cobra.Command{
 		Use:   "trash",
@@ -29,7 +28,8 @@ func getTrashCommand() *cobra.Command {
 				return
 			}
 
-			switch utils.ParseFormat(format) {
+			f, _ := cmd.Flags().GetString("format")
+			switch utils.ParseFormat(f) {
 			case utils.FormatJSON:
 				utils.OutputJSON(files)
 			case utils.FormatJSONL:
@@ -42,7 +42,6 @@ func getTrashCommand() *cobra.Command {
 	}
 
 	cmd.Flags().IntVarP(&limit, "limit", "n", 20, "显示最近 N 条")
-	cmd.Flags().StringVarP(&format, "format", "f", "table", "输出格式: table, json, jsonl")
 	return cmd
 }
 

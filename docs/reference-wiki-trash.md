@@ -13,7 +13,8 @@ reference wiki trash [flags]
 | 标志 | 简写 | 说明 |
 |:---|:---|:---|
 | `--limit` | `-n` | 显示最近 N 条（默认 20） |
-| `--format` | `-f` | 输出格式：`table`（默认）、`json`、`jsonl` |
+
+> `--format` / `-f` 为全局标志，详见 `reference --help`。
 
 ## 示例
 
