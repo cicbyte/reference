@@ -90,7 +90,7 @@ func (p *InjectProcessor) Execute(ctx context.Context) (string, error) {
 	for _, r := range repos {
 		refName := r.GetRefName()
 		linkPath := filepath.Join(reposDir, refName)
-		wikiBase := filepath.Join(utils.ConfigInstance.GetAppDir(), "wiki")
+		wikiBase := utils.ConfigInstance.GetWikiDir()
 		wikiDir := filepath.Join(wikiBase, r.WikiSubPath)
 		rd := repoData{
 			LinkName:    r.LinkName,
@@ -228,7 +228,7 @@ func (p *InjectProcessor) injectSkill(claudeDir string) []string {
 func (p *InjectProcessor) injectWikiJunctions(wikiJunctionDir string, repos []repoData) []string {
 	cleanStaleJunctions(wikiJunctionDir, repos)
 
-	wikiBase := filepath.Join(utils.ConfigInstance.GetAppDir(), "wiki")
+	wikiBase := utils.ConfigInstance.GetWikiDir()
 
 	var linked []string
 	for _, rd := range repos {

@@ -125,7 +125,9 @@ reference wiki restore <path>         # 从 Git 历史恢复文件
 
 ### 应用初始化流程（cmd/root.go init()）
 
-严格按顺序：`InitAppDirs` → `LoadConfig` → `ApplyConfig` → `InitLog` → `GetGormDB`（含 AutoMigrate） → `EnsureGitInit` → `EnsureAutoPull`，任何步骤失败 `os.Exit(1)`。
+严格按顺序：`InitAppDirs` → `LoadConfig` → `ApplyConfig` → `InitDataDirs` → `InitLog` → `GetGormDB`（含 AutoMigrate） → `MigratePathsIfNeeded` → `EnsureGitInit` → `EnsureAutoPull`，任何步骤失败 `os.Exit(1)`。
+
+`MigratePathsIfNeeded` 在启动时 O(1) 比较当前 `repos_path` 与 DB 中记录的值，路径变更时批量更新所有项目的 `CachePath` 记录。Wiki 路径通过 `GetWikiDir()` 动态获取，无需迁移。
 
 无参数运行 `reference` 时，若 `reference.settings.json` 不存在或 `initialized == false`，进入交互式引导（选择编程助手），保存后继续注入流程。
 

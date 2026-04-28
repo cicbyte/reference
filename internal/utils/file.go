@@ -41,18 +41,13 @@ func GetExeDir() string {
 	return filepath.Dir(exe)
 }
 
-// 初始化应用目录结构
 func InitAppDirs() error {
-	config := ConfigInstance
-
 	dirs := []string{
-		config.GetAppSeriesDir(),
-		config.GetAppDir(),
-		config.GetConfigDir(),
-		config.GetDbDir(),
-		config.GetLogDir(),
-		config.GetReposDir(),
-		config.GetWikiDir(),
+		ConfigInstance.GetAppSeriesDir(),
+		ConfigInstance.GetAppDir(),
+		ConfigInstance.GetConfigDir(),
+		ConfigInstance.GetDbDir(),
+		ConfigInstance.GetLogDir(),
 	}
 
 	for _, dir := range dirs {
@@ -61,5 +56,14 @@ func InitAppDirs() error {
 		}
 	}
 
+	return nil
+}
+
+func InitDataDirs() error {
+	for _, dir := range []string{ConfigInstance.GetReposDir(), ConfigInstance.GetWikiDir()} {
+		if err := EnsureDir(dir); err != nil {
+			return fmt.Errorf("directory init failed: %v", err)
+		}
+	}
 	return nil
 }

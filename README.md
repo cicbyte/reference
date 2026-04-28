@@ -202,6 +202,10 @@ reference proxy clear                 # 清除代理
 配置文件位于 `~/.cicbyte/reference/config/config.yaml`：
 
 ```yaml
+# 自定义存储路径（可选，修改后自动迁移数据库记录）
+repos_path: /path/to/repos
+wiki_path: /path/to/wiki
+
 network:
   proxy: http://127.0.0.1:7890
   git_proxy: socks5://127.0.0.1:1080

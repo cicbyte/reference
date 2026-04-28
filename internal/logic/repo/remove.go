@@ -249,7 +249,7 @@ func RefreshReferenceMap(projectDir, refDir string, indexer *RepoIndexer) error 
 			LinkName: r.LinkName,
 			RefName:  refName,
 			Type:     string(r.RefType),
-			WikiDir: filepath.Join(utils.ConfigInstance.GetAppDir(), "wiki", r.WikiSubPath),
+			WikiDir: filepath.Join(utils.ConfigInstance.GetWikiDir(), r.WikiSubPath),
 		}
 		if r.RefType == models.RefTypeRemote {
 			rd.Platform = r.Host

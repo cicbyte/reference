@@ -217,7 +217,7 @@ func (p *DoctorProcessor) checkWikiJunctions() checkResult {
 	}
 
 	wikiLinkDir := filepath.Join(p.config.ProjectDir, ".reference", "wiki")
-	wikiBase := filepath.Join(utils.ConfigInstance.GetAppDir(), "wiki")
+	wikiBase := utils.ConfigInstance.GetWikiDir()
 	reposDir := filepath.Join(p.config.ProjectDir, ".reference", "repos")
 	total, ok := len(repos), 0
 	var fixed []string
@@ -273,7 +273,7 @@ func (p *DoctorProcessor) checkReferenceMap() checkResult {
 	if err := RefreshReferenceMap(p.config.ProjectDir, refDir, indexer); err != nil {
 		return checkResult{Name: "Reference Map", Status: "warn", Details: "重新生成失败: " + err.Error()}
 	}
-	return checkResult{Name: "Reference Map", Status: "fixed", Details: "已重新生成"}
+	return checkResult{Name: "Reference Map", Status: "ok", Details: "正常"}
 }
 
 func (p *DoctorProcessor) checkDatabaseConsistency() checkResult {
@@ -338,7 +338,7 @@ func (p *DoctorProcessor) checkDatabaseConsistency() checkResult {
 }
 
 func (p *DoctorProcessor) checkWikiGit() checkResult {
-	wikiDir := filepath.Join(utils.ConfigInstance.GetAppDir(), "wiki")
+	wikiDir := utils.ConfigInstance.GetWikiDir()
 
 	if _, err := os.Stat(wikiDir); os.IsNotExist(err) {
 		return checkResult{Name: "Wiki Git", Status: "warn", Details: "wiki 目录不存在"}

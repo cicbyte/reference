@@ -118,6 +118,10 @@ func init() {
 	}
 	common.AppConfigModel = utils.ConfigInstance.LoadConfig()
 	utils.ConfigInstance.ApplyConfig(common.AppConfigModel)
+	if err := utils.InitDataDirs(); err != nil {
+		fmt.Printf("初始化数据目录失败: %v\n", err)
+		os.Exit(1)
+	}
 	if err := log.Init(utils.ConfigInstance.GetLogPath()); err != nil {
 		fmt.Printf("日志初始化失败: %v\n", err)
 		os.Exit(1)

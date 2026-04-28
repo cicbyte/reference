@@ -202,6 +202,10 @@ See the [docs/](docs/) directory for detailed documentation.
 Configuration file located at `~/.cicbyte/reference/config/config.yaml`:
 
 ```yaml
+# Custom storage paths (optional, DB records auto-migrate on change)
+repos_path: /path/to/repos
+wiki_path: /path/to/wiki
+
 network:
   proxy: http://127.0.0.1:7890
   git_proxy: socks5://127.0.0.1:1080
