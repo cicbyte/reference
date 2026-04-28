@@ -10,6 +10,7 @@ import (
 )
 
 var removePurge bool
+var removeClean bool
 var removeYes bool
 var removeAll bool
 
@@ -26,12 +27,14 @@ func getRemoveCommand() *cobra.Command {
 移除全部引用:
   reference remove --all
   reference remove --all --yes
+  reference remove --all --clean    # 同时清除注入的 AI 配置和 .reference/ 目录
 
 对本地引用 --purge 无效。`,
 		Run: runRemoveCommand,
 	}
 
 	cmd.Flags().BoolVarP(&removePurge, "purge", "p", false, "同时删除全局缓存仓库（仅远程模式）")
+	cmd.Flags().BoolVar(&removeClean, "clean", false, "同时清除注入的 AI 配置和 .reference/ 目录（需配合 --all）")
 	cmd.Flags().BoolVarP(&removeYes, "yes", "y", false, "跳过确认提示")
 	cmd.Flags().BoolVar(&removeAll, "all", false, "移除当前项目全部引用")
 
@@ -59,6 +62,7 @@ func runRemoveCommand(cmd *cobra.Command, args []string) {
 	config := &logicrepo.RemoveConfig{
 		Identifier: identifier,
 		Purge:      removePurge,
+		Clean:      removeClean,
 		Yes:        removeYes,
 		All:        removeAll,
 		ProjectDir: projectDir,

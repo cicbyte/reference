@@ -26,6 +26,7 @@ reference repo add --local <path>      # 添加本地仓库
 reference repo remove <name>           # 移除引用（按名称）
 reference repo remove --all            # 移除当前项目全部引用
 reference repo remove <name> --purge   # 同时删除缓存（需确认）
+reference repo remove --all --clean    # 同时清除 AI 配置和 .reference/ 目录
 reference repo list                    # 列出所有引用
 reference repo update [name]           # 更新远程仓库
 reference repo scc [name] [-n 15]      # 查看代码统计

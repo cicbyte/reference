@@ -17,6 +17,7 @@ import (
 type RemoveConfig struct {
 	Identifier string
 	Purge      bool
+	Clean      bool
 	Yes        bool
 	All        bool
 	ProjectDir string
@@ -102,7 +103,17 @@ func (p *RemoveProcessor) removeAll() error {
 	removed += p.cleanOrphanedJunctions(reposLinkDir, wikiLinkDir)
 	os.Remove(filepath.Join(refDir, "reference.map.jsonl"))
 
-	fmt.Printf("已移除 %d 个引用\n", removed)
+	if p.config.Clean {
+		cleaned := p.cleanInjectedFiles(p.config.ProjectDir)
+		os.RemoveAll(refDir)
+		if cleaned > 0 {
+			fmt.Printf("已移除 %d 个引用，已清理 %d 个注入文件\n", removed, cleaned)
+		} else {
+			fmt.Printf("已移除 %d 个引用\n", removed)
+		}
+	} else {
+		fmt.Printf("已移除 %d 个引用\n", removed)
+	}
 	return nil
 }
 
@@ -204,6 +215,24 @@ func (p *RemoveProcessor) purgeCacheIfNeeded(repo *models.Repo) error {
 		log.Info("缓存已清除", zap.String("path", repo.CachePath))
 	}
 	return nil
+}
+
+func (p *RemoveProcessor) cleanInjectedFiles(projectDir string) int {
+	cleaned := 0
+	claudeDir := filepath.Join(projectDir, ".claude")
+	for _, name := range []string{
+		filepath.Join("agents", "reference-explorer.md"),
+		filepath.Join("agents", "reference-analyzer.md"),
+		filepath.Join("skills", "reference", "SKILL.md"),
+	} {
+		path := filepath.Join(claudeDir, name)
+		if err := os.Remove(path); err == nil {
+			cleaned++
+		}
+	}
+	os.Remove(filepath.Join(claudeDir, "skills", "reference"))
+	os.Remove(filepath.Join(claudeDir, "skills"))
+	return cleaned
 }
 
 func RefreshReferenceMap(projectDir, refDir string, indexer *RepoIndexer) error {
