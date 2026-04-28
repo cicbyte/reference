@@ -52,12 +52,18 @@ func (p *RemoveProcessor) removeAll() error {
 	}
 
 	if len(repos) == 0 {
-		cleaned := p.cleanOrphanedJunctions(reposLinkDir, wikiLinkDir)
-		os.Remove(filepath.Join(refDir, "reference.map.jsonl"))
-		if cleaned > 0 {
-			fmt.Printf("数据库无记录，已清理 %d 个残留链接\n", cleaned)
+		if p.config.Clean {
+			cleaned := p.cleanInjectedFiles(p.config.ProjectDir)
+			os.RemoveAll(refDir)
+			fmt.Printf("已移除 .reference/ 目录，已清理 %d 个 AI 配置文件\n", cleaned)
 		} else {
-			fmt.Println("当前项目暂无引用仓库。")
+			cleaned := p.cleanOrphanedJunctions(reposLinkDir, wikiLinkDir)
+			os.Remove(filepath.Join(refDir, "reference.map.jsonl"))
+			if cleaned > 0 {
+				fmt.Printf("数据库无记录，已清理 %d 个残留链接\n", cleaned)
+			} else {
+				fmt.Println("当前项目暂无引用仓库。")
+			}
 		}
 		return nil
 	}
@@ -106,11 +112,7 @@ func (p *RemoveProcessor) removeAll() error {
 	if p.config.Clean {
 		cleaned := p.cleanInjectedFiles(p.config.ProjectDir)
 		os.RemoveAll(refDir)
-		if cleaned > 0 {
-			fmt.Printf("已移除 %d 个引用，已清理 %d 个注入文件\n", removed, cleaned)
-		} else {
-			fmt.Printf("已移除 %d 个引用\n", removed)
-		}
+		fmt.Printf("已移除 %d 个引用，已移除 .reference/ 目录，已清理 %d 个 AI 配置文件\n", removed, cleaned)
 	} else {
 		fmt.Printf("已移除 %d 个引用\n", removed)
 	}

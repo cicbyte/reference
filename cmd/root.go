@@ -129,6 +129,7 @@ func init() {
 		os.Exit(1)
 	}
 	log.Info("数据库连接成功")
+	utils.MigratePathsIfNeeded()
 
 	wikiDir := utils.ConfigInstance.GetWikiDir()
 	if err := logicwiki.EnsureGitInit(wikiDir); err != nil {

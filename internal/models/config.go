@@ -1,5 +1,10 @@
 package models
 
+type ConfigState struct {
+	Key   string `gorm:"primaryKey"`
+	Value string
+}
+
 type AppConfig struct {
 	ReposPath string `yaml:"repos_path,omitempty"` // 全局缓存目录，默认 ~/.cicbyte/reference/repos
 	WikiPath  string `yaml:"wiki_path,omitempty"`  // 全局知识库目录，默认 ~/.cicbyte/reference/wiki
