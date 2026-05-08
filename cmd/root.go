@@ -55,7 +55,7 @@ func runDefault(cmd *cobra.Command, args []string) error {
 
 	settings := models.LoadProjectSettings(projectDir)
 	if !settings.Initialized {
-		guideInit(projectDir, settings)
+		guideInit(projectDir)
 	}
 
 	config := &logicrepo.InjectConfig{ProjectDir: projectDir}
@@ -72,7 +72,14 @@ func runDefault(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func guideInit(projectDir string, settings *models.ProjectSettings) {
+func initProject(projectDir string, agent string) error {
+	settings := models.LoadProjectSettings(projectDir)
+	settings.Agent = agent
+	settings.Initialized = true
+	return models.SaveProjectSettings(projectDir, settings)
+}
+
+func guideInit(projectDir string) {
 	fmt.Println()
 	fmt.Println("  欢迎使用 reference！")
 	fmt.Println()
@@ -85,26 +92,24 @@ func guideInit(projectDir string, settings *models.ProjectSettings) {
 	var input string
 	fmt.Scanln(&input)
 
+	var agent string
 	switch strings.TrimSpace(input) {
 	case "1":
-		settings.Agent = "claude"
-		settings.Initialized = true
-	case "2":
-		settings.Agent = ""
-		settings.Initialized = true
+		agent = "claude"
 	default:
-		settings.Agent = ""
-		settings.Initialized = true
-		fmt.Println("  未识别选项，已设为无编程助手。可通过 .reference/reference.settings.json 修改。")
+		agent = ""
+		if strings.TrimSpace(input) != "2" {
+			fmt.Println("  未识别选项，已设为无编程助手。可通过 .reference/reference.settings.json 修改。")
+		}
 	}
 
-	if err := models.SaveProjectSettings(projectDir, settings); err != nil {
+	if err := initProject(projectDir, agent); err != nil {
 		fmt.Printf("  保存配置失败: %v\n", err)
 		return
 	}
 
 	agentName := "无"
-	if settings.Agent == "claude" {
+	if agent == "claude" {
 		agentName = "Claude Code"
 	}
 	fmt.Printf("  已配置: %s\n", agentName)
@@ -142,6 +147,7 @@ func init() {
 		logicwiki.EnsureAutoPull(wikiDir)
 	}
 
+	rootCmd.AddCommand(getInitCommand())
 	rootCmd.AddCommand(global.GetGlobalCommand())
 	rootCmd.AddCommand(repo.GetRepoCommand())
 	rootCmd.AddCommand(repo.GetDoctorCommand())

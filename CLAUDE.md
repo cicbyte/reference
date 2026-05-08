@@ -21,6 +21,7 @@ python scripts/build.py           # 三平台全量编译
 ```bash
 reference [-f table|json|jsonl]        # 全局 --format/-f 标志，适用于所有输出类子命令
 reference version                      # 显示版本信息
+reference init [--agent claude|none]   # 非交互式初始化项目（CI 集成用）
 reference repo add <url>               # 添加远程仓库（支持 owner/repo 简写）
 reference repo add --local <path>      # 添加本地仓库
 reference repo remove <name>           # 移除引用（按名称）
