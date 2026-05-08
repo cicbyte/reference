@@ -149,6 +149,20 @@ All files are pure Markdown + Mermaid. Generated once, reused across projects.
 
 Knowledge files are pure Markdown — any AI can read them directly.
 
+## VS Code Extension
+
+[reference-vscode-plugin](https://github.com/cicbyte/reference_vs_plugin) provides a graphical management interface:
+
+- **Sidebar tree view** — Browse referenced repository directories and knowledge files
+- **Visual operations** — Add/update/remove repositories without terminal commands
+- **Status bar integration** — Real-time display of referenced repository count
+
+Install:
+
+```bash
+code --install-extension reference-vscode-plugin-0.1.0.vsix
+```
+
 ## Usage
 
 ### Repository Management

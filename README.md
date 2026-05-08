@@ -149,6 +149,20 @@ flowchart LR
 
 知识文件为纯 Markdown，任何 AI 都能直接读取。
 
+## VS Code 扩展
+
+[reference-vscode-plugin](https://github.com/cicbyte/reference_vs_plugin) 提供图形化管理界面：
+
+- **侧栏树形视图** — 浏览引用仓库目录结构和知识文件
+- **可视化操作** — 添加/更新/移除仓库，无需终端命令
+- **状态栏集成** — 实时显示引用仓库数量
+
+安装：
+
+```bash
+code --install-extension reference-vscode-plugin-0.1.0.vsix
+```
+
 ## 使用方法
 
 ### 仓库管理
