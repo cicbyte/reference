@@ -55,7 +55,10 @@ func removeLink(linkPath string) error {
 		}
 		return nil
 	}
-	return os.Remove(linkPath)
+	if err := os.Remove(linkPath); err != nil {
+		return os.RemoveAll(linkPath)
+	}
+	return nil
 }
 
 func ReadLink(linkPath string) (string, error) {
