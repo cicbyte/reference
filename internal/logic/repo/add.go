@@ -21,7 +21,7 @@ type AddConfig struct {
 	Name       string
 	Branch     string
 	Depth      int
-	NoUpdate   bool
+	Update     bool
 	ProjectDir string
 }
 
@@ -81,7 +81,7 @@ func (p *AddProcessor) addRemote(refDir string) (*AddResult, error) {
 		Branch:   p.config.Branch,
 		Depth:    p.config.Depth,
 		Proxy:    proxy,
-		NoUpdate: p.config.NoUpdate,
+		Update:   p.config.Update,
 	})
 	if err != nil {
 		return nil, err

@@ -33,5 +33,6 @@ reference repo update github.com-gin-gonic-gin
 
 ## 相关命令
 
-- `reference repo add --no-update` — 添加时跳过更新
+- `reference repo add` — 添加时默认不更新已有缓存
+- `reference repo add --update` — 添加时强制更新已有缓存
 - `reference repo list` — 查看当前 commit 信息
