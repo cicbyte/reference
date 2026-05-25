@@ -120,12 +120,22 @@ func pullRepo(opts CloneOptions) error {
 }
 
 func pullViaGitCmd(opts CloneOptions) error {
-	cmd := exec.Command("git", "-C", opts.Path, "pull", "--ff-only")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("更新失败: %s\n%s", err, string(out))
+	branch := "HEAD"
+	if opts.Branch != "" {
+		branch = opts.Branch
 	}
-	log.Info("git pull 完成", zap.String("path", opts.Path))
+
+	fetch := exec.Command("git", "-C", opts.Path, "fetch", "origin")
+	if out, err := fetch.CombinedOutput(); err != nil {
+		return fmt.Errorf("fetch 失败: %s\n%s", err, string(out))
+	}
+
+	reset := exec.Command("git", "-C", opts.Path, "reset", "--hard", "origin/"+branch)
+	if out, err := reset.CombinedOutput(); err != nil {
+		return fmt.Errorf("reset 失败: %s\n%s", err, string(out))
+	}
+
+	log.Info("git fetch + reset 完成", zap.String("path", opts.Path))
 	return nil
 }
 
