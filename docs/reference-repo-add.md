@@ -22,7 +22,7 @@ reference repo add <target> [flags]
 | `--name` | `-n` | 自定义链接名称（默认从 URL/路径自动生成） |
 | `--branch` | `-b` | 指定克隆的分支或标签（仅远程模式） |
 | `--depth` | `-d` | 浅克隆深度，默认 1（仅远程模式） |
-| `--no-update` | | 若缓存已存在，跳过 git pull（仅远程模式） |
+| `--update` | `-u` | 若缓存已存在，强制 git pull 更新（仅远程模式） |
 
 ## 远程仓库
 
@@ -42,6 +42,9 @@ reference repo add golang/go --branch master --depth 5
 
 # 自定义链接名称
 reference repo add spf13/cobra --name cobra
+
+# 强制更新已有缓存
+reference repo add spf13/cobra --update
 ```
 
 ### 远程模式执行流程

@@ -11,11 +11,11 @@ import (
 )
 
 var (
-	addLocal    bool
-	addName     string
-	addBranch   string
-	addDepth    int
-	addNoUpdate bool
+	addLocal  bool
+	addName   string
+	addBranch string
+	addDepth  int
+	addUpdate bool
 )
 
 func getAddCommand() *cobra.Command {
@@ -38,7 +38,7 @@ func getAddCommand() *cobra.Command {
 	cmd.Flags().StringVarP(&addName, "name", "n", "", "自定义链接名称")
 	cmd.Flags().StringVarP(&addBranch, "branch", "b", "", "指定克隆的分支或标签（仅远程模式）")
 	cmd.Flags().IntVarP(&addDepth, "depth", "d", 1, "浅克隆深度（仅远程模式）")
-	cmd.Flags().BoolVar(&addNoUpdate, "no-update", false, "若缓存已存在，跳过 git pull（仅远程模式）")
+	cmd.Flags().BoolVarP(&addUpdate, "update", "u", false, "若缓存已存在，强制 git pull 更新（仅远程模式）")
 
 	return cmd
 }
@@ -73,7 +73,7 @@ func runAddCommand(cmd *cobra.Command, args []string) {
 		Name:       addName,
 		Branch:     addBranch,
 		Depth:      addDepth,
-		NoUpdate:   addNoUpdate,
+		Update:     addUpdate,
 		ProjectDir: projectDir,
 	}
 

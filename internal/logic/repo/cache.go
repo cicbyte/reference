@@ -14,12 +14,12 @@ import (
 )
 
 type CloneOptions struct {
-	URL      string
-	Path     string
-	Branch   string
-	Depth    int
-	Proxy    string
-	NoUpdate bool
+	URL    string
+	Path   string
+	Branch string
+	Depth  int
+	Proxy  string
+	Update bool
 }
 
 func CloneOrUpdate(opts CloneOptions) error {
@@ -32,10 +32,10 @@ func CloneOrUpdate(opts CloneOptions) error {
 	if _, err := os.Stat(opts.Path); os.IsNotExist(err) {
 		return cloneRepo(opts)
 	}
-	if !opts.NoUpdate {
+	if opts.Update {
 		return pullRepo(opts)
 	}
-	log.Info("缓存已存在，跳过更新", zap.String("path", opts.Path))
+	log.Info("缓存已存在，跳过更新（使用 --update 强制更新）", zap.String("path", opts.Path))
 	return nil
 }
 

@@ -94,7 +94,7 @@ func (p *UpdateProcessor) updateOne(repo *models.Repo) error {
 		Branch:   repo.Branch,
 		Depth:    0,
 		Proxy:    proxy,
-		NoUpdate: false,
+		Update:   true,
 	})
 	if err != nil {
 		return err
