@@ -3,6 +3,7 @@ package repo
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"time"
 
 	"github.com/cicbyte/reference/internal/log"
@@ -55,11 +56,33 @@ func cloneRepo(opts CloneOptions) error {
 
 	log.Info("正在克隆仓库", zap.String("url", opts.URL), zap.String("path", opts.Path))
 	_, err := git.PlainClone(opts.Path, false, cloneOpts)
+	if err == nil {
+		log.Info("克隆完成", zap.String("path", opts.Path))
+		return nil
+	}
+
+	os.RemoveAll(opts.Path)
+	log.Warn("go-git 克隆失败，尝试 git clone", zap.Error(err))
+	return cloneViaGitCmd(opts)
+}
+
+func cloneViaGitCmd(opts CloneOptions) error {
+	args := []string{"clone", "--single-branch"}
+	if opts.Depth > 0 {
+		args = append(args, "--depth", fmt.Sprintf("%d", opts.Depth))
+	}
+	if opts.Branch != "" {
+		args = append(args, "--branch", opts.Branch)
+	}
+	args = append(args, opts.URL, opts.Path)
+
+	cmd := exec.Command("git", args...)
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		os.RemoveAll(opts.Path)
-		return fmt.Errorf("克隆失败: %w", err)
+		return fmt.Errorf("克隆失败: %s\n%s", err, string(out))
 	}
-	log.Info("克隆完成", zap.String("path", opts.Path))
+	log.Info("git clone 完成", zap.String("path", opts.Path))
 	return nil
 }
 
@@ -87,10 +110,22 @@ func pullRepo(opts CloneOptions) error {
 		log.Info("仓库已是最新", zap.String("path", opts.Path))
 		return nil
 	}
-	if err != nil {
-		return fmt.Errorf("更新失败: %w", err)
+	if err == nil {
+		log.Info("更新完成", zap.String("path", opts.Path))
+		return nil
 	}
-	log.Info("更新完成", zap.String("path", opts.Path))
+
+	log.Warn("go-git 更新失败，尝试 git pull", zap.Error(err))
+	return pullViaGitCmd(opts)
+}
+
+func pullViaGitCmd(opts CloneOptions) error {
+	cmd := exec.Command("git", "-C", opts.Path, "pull", "--ff-only")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("更新失败: %s\n%s", err, string(out))
+	}
+	log.Info("git pull 完成", zap.String("path", opts.Path))
 	return nil
 }
 
