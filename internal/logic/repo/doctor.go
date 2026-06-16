@@ -169,8 +169,8 @@ func (p *DoctorProcessor) checkAgentFiles() checkResult {
 	var updated []string
 
 	for _, name := range agentNames {
-		embedPath := "prompts/agents/" + name + ".md"
-		dst := filepath.Join(agentsDir, name+".md")
+		embedPath := "prompts/agents/" + name + layout.agentExt
+		dst := filepath.Join(agentsDir, name+layout.agentExt)
 		newData, err := readEmbedded(embedPath)
 		if err != nil {
 			log.Warn("读取 agent 模板失败", zap.String("agent", name), zap.Error(err))
@@ -183,7 +183,7 @@ func (p *DoctorProcessor) checkAgentFiles() checkResult {
 			log.Warn("写入 agent 文件失败", zap.String("agent", name), zap.Error(err))
 			continue
 		}
-		updated = append(updated, name+".md")
+		updated = append(updated, name+layout.agentExt)
 	}
 
 	if len(updated) == 0 {

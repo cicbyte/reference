@@ -227,8 +227,8 @@ func (p *RemoveProcessor) cleanInjectedFiles(projectDir string) int {
 	cleaned := 0
 	baseDir := filepath.Join(projectDir, layout.baseDir)
 	for _, name := range []string{
-		filepath.Join(layout.agentsSubdir, "reference-explorer.md"),
-		filepath.Join(layout.agentsSubdir, "reference-analyzer.md"),
+		filepath.Join(layout.agentsSubdir, "reference-explorer"+layout.agentExt),
+		filepath.Join(layout.agentsSubdir, "reference-analyzer"+layout.agentExt),
 		filepath.Join(layout.skillsSubdir, "reference", "SKILL.md"),
 	} {
 		path := filepath.Join(baseDir, name)

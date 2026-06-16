@@ -88,9 +88,10 @@ func guideInit(projectDir string) {
 	fmt.Println("    [2] ZCode")
 	fmt.Println("    [3] MiMo Code")
 	fmt.Println("    [4] OpenCode")
-	fmt.Println("    [5] 无（仅使用仓库引用管理功能）")
+	fmt.Println("    [5] Codex")
+	fmt.Println("    [6] 无（仅使用仓库引用管理功能）")
 	fmt.Println()
-	fmt.Print("  请输入选项 (1/2/3/4/5): ")
+	fmt.Print("  请输入选项 (1/2/3/4/5/6): ")
 
 	var input string
 	fmt.Scanln(&input)
@@ -105,9 +106,11 @@ func guideInit(projectDir string) {
 		agent, agentName = "mimocode", "MiMo Code"
 	case "4":
 		agent, agentName = "opencode", "OpenCode"
+	case "5":
+		agent, agentName = "codex", "Codex"
 	default:
 		agent, agentName = "", "无"
-		if strings.TrimSpace(input) != "5" {
+		if strings.TrimSpace(input) != "6" {
 			fmt.Println("  未识别选项，已设为无编程助手。可通过 .reference/reference.settings.json 修改。")
 		}
 	}

@@ -63,21 +63,24 @@ func NewInjectProcessor(config *InjectConfig, db *gorm.DB) *InjectProcessor {
 }
 
 type agentLayout struct {
-	baseDir       string
-	agentsSubdir  string
-	skillsSubdir  string
+	baseDir      string
+	agentsSubdir string
+	skillsSubdir string
+	agentExt     string
 }
 
 func getAgentLayout(agent string) *agentLayout {
 	switch agent {
 	case "claude":
-		return &agentLayout{baseDir: ".claude", agentsSubdir: "agents", skillsSubdir: "skills"}
+		return &agentLayout{baseDir: ".claude", agentsSubdir: "agents", skillsSubdir: "skills", agentExt: ".md"}
 	case "zcode":
-		return &agentLayout{baseDir: ".zcode", agentsSubdir: "cli/agents", skillsSubdir: "skills"}
+		return &agentLayout{baseDir: ".zcode", agentsSubdir: "cli/agents", skillsSubdir: "skills", agentExt: ".md"}
 	case "mimocode":
-		return &agentLayout{baseDir: ".mimocode", agentsSubdir: "agents", skillsSubdir: "skills"}
+		return &agentLayout{baseDir: ".mimocode", agentsSubdir: "agents", skillsSubdir: "skills", agentExt: ".md"}
 	case "opencode":
-		return &agentLayout{baseDir: ".opencode", agentsSubdir: "agents", skillsSubdir: "skills"}
+		return &agentLayout{baseDir: ".opencode", agentsSubdir: "agents", skillsSubdir: "skills", agentExt: ".md"}
+	case "codex":
+		return &agentLayout{baseDir: ".codex", agentsSubdir: "agents", skillsSubdir: "skills", agentExt: ".toml"}
 	}
 	return nil
 }
@@ -151,11 +154,11 @@ func (p *InjectProcessor) Execute(ctx context.Context) (string, error) {
 
 	var agentFiles, skillFiles []string
 	settings := models.LoadProjectSettings(p.config.ProjectDir)
-	agentLayout := getAgentLayout(settings.Agent)
-	if agentLayout != nil {
-		baseDir := filepath.Join(p.config.ProjectDir, agentLayout.baseDir)
-		agentFiles = p.injectAgents(baseDir, agentLayout.agentsSubdir)
-		skillFiles = p.injectSkill(baseDir, agentLayout.skillsSubdir)
+	layout := getAgentLayout(settings.Agent)
+	if layout != nil {
+		baseDir := filepath.Join(p.config.ProjectDir, layout.baseDir)
+		agentFiles = p.injectAgents(baseDir, layout.agentsSubdir, layout.agentExt)
+		skillFiles = p.injectSkill(baseDir, layout.skillsSubdir)
 	}
 
 	total := len(agentFiles) + len(skillFiles) + len(wikiFiles)
@@ -206,7 +209,7 @@ func (p *InjectProcessor) repairSymlinks(reposDir string, repos []models.Repo) i
 	return fixed
 }
 
-func (p *InjectProcessor) injectAgents(baseDir, agentsSubdir string) []string {
+func (p *InjectProcessor) injectAgents(baseDir, agentsSubdir, ext string) []string {
 	agentsDir := filepath.Join(baseDir, agentsSubdir)
 	if err := os.MkdirAll(agentsDir, 0755); err != nil {
 		log.Warn("创建 agents 目录失败", zap.Error(err))
@@ -215,11 +218,12 @@ func (p *InjectProcessor) injectAgents(baseDir, agentsSubdir string) []string {
 
 	var updated []string
 	for _, agentName := range []string{"reference-explorer", "reference-analyzer"} {
-		dst := filepath.Join(agentsDir, agentName+".md")
-		if err := extractEmbedded("prompts/agents/"+agentName+".md", dst); err != nil {
+		srcPath := "prompts/agents/" + agentName + ext
+		dst := filepath.Join(agentsDir, agentName+ext)
+		if err := extractEmbedded(srcPath, dst); err != nil {
 			log.Warn("复制 agent 文件失败", zap.String("agent", agentName), zap.Error(err))
 		} else {
-			updated = append(updated, agentName+".md")
+			updated = append(updated, agentName+ext)
 		}
 	}
 	return updated
