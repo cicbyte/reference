@@ -17,19 +17,30 @@ reference
 
   请选择你的编程助手：
     [1] Claude Code
-    [2] 无（仅使用仓库引用管理功能）
+    [2] Codex
+    [3] OpenCode
+    [4] ZCode
+    [5] MiMo Code
+    [6] 无（仅使用仓库引用管理功能）
 
-  请输入选项 (1/2):
+  请输入选项 (1/2/3/4/5/6):
 ```
 
 选择后配置保存到 `.reference/reference.settings.json`，后续运行不再引导。
+
+CI 集成可使用非交互式 `reference init --agent <name>`，详见 [reference init](./reference-init.md)。
 
 ## 执行内容
 
 1. **修复软链接** — 检测 `.reference/repos/` 下的 Junction/Symlink，若被手动删除则静默重建
 2. **生成 reference.map.jsonl** — 将仓库列表写入 `.reference/reference.map.jsonl`，供 AI Agent 读取
 3. **创建 Wiki Junction** — 为每个仓库创建 Junction 链接到 `.reference/wiki/`
-4. **注入 Agent 配置**（仅 Claude Code 用户）— 复制 Agent 文件和 SKILL.md 到 `.claude/`
+4. **注入 AI 配置**（启用 AI 助手时）— 按所选助手注入子代理 + Skill：
+   - **Claude Code** → `.claude/agents/*.md` + `.claude/skills/reference/SKILL.md`
+   - **Codex** → `.codex/agents/*.toml` + `.codex/skills/reference/SKILL.md`
+   - **OpenCode** → `.opencode/agents/*.md` + `.opencode/skills/reference/SKILL.md`
+   - **ZCode** → `.zcode/cli/agents/*.md` + `.zcode/skills/reference/SKILL.md`
+   - **MiMo Code** → `.mimocode/agents/*.md` + `.mimocode/skills/reference/SKILL.md`
 
 ## 前提条件
 

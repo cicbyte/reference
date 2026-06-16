@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 
 	"github.com/cicbyte/reference/internal/log"
@@ -17,7 +18,6 @@ type CloneOptions struct {
 	URL    string
 	Path   string
 	Branch string
-	Depth  int
 	Proxy  string
 	Update bool
 }
@@ -46,7 +46,6 @@ func cloneRepo(opts CloneOptions) error {
 
 	cloneOpts := &git.CloneOptions{
 		URL:          opts.URL,
-		Depth:        opts.Depth,
 		SingleBranch: true,
 	}
 
@@ -68,9 +67,6 @@ func cloneRepo(opts CloneOptions) error {
 
 func cloneViaGitCmd(opts CloneOptions) error {
 	args := []string{"clone", "--single-branch"}
-	if opts.Depth > 0 {
-		args = append(args, "--depth", fmt.Sprintf("%d", opts.Depth))
-	}
 	if opts.Branch != "" {
 		args = append(args, "--branch", opts.Branch)
 	}
@@ -123,6 +119,14 @@ func pullViaGitCmd(opts CloneOptions) error {
 	branch := "HEAD"
 	if opts.Branch != "" {
 		branch = opts.Branch
+	}
+
+	if _, err := os.Stat(filepath.Join(opts.Path, ".git", "shallow")); err == nil {
+		log.Info("检测到浅克隆，执行 unshallow", zap.String("path", opts.Path))
+		unshallow := exec.Command("git", "-C", opts.Path, "fetch", "--unshallow", "origin")
+		if out, err := unshallow.CombinedOutput(); err != nil {
+			return fmt.Errorf("unshallow 失败: %s\n%s", err, string(out))
+		}
 	}
 
 	fetch := exec.Command("git", "-C", opts.Path, "fetch", "origin")

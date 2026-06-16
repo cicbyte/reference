@@ -14,7 +14,6 @@ var (
 	addLocal  bool
 	addName   string
 	addBranch string
-	addDepth  int
 	addUpdate bool
 )
 
@@ -26,7 +25,7 @@ func getAddCommand() *cobra.Command {
 
 远程模式（默认）:
   reference add https://github.com/gin-gonic/gin
-  reference add spf13/cobra --depth 1
+  reference add spf13/cobra
 
 本地模式:
   reference add --local ~/projects/my-lib --name my-utils`,
@@ -37,7 +36,6 @@ func getAddCommand() *cobra.Command {
 	cmd.Flags().BoolVarP(&addLocal, "local", "l", false, "标记为本地 Git 仓库路径")
 	cmd.Flags().StringVarP(&addName, "name", "n", "", "自定义链接名称")
 	cmd.Flags().StringVarP(&addBranch, "branch", "b", "", "指定克隆的分支或标签（仅远程模式）")
-	cmd.Flags().IntVarP(&addDepth, "depth", "d", 1, "浅克隆深度（仅远程模式）")
 	cmd.Flags().BoolVarP(&addUpdate, "update", "u", false, "若缓存已存在，强制 git pull 更新（仅远程模式）")
 
 	return cmd
@@ -72,7 +70,6 @@ func runAddCommand(cmd *cobra.Command, args []string) {
 		Local:      addLocal,
 		Name:       addName,
 		Branch:     addBranch,
-		Depth:      addDepth,
 		Update:     addUpdate,
 		ProjectDir: projectDir,
 	}

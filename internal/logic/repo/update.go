@@ -89,12 +89,11 @@ func (p *UpdateProcessor) updateOne(repo *models.Repo) error {
 
 	proxy := ResolveProxy(p.appConfig)
 	err := CloneOrUpdate(CloneOptions{
-		URL:      repo.RemoteURL,
-		Path:     repo.CachePath,
-		Branch:   repo.Branch,
-		Depth:    0,
-		Proxy:    proxy,
-		Update:   true,
+		URL:    repo.RemoteURL,
+		Path:   repo.CachePath,
+		Branch: repo.Branch,
+		Proxy:  proxy,
+		Update: true,
 	})
 	if err != nil {
 		return err

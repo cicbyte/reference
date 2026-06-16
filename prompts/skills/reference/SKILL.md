@@ -56,7 +56,7 @@ allowed-tools: Bash(git:*), Read, Grep, Glob, Task
 
 3. **若不存在，立即获取**：
    - 告知用户："本地暂无该仓库缓存，正在为您下载（约需数秒）..."
-   - 执行命令：`reference repo add <url> --depth 1`（或对本地路径执行 `reference repo add --local <path>`）
+   - 执行命令：`reference repo add <url>`（或对本地路径执行 `reference repo add --local <path>`）
    - 完成后继续处理用户请求。
 
 4. **若已存在**：

@@ -54,8 +54,7 @@ reference repo remove --all --clean
 
 **完整清理**（`--all --clean`）：
 - 移除当前项目所有引用（同 `--all`）
-- 删除 `.claude/agents/reference-explorer.md`、`.claude/agents/reference-analyzer.md`
-- 删除 `.claude/skills/reference/SKILL.md`
+- 按当前项目所选助手清理注入的子代理和 Skill 文件（如 `.claude/agents/*.md`、`.claude/skills/reference/SKILL.md`；Codex 则为 `*.toml`）
 - 删除整个 `.reference/` 目录
 - 效果等同于项目从未初始化过 reference，下次运行 `reference` 会重新引导
 

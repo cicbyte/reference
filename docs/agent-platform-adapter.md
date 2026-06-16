@@ -1,5 +1,17 @@
 # AI 编程 Agent 平台适配调研报告
 
+> **实现状态（2026-04）**：本报告是历史调研文档。当前 `reference` 已实现完整子代理 + Skill 注入的平台有 5 个，按 `reference init --agent <name>` 选择：
+>
+> | 助手 | 配置值 | agents 目录 | skills 目录 | agent 格式 |
+> |:---|:---|:---|:---|:---|
+> | Claude Code | `claude` | `.claude/agents/` | `.claude/skills/` | Markdown |
+> | Codex | `codex` | `.codex/agents/` | `.codex/skills/` | TOML |
+> | OpenCode | `opencode` | `.opencode/agents/` | `.opencode/skills/` | Markdown |
+> | ZCode | `zcode` | `.zcode/cli/agents/` | `.zcode/skills/` | Markdown |
+> | MiMo Code | `mimocode` | `.mimocode/agents/` | `.mimocode/skills/` | Markdown |
+>
+> 其他平台（Cursor / Windsurf / Cline / Continue / Roo / Copilot 等）目前未做自动注入，可通过引导 AI 查看 `.reference/` 目录使用。下文为调研分析，仅供后续扩展参考。
+
 ## 概述
 
 本报告调研主流 AI 编程 Agent 平台的配置体系（项目指令、MCP、子代理、Skill 等），评估 `reference` 项目对各平台的适配可行性，并给出适配优先级和实现方案。

@@ -47,12 +47,12 @@ reference doctor -f jsonl
 | 数据库一致性 | 数据库记录与实际链接是否匹配 | 标记孤立记录和未跟踪链接 |
 | Wiki Git | 全局知识库 Git 状态是否正常 | 自动初始化 |
 
-### AI Agent 配置（仅 Claude Code 用户）
+### AI Agent 配置（启用 AI 助手时）
 
 | 检查项 | 说明 | 修复方式 |
 |:---|:---|:---|
-| Agent 文件 | `.claude/agents/` 下的 agent 配置是否最新 | 从源模板强制覆盖 |
-| SKILL.md | `.claude/skills/reference/SKILL.md` 是否存在 | 从模板重新渲染 |
+| Agent 文件 | 按所选助手路径下的 agent 文件是否最新（`.claude/.zcode/.mimocode/.opencode` 的 `*.md`，或 `.codex` 的 `*.toml`） | 从源模板强制覆盖 |
+| SKILL.md | 按所选助手路径下的 `skills/reference/SKILL.md` 是否存在 | 从模板重新渲染 |
 
 ## 输出示例
 

@@ -21,7 +21,6 @@ reference repo add <target> [flags]
 | `--local` | `-l` | 标记为本地 Git 仓库路径 |
 | `--name` | `-n` | 自定义链接名称（默认从 URL/路径自动生成） |
 | `--branch` | `-b` | 指定克隆的分支或标签（仅远程模式） |
-| `--depth` | `-d` | 浅克隆深度，默认 1（仅远程模式） |
 | `--update` | `-u` | 若缓存已存在，强制 git pull 更新（仅远程模式） |
 
 ## 远程仓库
@@ -37,8 +36,8 @@ reference repo add https://gitlab.com/group/project.git
 reference repo add spf13/cobra
 reference repo add golang/go
 
-# 指定分支和克隆深度
-reference repo add golang/go --branch master --depth 5
+# 指定分支
+reference repo add golang/go --branch master
 
 # 自定义链接名称
 reference repo add spf13/cobra --name cobra
@@ -50,11 +49,13 @@ reference repo add spf13/cobra --update
 ### 远程模式执行流程
 
 1. 解析 URL，识别平台和命名空间
-2. 克隆（浅克隆）到全局缓存 `~/.cicbyte/reference/repos/<platform>/<namespace>/<repo>`
+2. **完整克隆**（非浅克隆，保证 commit 历史完整）到全局缓存 `~/.cicbyte/reference/repos/<platform>/<namespace>/<repo>`
 3. 在 `.reference/` 下创建 Junction/Symlink 链接
 4. 确保 `.reference/` 在 `.gitignore` 中
 5. 写入数据库索引
 6. 自动调用 inject 生成 AI Agent 配置和知识文件
+
+> **关于浅克隆**：早期版本使用 `--depth 1` 浅克隆以节省空间，但实践中发现浅克隆会导致更新时 commit 不匹配等问题，现已移除该机制，统一使用完整克隆。对历史遗留的浅克隆缓存，`repo update` 会自动执行 `git fetch --unshallow` 转为完整仓库。
 
 ## 本地仓库
 

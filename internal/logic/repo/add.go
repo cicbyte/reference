@@ -20,7 +20,6 @@ type AddConfig struct {
 	Local      bool
 	Name       string
 	Branch     string
-	Depth      int
 	Update     bool
 	ProjectDir string
 }
@@ -76,12 +75,11 @@ func (p *AddProcessor) addRemote(refDir string) (*AddResult, error) {
 
 	proxy := ResolveProxy(p.appConfig)
 	err = CloneOrUpdate(CloneOptions{
-		URL:      info.OriginalURL,
-		Path:     info.CachePath,
-		Branch:   p.config.Branch,
-		Depth:    p.config.Depth,
-		Proxy:    proxy,
-		Update:   p.config.Update,
+		URL:    info.OriginalURL,
+		Path:   info.CachePath,
+		Branch: p.config.Branch,
+		Proxy:  proxy,
+		Update: p.config.Update,
 	})
 	if err != nil {
 		return nil, err
