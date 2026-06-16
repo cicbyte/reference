@@ -85,10 +85,10 @@ func guideInit(projectDir string) {
 	fmt.Println()
 	fmt.Println("  请选择你的编程助手：")
 	fmt.Println("    [1] Claude Code")
-	fmt.Println("    [2] ZCode")
-	fmt.Println("    [3] MiMo Code")
-	fmt.Println("    [4] OpenCode")
-	fmt.Println("    [5] Codex")
+	fmt.Println("    [2] Codex")
+	fmt.Println("    [3] OpenCode")
+	fmt.Println("    [4] ZCode")
+	fmt.Println("    [5] MiMo Code")
 	fmt.Println("    [6] 无（仅使用仓库引用管理功能）")
 	fmt.Println()
 	fmt.Print("  请输入选项 (1/2/3/4/5/6): ")
@@ -101,13 +101,13 @@ func guideInit(projectDir string) {
 	case "1":
 		agent, agentName = "claude", "Claude Code"
 	case "2":
-		agent, agentName = "zcode", "ZCode"
-	case "3":
-		agent, agentName = "mimocode", "MiMo Code"
-	case "4":
-		agent, agentName = "opencode", "OpenCode"
-	case "5":
 		agent, agentName = "codex", "Codex"
+	case "3":
+		agent, agentName = "opencode", "OpenCode"
+	case "4":
+		agent, agentName = "zcode", "ZCode"
+	case "5":
+		agent, agentName = "mimocode", "MiMo Code"
 	default:
 		agent, agentName = "", "无"
 		if strings.TrimSpace(input) != "6" {

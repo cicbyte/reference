@@ -26,7 +26,7 @@
 - **零延迟查阅** — 源码在本地磁盘，AI 直接 Grep/Glob/Read，无网络请求
 - **知识可复用** — 探索结果沉淀为 Markdown 知识文件，一次探索，所有项目受益
 - **不污染上下文** — 双子代理架构：探索在子代理中完成，主 Agent 只加载知识文件
-- **多 AI 助手兼容** — 支持 Claude Code（完整功能）、Cursor、Copilot、Windsurf 等
+- **多 AI 助手兼容** — 支持 Claude Code、ZCode、MiMo Code、OpenCode、Codex（自动注入子代理 + Skill），兼容 Cursor、Copilot、Windsurf 等
 - **纯本地** — 不依赖任何在线 API 或付费服务，不受网络波动影响
 - **本地仓库引用** — 复用你之前在其他项目中实现过的代码
 
@@ -57,11 +57,21 @@ reference          # 首次运行：交互式选择编程助手
 
   请选择你的编程助手：
     [1] Claude Code
-    [2] 无（仅使用仓库引用管理功能）
+    [2] Codex
+    [3] OpenCode
+    [4] ZCode
+    [5] MiMo Code
+    [6] 无（仅使用仓库引用管理功能）
 
-  请输入选项 (1/2): 1
+  请输入选项 (1/2/3/4/5/6): 1
   已配置: Claude Code
   已链接 0 个仓库知识。
+```
+
+CI 集成可非交互式初始化：
+
+```bash
+reference init --agent claude    # 或 codex / opencode / zcode / mimocode
 ```
 
 ### 2. 添加仓库
@@ -141,13 +151,17 @@ flowchart LR
 
 ## 平台支持
 
-| 平台 | 功能 |
-|:---|:---|
-| **Claude Code** | 完整功能：双子代理 + Skill + 知识自动注入 |
-| **Cursor / Copilot / Windsurf 等** | 添加仓库后引导 AI 查看 `.reference/` 目录即可 |
-| **无 AI** | 仓库管理、代码统计、知识库管理 |
+| 平台 | agents 目录 | skills 目录 | agent 格式 |
+|:---|:---|:---|:---|
+| **Claude Code** | `.claude/agents/` | `.claude/skills/` | Markdown |
+| **Codex** | `.codex/agents/` | `.codex/skills/` | TOML |
+| **OpenCode** | `.opencode/agents/` | `.opencode/skills/` | Markdown |
+| **ZCode** | `.zcode/cli/agents/` | `.zcode/skills/` | Markdown |
+| **MiMo Code** | `.mimocode/agents/` | `.mimocode/skills/` | Markdown |
+| **Cursor / Copilot / Windsurf 等** | — | — | 引导 AI 查看 `.reference/` 目录 |
+| **无 AI** | — | — | 仓库管理、代码统计、知识库管理 |
 
-知识文件为纯 Markdown，任何 AI 都能直接读取。
+初始化时按所选助手自动注入 `reference-explorer` + `reference-analyzer` 子代理和 `reference` Skill 到对应目录。
 
 ## VS Code 扩展
 

@@ -26,7 +26,7 @@ English | [简体中文](README.md)
 - **Zero-latency access** — Source code lives on your local disk. AI reads it directly via Grep/Glob/Read with no network requests.
 - **Reusable knowledge** — Exploration results are saved as Markdown knowledge files. One exploration benefits all projects.
 - **Clean context** — Dual-agent architecture: exploration happens in sub-agents, the main Agent only loads lightweight knowledge files.
-- **Multi-AI compatible** — Full support for Claude Code; works with Cursor, Copilot, Windsurf, and more.
+- **Multi-AI compatible** — Supports Claude Code, ZCode, MiMo Code, OpenCode, Codex (auto-injects subagents + Skill); works with Cursor, Copilot, Windsurf, and more.
 - **Fully local** — No online APIs or paid services required. Works offline, unaffected by network issues.
 - **Local repository references** — Reuse code you've implemented in other projects.
 
@@ -57,11 +57,21 @@ reference          # First run: interactive assistant selection
 
   Select your coding assistant:
     [1] Claude Code
-    [2] None (repository management only)
+    [2] Codex
+    [3] OpenCode
+    [4] ZCode
+    [5] MiMo Code
+    [6] None (repository management only)
 
-  Enter option (1/2): 1
+  Enter option (1/2/3/4/5/6): 1
   Configured: Claude Code
   Linked 0 repositories.
+```
+
+For CI integration, initialize non-interactively:
+
+```bash
+reference init --agent claude    # or codex / opencode / zcode / mimocode
 ```
 
 ### 2. Add Repositories
@@ -141,13 +151,17 @@ All files are pure Markdown + Mermaid. Generated once, reused across projects.
 
 ## Platform Support
 
-| Platform | Features |
-|:---|:---|
-| **Claude Code** | Full features: dual-agent + Skill + automatic knowledge injection |
-| **Cursor / Copilot / Windsurf** | Add repositories, then guide AI to check the `.reference/` directory |
-| **No AI** | Repository management, code statistics, knowledge base management |
+| Platform | agents dir | skills dir | agent format |
+|:---|:---|:---|:---|
+| **Claude Code** | `.claude/agents/` | `.claude/skills/` | Markdown |
+| **Codex** | `.codex/agents/` | `.codex/skills/` | TOML |
+| **OpenCode** | `.opencode/agents/` | `.opencode/skills/` | Markdown |
+| **ZCode** | `.zcode/cli/agents/` | `.zcode/skills/` | Markdown |
+| **MiMo Code** | `.mimocode/agents/` | `.mimocode/skills/` | Markdown |
+| **Cursor / Copilot / Windsurf** | — | — | Guide AI to check `.reference/` directory |
+| **No AI** | — | — | Repository management, code statistics, knowledge base |
 
-Knowledge files are pure Markdown — any AI can read them directly.
+On initialization, `reference-explorer` + `reference-analyzer` subagents and the `reference` Skill are auto-injected to the corresponding directory based on the selected assistant.
 
 ## VS Code Extension
 

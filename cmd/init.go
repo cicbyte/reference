@@ -16,10 +16,10 @@ var validAgents = map[string]string{
 	"":         "",
 	"none":     "",
 	"claude":   "claude",
+	"codex":    "codex",
+	"opencode": "opencode",
 	"zcode":    "zcode",
 	"mimocode": "mimocode",
-	"opencode": "opencode",
-	"codex":    "codex",
 }
 
 func getInitCommand() *cobra.Command {
@@ -33,13 +33,13 @@ func getInitCommand() *cobra.Command {
   2. 生成 reference.settings.json
   3. 更新 .gitignore
   4. 生成 reference.map.jsonl
-  5. 注入 AI 配置文件（如果指定了 --agent claude/zcode/mimocode/opencode/codex）
+  5. 注入 AI 配置文件（如果指定了 --agent claude/codex/opencode/zcode/mimocode）
 
 首次交互式引导请直接运行无参数的 reference 命令。`,
 		RunE: runInit,
 	}
 	cmd.Flags().StringVar(&initAgent, "agent", "",
-		"编程助手类型: claude | zcode | mimocode | opencode | codex | none（默认 none）")
+		"编程助手类型: claude | codex | opencode | zcode | mimocode | none（默认 none）")
 	return cmd
 }
 
@@ -51,7 +51,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 
 	normalized, ok := validAgents[initAgent]
 	if !ok {
-		return fmt.Errorf("不支持的助手类型: %s（可选: claude, zcode, mimocode, opencode, codex, none）", initAgent)
+		return fmt.Errorf("不支持的助手类型: %s（可选: claude, codex, opencode, zcode, mimocode, none）", initAgent)
 	}
 
 	if err := initProject(projectDir, normalized); err != nil {
