@@ -220,20 +220,24 @@ func (p *RemoveProcessor) purgeCacheIfNeeded(repo *models.Repo) error {
 }
 
 func (p *RemoveProcessor) cleanInjectedFiles(projectDir string) int {
+	layout := getAgentLayout(models.LoadProjectSettings(projectDir).Agent)
+	if layout == nil {
+		return 0
+	}
 	cleaned := 0
-	claudeDir := filepath.Join(projectDir, ".claude")
+	baseDir := filepath.Join(projectDir, layout.baseDir)
 	for _, name := range []string{
-		filepath.Join("agents", "reference-explorer.md"),
-		filepath.Join("agents", "reference-analyzer.md"),
-		filepath.Join("skills", "reference", "SKILL.md"),
+		filepath.Join(layout.agentsSubdir, "reference-explorer.md"),
+		filepath.Join(layout.agentsSubdir, "reference-analyzer.md"),
+		filepath.Join(layout.skillsSubdir, "reference", "SKILL.md"),
 	} {
-		path := filepath.Join(claudeDir, name)
+		path := filepath.Join(baseDir, name)
 		if err := os.Remove(path); err == nil {
 			cleaned++
 		}
 	}
-	os.Remove(filepath.Join(claudeDir, "skills", "reference"))
-	os.Remove(filepath.Join(claudeDir, "skills"))
+	os.Remove(filepath.Join(baseDir, layout.skillsSubdir, "reference"))
+	os.Remove(filepath.Join(baseDir, layout.skillsSubdir))
 	return cleaned
 }
 

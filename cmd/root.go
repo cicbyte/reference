@@ -85,20 +85,29 @@ func guideInit(projectDir string) {
 	fmt.Println()
 	fmt.Println("  请选择你的编程助手：")
 	fmt.Println("    [1] Claude Code")
-	fmt.Println("    [2] 无（仅使用仓库引用管理功能）")
+	fmt.Println("    [2] ZCode")
+	fmt.Println("    [3] MiMo Code")
+	fmt.Println("    [4] OpenCode")
+	fmt.Println("    [5] 无（仅使用仓库引用管理功能）")
 	fmt.Println()
-	fmt.Print("  请输入选项 (1/2): ")
+	fmt.Print("  请输入选项 (1/2/3/4/5): ")
 
 	var input string
 	fmt.Scanln(&input)
 
-	var agent string
+	var agent, agentName string
 	switch strings.TrimSpace(input) {
 	case "1":
-		agent = "claude"
+		agent, agentName = "claude", "Claude Code"
+	case "2":
+		agent, agentName = "zcode", "ZCode"
+	case "3":
+		agent, agentName = "mimocode", "MiMo Code"
+	case "4":
+		agent, agentName = "opencode", "OpenCode"
 	default:
-		agent = ""
-		if strings.TrimSpace(input) != "2" {
+		agent, agentName = "", "无"
+		if strings.TrimSpace(input) != "5" {
 			fmt.Println("  未识别选项，已设为无编程助手。可通过 .reference/reference.settings.json 修改。")
 		}
 	}
@@ -108,10 +117,6 @@ func guideInit(projectDir string) {
 		return
 	}
 
-	agentName := "无"
-	if agent == "claude" {
-		agentName = "Claude Code"
-	}
 	fmt.Printf("  已配置: %s\n", agentName)
 	fmt.Println()
 }

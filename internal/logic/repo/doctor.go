@@ -156,7 +156,11 @@ func (p *DoctorProcessor) checkSymlinks() checkResult {
 }
 
 func (p *DoctorProcessor) checkAgentFiles() checkResult {
-	agentsDir := filepath.Join(p.config.ProjectDir, ".claude", "agents")
+	layout := getAgentLayout(models.LoadProjectSettings(p.config.ProjectDir).Agent)
+	if layout == nil {
+		return checkResult{Name: "Agent 文件", Status: "ok", Details: "未启用 AI 助手，跳过"}
+	}
+	agentsDir := filepath.Join(p.config.ProjectDir, layout.baseDir, layout.agentsSubdir)
 	if err := os.MkdirAll(agentsDir, 0755); err != nil {
 		return checkResult{Name: "Agent 文件", Status: "warn", Details: fmt.Sprintf("创建目录失败: %v", err)}
 	}
@@ -189,7 +193,11 @@ func (p *DoctorProcessor) checkAgentFiles() checkResult {
 }
 
 func (p *DoctorProcessor) checkSkillFile() checkResult {
-	skillPath := filepath.Join(p.config.ProjectDir, ".claude", "skills", "reference", "SKILL.md")
+	layout := getAgentLayout(models.LoadProjectSettings(p.config.ProjectDir).Agent)
+	if layout == nil {
+		return checkResult{Name: "SKILL.md", Status: "ok", Details: "未启用 AI 助手，跳过"}
+	}
+	skillPath := filepath.Join(p.config.ProjectDir, layout.baseDir, layout.skillsSubdir, "reference", "SKILL.md")
 
 	newData, err := readEmbedded("prompts/skills/reference/SKILL.md")
 	if err != nil {
