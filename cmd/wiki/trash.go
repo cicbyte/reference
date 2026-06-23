@@ -17,8 +17,7 @@ func getTrashCommand() *cobra.Command {
 		Use:   "trash",
 		Short: "查看被删除的知识文件",
 		Run: func(cmd *cobra.Command, args []string) {
-			wikiDir := utils.ConfigInstance.GetWikiDir()
-			files, err := logicwiki.ListDeletedFiles(wikiDir, limit)
+			files, err := logicwiki.ListDeletedFiles(getWikiDir(), limit)
 			if err != nil {
 				fmt.Printf("查询失败: %v\n", err)
 				return

@@ -220,24 +220,21 @@ func (p *RemoveProcessor) purgeCacheIfNeeded(repo *models.Repo) error {
 }
 
 func (p *RemoveProcessor) cleanInjectedFiles(projectDir string) int {
-	layout := getAgentLayout(models.LoadProjectSettings(projectDir).Agent)
-	if layout == nil {
-		return 0
-	}
+	settings := models.LoadProjectSettings(projectDir)
 	cleaned := 0
-	baseDir := filepath.Join(projectDir, layout.baseDir)
-	for _, name := range []string{
-		filepath.Join(layout.agentsSubdir, "reference-explorer"+layout.agentExt),
-		filepath.Join(layout.agentsSubdir, "reference-analyzer"+layout.agentExt),
-		filepath.Join(layout.skillsSubdir, "reference", "SKILL.md"),
-	} {
-		path := filepath.Join(baseDir, name)
-		if err := os.Remove(path); err == nil {
-			cleaned++
+	for _, agentID := range settings.Agents {
+		cfg, ok := GetAgentConfig(agentID)
+		if !ok {
+			continue
+		}
+		baseDir := filepath.Join(projectDir, cfg.BaseDir)
+		for _, f := range cfg.Files {
+			path := filepath.Join(baseDir, f.DestPath)
+			if err := os.Remove(path); err == nil {
+				cleaned++
+			}
 		}
 	}
-	os.Remove(filepath.Join(baseDir, layout.skillsSubdir, "reference"))
-	os.Remove(filepath.Join(baseDir, layout.skillsSubdir))
 	return cleaned
 }
 
@@ -253,7 +250,7 @@ func RefreshReferenceMap(projectDir, refDir string, indexer *RepoIndexer) error 
 			LinkName: r.LinkName,
 			RefName:  refName,
 			Type:     string(r.RefType),
-			WikiDir: filepath.Join(utils.ConfigInstance.GetWikiDir(), r.WikiSubPath),
+			WikiDir:  resolveWikiDir(&r),
 		}
 		if r.RefType == models.RefTypeRemote {
 			rd.Platform = r.Host

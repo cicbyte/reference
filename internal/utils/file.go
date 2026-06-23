@@ -60,7 +60,7 @@ func InitAppDirs() error {
 }
 
 func InitDataDirs() error {
-	for _, dir := range []string{ConfigInstance.GetReposDir(), ConfigInstance.GetWikiDir()} {
+	for _, dir := range []string{ConfigInstance.GetReposDir(), ConfigInstance.GetWikiDir(), ConfigInstance.GetLocalWikiDir()} {
 		if err := EnsureDir(dir); err != nil {
 			return fmt.Errorf("directory init failed: %v", err)
 		}

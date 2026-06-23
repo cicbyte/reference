@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/cicbyte/reference/internal/common"
@@ -62,28 +61,6 @@ func NewInjectProcessor(config *InjectConfig, db *gorm.DB) *InjectProcessor {
 	return &InjectProcessor{config: config, db: db}
 }
 
-type agentLayout struct {
-	baseDir      string
-	agentsSubdir string
-	skillsSubdir string
-	agentExt     string
-}
-
-func getAgentLayout(agent string) *agentLayout {
-	switch agent {
-	case "claude":
-		return &agentLayout{baseDir: ".claude", agentsSubdir: "agents", skillsSubdir: "skills", agentExt: ".md"}
-	case "zcode":
-		return &agentLayout{baseDir: ".zcode", agentsSubdir: "cli/agents", skillsSubdir: "skills", agentExt: ".md"}
-	case "mimocode":
-		return &agentLayout{baseDir: ".mimocode", agentsSubdir: "agents", skillsSubdir: "skills", agentExt: ".md"}
-	case "opencode":
-		return &agentLayout{baseDir: ".opencode", agentsSubdir: "agents", skillsSubdir: "skills", agentExt: ".md"}
-	case "codex":
-		return &agentLayout{baseDir: ".codex", agentsSubdir: "agents", skillsSubdir: "skills", agentExt: ".toml"}
-	}
-	return nil
-}
 
 func (p *InjectProcessor) Execute(ctx context.Context) (string, error) {
 	indexer := NewRepoIndexer(p.db)
@@ -113,8 +90,7 @@ func (p *InjectProcessor) Execute(ctx context.Context) (string, error) {
 	for _, r := range repos {
 		refName := r.GetRefName()
 		linkPath := filepath.Join(reposDir, refName)
-		wikiBase := utils.ConfigInstance.GetWikiDir()
-		wikiDir := filepath.Join(wikiBase, r.WikiSubPath)
+		wikiDir := resolveWikiDir(&r)
 		rd := repoData{
 			LinkName:    r.LinkName,
 			RefName:     refName,
@@ -152,16 +128,19 @@ func (p *InjectProcessor) Execute(ctx context.Context) (string, error) {
 
 	wikiFiles := p.injectWikiJunctions(wikiJunctionDir, repoDataList)
 
-	var agentFiles, skillFiles []string
 	settings := models.LoadProjectSettings(p.config.ProjectDir)
-	layout := getAgentLayout(settings.Agent)
-	if layout != nil {
-		baseDir := filepath.Join(p.config.ProjectDir, layout.baseDir)
-		agentFiles = p.injectAgents(baseDir, layout.agentsSubdir, layout.agentExt)
-		skillFiles = p.injectSkill(baseDir, layout.skillsSubdir)
+	var injectedFiles []string
+	for _, agentID := range settings.Agents {
+		cfg, ok := GetAgentConfig(agentID)
+		if !ok {
+			continue
+		}
+		baseDir := filepath.Join(p.config.ProjectDir, cfg.BaseDir)
+		files := p.injectAgentFiles(baseDir, cfg.Files)
+		injectedFiles = append(injectedFiles, files...)
 	}
 
-	total := len(agentFiles) + len(skillFiles) + len(wikiFiles)
+	total := len(injectedFiles) + len(wikiFiles)
 	if total == 0 && repairCount == 0 {
 		return "配置已是最新。", nil
 	}
@@ -170,11 +149,11 @@ func (p *InjectProcessor) Execute(ctx context.Context) (string, error) {
 	if len(wikiFiles) > 0 {
 		sb.WriteString(fmt.Sprintf("已链接 %d 个仓库知识", len(wikiFiles)))
 	}
-	if len(agentFiles)+len(skillFiles) > 0 {
+	if len(injectedFiles) > 0 {
 		if sb.Len() > 0 {
 			sb.WriteString("，")
 		}
-		sb.WriteString(fmt.Sprintf("已更新 %d 个 AI 配置文件", len(agentFiles)+len(skillFiles)))
+		sb.WriteString(fmt.Sprintf("已更新 %d 个 AI 配置文件", len(injectedFiles)))
 	}
 	if repairCount > 0 {
 		if sb.Len() > 0 {
@@ -209,55 +188,29 @@ func (p *InjectProcessor) repairSymlinks(reposDir string, repos []models.Repo) i
 	return fixed
 }
 
-func (p *InjectProcessor) injectAgents(baseDir, agentsSubdir, ext string) []string {
-	agentsDir := filepath.Join(baseDir, agentsSubdir)
-	if err := os.MkdirAll(agentsDir, 0755); err != nil {
-		log.Warn("创建 agents 目录失败", zap.Error(err))
-		return nil
-	}
-
+func (p *InjectProcessor) injectAgentFiles(baseDir string, files []AgentFile) []string {
 	var updated []string
-	for _, agentName := range []string{"reference-explorer", "reference-analyzer"} {
-		srcPath := "prompts/agents/" + agentName + ext
-		dst := filepath.Join(agentsDir, agentName+ext)
-		if err := extractEmbedded(srcPath, dst); err != nil {
-			log.Warn("复制 agent 文件失败", zap.String("agent", agentName), zap.Error(err))
+	for _, f := range files {
+		dst := filepath.Join(baseDir, f.DestPath)
+		if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+			log.Warn("创建目录失败", zap.String("path", filepath.Dir(dst)), zap.Error(err))
+			continue
+		}
+		if err := extractEmbedded(f.EmbedPath, dst); err != nil {
+			log.Warn("注入文件失败", zap.String("file", f.DestPath), zap.Error(err))
 		} else {
-			updated = append(updated, agentName+ext)
+			updated = append(updated, filepath.Base(f.DestPath))
 		}
 	}
 	return updated
 }
 
-func (p *InjectProcessor) injectSkill(baseDir, skillsSubdir string) []string {
-	skillsDir := filepath.Join(baseDir, skillsSubdir, "reference")
-	if err := os.MkdirAll(skillsDir, 0755); err != nil {
-		log.Warn("创建 skills 目录失败", zap.Error(err))
-		return nil
-	}
-
-	data, err := readEmbedded("prompts/skills/reference/SKILL.md")
-	if err != nil {
-		log.Warn("读取 SKILL.md 模板失败", zap.Error(err))
-		return nil
-	}
-
-	skillPath := filepath.Join(skillsDir, "SKILL.md")
-	if err := renderSkill(data, skillPath); err != nil {
-		log.Warn("生成 SKILL.md 失败", zap.Error(err))
-		return nil
-	}
-	return []string{"SKILL.md"}
-}
-
 func (p *InjectProcessor) injectWikiJunctions(wikiJunctionDir string, repos []repoData) []string {
 	cleanStaleJunctions(wikiJunctionDir, repos)
 
-	wikiBase := utils.ConfigInstance.GetWikiDir()
-
 	var linked []string
 	for _, rd := range repos {
-		wikiDir := filepath.Join(wikiBase, rd.WikiSubPath)
+		wikiDir := rd.WikiDir
 		linkDir := filepath.Join(wikiJunctionDir, rd.RefName)
 
 		if _, err := os.Lstat(linkDir); err == nil {
@@ -432,18 +385,6 @@ func detectLanguage(repoPath string) string {
 	return "Unknown"
 }
 
-func renderSkill(templateData []byte, outputPath string) error {
-	tmpl, err := template.New("skill").Parse(string(templateData))
-	if err != nil {
-		return err
-	}
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, struct{}{}); err != nil {
-		return err
-	}
-	return os.WriteFile(outputPath, buf.Bytes(), 0644)
-}
-
 func readEmbedded(embedPath string) ([]byte, error) {
 	data, err := common.PromptsFS.ReadFile(embedPath)
 	if err == nil {
@@ -478,6 +419,13 @@ func detectDescription(repoPath string, r *models.Repo) string {
 		}
 	}
 	return ""
+}
+
+func resolveWikiDir(r *models.Repo) string {
+	if r.RefType == models.RefTypeLocal {
+		return filepath.Join(utils.ConfigInstance.GetLocalWikiDir(), r.WikiSubPath)
+	}
+	return filepath.Join(utils.ConfigInstance.GetWikiDir(), r.WikiSubPath)
 }
 
 func cleanStaleJunctions(dir string, activeRepos []repoData) {

@@ -56,8 +56,6 @@ func (p *DoctorProcessor) Execute(ctx context.Context) (*DoctorResult, error) {
 		return nil, fmt.Errorf("尚未初始化。请先运行 reference 完成初始化配置。")
 	}
 
-	hasAgent := settings.Agent != ""
-
 	coreChecks := []checkResult{
 		p.checkSymlinks(),
 		p.checkWikiJunctions(),
@@ -67,11 +65,13 @@ func (p *DoctorProcessor) Execute(ctx context.Context) (*DoctorResult, error) {
 	}
 
 	var agentChecks []checkResult
-	if hasAgent {
-		agentChecks = []checkResult{
-			p.checkAgentFiles(),
-			p.checkSkillFile(),
+	for _, agentID := range settings.Agents {
+		cfg, ok := GetAgentConfig(agentID)
+		if !ok {
+			continue
 		}
+		baseDir := filepath.Join(p.config.ProjectDir, cfg.BaseDir)
+		agentChecks = append(agentChecks, p.checkAgentFiles(agentID, baseDir, cfg)...)
 	}
 
 	result := &DoctorResult{
@@ -155,66 +155,45 @@ func (p *DoctorProcessor) checkSymlinks() checkResult {
 	return checkResult{Name: "软链接完整性", Status: "ok", Details: details}
 }
 
-func (p *DoctorProcessor) checkAgentFiles() checkResult {
-	layout := getAgentLayout(models.LoadProjectSettings(p.config.ProjectDir).Agent)
-	if layout == nil {
-		return checkResult{Name: "Agent 文件", Status: "ok", Details: "未启用 AI 助手，跳过"}
-	}
-	agentsDir := filepath.Join(p.config.ProjectDir, layout.baseDir, layout.agentsSubdir)
-	if err := os.MkdirAll(agentsDir, 0755); err != nil {
-		return checkResult{Name: "Agent 文件", Status: "warn", Details: fmt.Sprintf("创建目录失败: %v", err)}
-	}
-
-	agentNames := []string{"reference-explorer", "reference-analyzer"}
+func (p *DoctorProcessor) checkAgentFiles(agentID, baseDir string, cfg AgentConfig) []checkResult {
+	var results []checkResult
 	var updated []string
 
-	for _, name := range agentNames {
-		embedPath := "prompts/agents/" + name + layout.agentExt
-		dst := filepath.Join(agentsDir, name+layout.agentExt)
-		newData, err := readEmbedded(embedPath)
+	for _, f := range cfg.Files {
+		dst := filepath.Join(baseDir, f.DestPath)
+		if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+			results = append(results, checkResult{
+				Name: fmt.Sprintf("%s/%s", agentID, filepath.Base(f.DestPath)),
+				Status: "warn", Details: fmt.Sprintf("创建目录失败: %v", err),
+			})
+			continue
+		}
+		newData, err := readEmbedded(f.EmbedPath)
 		if err != nil {
-			log.Warn("读取 agent 模板失败", zap.String("agent", name), zap.Error(err))
+			log.Warn("读取模板失败", zap.String("file", f.EmbedPath), zap.Error(err))
 			continue
 		}
 		if oldData, err := os.ReadFile(dst); err == nil && bytes.Equal(oldData, newData) {
 			continue
 		}
 		if err := os.WriteFile(dst, newData, 0644); err != nil {
-			log.Warn("写入 agent 文件失败", zap.String("agent", name), zap.Error(err))
+			log.Warn("写入文件失败", zap.String("file", f.DestPath), zap.Error(err))
 			continue
 		}
-		updated = append(updated, name+layout.agentExt)
+		updated = append(updated, filepath.Base(f.DestPath))
 	}
 
 	if len(updated) == 0 {
-		return checkResult{Name: "Agent 文件", Status: "ok", Details: "正常"}
+		results = append(results, checkResult{
+			Name: fmt.Sprintf("%s 配置文件", cfg.DisplayName), Status: "ok", Details: "正常",
+		})
+	} else {
+		results = append(results, checkResult{
+			Name: fmt.Sprintf("%s 配置文件", cfg.DisplayName), Status: "ok",
+			Details: "已更新: " + strings.Join(updated, ", "),
+		})
 	}
-	return checkResult{Name: "Agent 文件", Status: "ok", Details: "已更新: " + strings.Join(updated, ", ")}
-}
-
-func (p *DoctorProcessor) checkSkillFile() checkResult {
-	layout := getAgentLayout(models.LoadProjectSettings(p.config.ProjectDir).Agent)
-	if layout == nil {
-		return checkResult{Name: "SKILL.md", Status: "ok", Details: "未启用 AI 助手，跳过"}
-	}
-	skillPath := filepath.Join(p.config.ProjectDir, layout.baseDir, layout.skillsSubdir, "reference", "SKILL.md")
-
-	newData, err := readEmbedded("prompts/skills/reference/SKILL.md")
-	if err != nil {
-		return checkResult{Name: "SKILL.md", Status: "warn", Details: "读取模板失败: " + err.Error()}
-	}
-
-	if err := os.MkdirAll(filepath.Dir(skillPath), 0755); err != nil {
-		return checkResult{Name: "SKILL.md", Status: "warn", Details: fmt.Sprintf("创建目录失败: %v", err)}
-	}
-
-	if oldData, err := os.ReadFile(skillPath); err == nil && string(oldData) == string(newData) {
-		return checkResult{Name: "SKILL.md", Status: "ok", Details: "正常"}
-	}
-	if err := os.WriteFile(skillPath, newData, 0644); err != nil {
-		return checkResult{Name: "SKILL.md", Status: "warn", Details: "写入失败: " + err.Error()}
-	}
-	return checkResult{Name: "SKILL.md", Status: "ok", Details: "已更新"}
+	return results
 }
 
 func (p *DoctorProcessor) checkWikiJunctions() checkResult {
@@ -225,7 +204,6 @@ func (p *DoctorProcessor) checkWikiJunctions() checkResult {
 	}
 
 	wikiLinkDir := filepath.Join(p.config.ProjectDir, ".reference", "wiki")
-	wikiBase := utils.ConfigInstance.GetWikiDir()
 	reposDir := filepath.Join(p.config.ProjectDir, ".reference", "repos")
 	total, ok := len(repos), 0
 	var fixed []string
@@ -233,7 +211,7 @@ func (p *DoctorProcessor) checkWikiJunctions() checkResult {
 	for _, r := range repos {
 		refName := r.GetRefName()
 		linkDir := filepath.Join(wikiLinkDir, refName)
-		wikiDir := filepath.Join(wikiBase, r.WikiSubPath)
+		wikiDir := resolveWikiDir(&r)
 		linkPath := filepath.Join(reposDir, refName)
 
 		wikiFile := filepath.Join(wikiDir, "reference.md")

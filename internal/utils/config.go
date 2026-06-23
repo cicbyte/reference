@@ -124,6 +124,10 @@ func (c *Config) GetWikiDir() string {
 	return c.WikiDir
 }
 
+func (c *Config) GetLocalWikiDir() string {
+	return filepath.Join(c.GetAppDir(), "localwiki")
+}
+
 func (c *Config) ApplyConfig(appConfig *models.AppConfig) {
 	if appConfig.ReposPath != "" {
 		c.ReposDir = appConfig.ReposPath

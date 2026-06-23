@@ -7,8 +7,27 @@ import (
 )
 
 type ProjectSettings struct {
-	Agent       string `json:"agent"`
-	Initialized bool   `json:"initialized"`
+	Agents      []string `json:"agents,omitempty"`
+	Agent       string   `json:"agent,omitempty"` // 已废弃，仅兼容旧格式读取
+	Initialized bool     `json:"initialized"`
+}
+
+// MigrateAgent 兼容旧格式：将 agent 字段迁移到 agents 数组
+func (s *ProjectSettings) MigrateAgent() {
+	if s.Agent != "" && len(s.Agents) == 0 {
+		s.Agents = []string{s.Agent}
+	}
+	s.Agent = ""
+}
+
+// HasAgent 检查是否配置了指定 agent
+func (s *ProjectSettings) HasAgent(id string) bool {
+	for _, a := range s.Agents {
+		if a == id {
+			return true
+		}
+	}
+	return false
 }
 
 func settingsPath(projectDir string) string {
@@ -24,6 +43,7 @@ func LoadProjectSettings(projectDir string) *ProjectSettings {
 	if err := json.Unmarshal(data, &s); err != nil {
 		return &ProjectSettings{}
 	}
+	s.MigrateAgent()
 	return &s
 }
 

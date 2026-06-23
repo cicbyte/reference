@@ -72,55 +72,69 @@ func runDefault(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func initProject(projectDir string, agent string) error {
+func initProject(projectDir string, agents []string) error {
 	settings := models.LoadProjectSettings(projectDir)
-	settings.Agent = agent
+	settings.Agents = agents
 	settings.Initialized = true
 	return models.SaveProjectSettings(projectDir, settings)
 }
 
 func guideInit(projectDir string) {
+	agentIDs := logicrepo.ListAgentIDs()
+
 	fmt.Println()
 	fmt.Println("  欢迎使用 reference！")
 	fmt.Println()
-	fmt.Println("  请选择你的编程助手：")
-	fmt.Println("    [1] Claude Code")
-	fmt.Println("    [2] Codex")
-	fmt.Println("    [3] OpenCode")
-	fmt.Println("    [4] ZCode")
-	fmt.Println("    [5] MiMo Code")
-	fmt.Println("    [6] 无（仅使用仓库引用管理功能）")
+	fmt.Println("  请选择你的编程助手（可多选，用逗号分隔）：")
+	for i, id := range agentIDs {
+		fmt.Printf("    [%d] %s\n", i+1, logicrepo.GetAgentDisplayName(id))
+	}
+	fmt.Printf("    [%d] 无（仅使用仓库引用管理功能）\n", len(agentIDs)+1)
 	fmt.Println()
-	fmt.Print("  请输入选项 (1/2/3/4/5/6): ")
+	fmt.Print("  请输入选项: ")
 
 	var input string
 	fmt.Scanln(&input)
 
-	var agent, agentName string
-	switch strings.TrimSpace(input) {
-	case "1":
-		agent, agentName = "claude", "Claude Code"
-	case "2":
-		agent, agentName = "codex", "Codex"
-	case "3":
-		agent, agentName = "opencode", "OpenCode"
-	case "4":
-		agent, agentName = "zcode", "ZCode"
-	case "5":
-		agent, agentName = "mimocode", "MiMo Code"
-	default:
-		agent, agentName = "", "无"
-		if strings.TrimSpace(input) != "6" {
+	input = strings.TrimSpace(input)
+	var agents []string
+
+	if input == fmt.Sprintf("%d", len(agentIDs)+1) || input == "" {
+		// 无 agent
+	} else {
+		parts := strings.Split(input, ",")
+		for _, p := range parts {
+			p = strings.TrimSpace(p)
+			var agentID string
+			for i, id := range agentIDs {
+				if p == fmt.Sprintf("%d", i+1) || p == id {
+					agentID = id
+					break
+				}
+			}
+			if agentID != "" {
+				agents = append(agents, agentID)
+			}
+		}
+		if len(agents) == 0 {
 			fmt.Println("  未识别选项，已设为无编程助手。可通过 .reference/reference.settings.json 修改。")
 		}
 	}
 
-	if err := initProject(projectDir, agent); err != nil {
+	if err := initProject(projectDir, agents); err != nil {
 		fmt.Printf("  保存配置失败: %v\n", err)
 		return
 	}
 
-	fmt.Printf("  已配置: %s\n", agentName)
+	if len(agents) == 0 {
+		fmt.Println("  已配置: 无")
+	} else {
+		names := make([]string, len(agents))
+		for i, id := range agents {
+			names[i] = logicrepo.GetAgentDisplayName(id)
+		}
+		fmt.Printf("  已配置: %s\n", strings.Join(names, ", "))
+	}
 	fmt.Println()
 }
 
@@ -153,6 +167,11 @@ func init() {
 		log.Warn("wiki git 初始化失败", zap.Error(err))
 	} else {
 		logicwiki.EnsureAutoPull(wikiDir)
+	}
+
+	localWikiDir := utils.ConfigInstance.GetLocalWikiDir()
+	if err := logicwiki.EnsureGitInit(localWikiDir); err != nil {
+		log.Warn("localwiki git 初始化失败", zap.Error(err))
 	}
 
 	rootCmd.AddCommand(getInitCommand())

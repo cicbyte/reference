@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	logicrepo "github.com/cicbyte/reference/internal/logic/repo"
 	"github.com/cicbyte/reference/internal/utils"
@@ -11,16 +12,6 @@ import (
 )
 
 var initAgent string
-
-var validAgents = map[string]string{
-	"":         "",
-	"none":     "",
-	"claude":   "claude",
-	"codex":    "codex",
-	"opencode": "opencode",
-	"zcode":    "zcode",
-	"mimocode": "mimocode",
-}
 
 func getInitCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -33,13 +24,13 @@ func getInitCommand() *cobra.Command {
   2. 生成 reference.settings.json
   3. 更新 .gitignore
   4. 生成 reference.map.jsonl
-  5. 注入 AI 配置文件（如果指定了 --agent claude/codex/opencode/zcode/mimocode）
+  5. 注入 AI 配置文件（如果指定了 --agent）
 
 首次交互式引导请直接运行无参数的 reference 命令。`,
 		RunE: runInit,
 	}
 	cmd.Flags().StringVar(&initAgent, "agent", "",
-		"编程助手类型: claude | codex | opencode | zcode | mimocode | none（默认 none）")
+		"编程助手类型，多个用逗号分隔: claude | codex | opencode | zcode | mimocode | none（默认 none）")
 	return cmd
 }
 
@@ -49,12 +40,22 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	normalized, ok := validAgents[initAgent]
-	if !ok {
-		return fmt.Errorf("不支持的助手类型: %s（可选: claude, codex, opencode, zcode, mimocode, none）", initAgent)
+	var agents []string
+	agentValue := strings.TrimSpace(initAgent)
+	if agentValue != "" && agentValue != "none" {
+		for _, part := range strings.Split(agentValue, ",") {
+			id := strings.TrimSpace(part)
+			if id != "" {
+				agents = append(agents, id)
+			}
+		}
+		if invalid := logicrepo.ValidateAgentIDs(agents); len(invalid) > 0 {
+			allIDs := strings.Join(logicrepo.ListAgentIDs(), ", ")
+			return fmt.Errorf("不支持的助手类型: %s（可选: %s）", strings.Join(invalid, ", "), allIDs)
+		}
 	}
 
-	if err := initProject(projectDir, normalized); err != nil {
+	if err := initProject(projectDir, agents); err != nil {
 		return fmt.Errorf("初始化失败: %w", err)
 	}
 

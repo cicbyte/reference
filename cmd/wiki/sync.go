@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	logicwiki "github.com/cicbyte/reference/internal/logic/wiki"
-	"github.com/cicbyte/reference/internal/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -13,8 +12,7 @@ func getSyncCommand() *cobra.Command {
 		Use:   "sync",
 		Short: "同步知识库（pull + 自动提交 + push）",
 		Run: func(cmd *cobra.Command, args []string) {
-			wikiDir := utils.ConfigInstance.GetWikiDir()
-			result, err := logicwiki.Sync(wikiDir)
+			result, err := logicwiki.Sync(getWikiDir())
 			if err != nil {
 				fmt.Printf("  同步失败: %v\n", err)
 				return

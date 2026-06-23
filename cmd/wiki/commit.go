@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	logicwiki "github.com/cicbyte/reference/internal/logic/wiki"
-	"github.com/cicbyte/reference/internal/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -13,8 +12,7 @@ func getCommitCommand() *cobra.Command {
 		Use:   "commit",
 		Short: "提交知识库更改",
 		Run: func(cmd *cobra.Command, args []string) {
-			wikiDir := utils.ConfigInstance.GetWikiDir()
-			result, err := logicwiki.StageAndCommit(wikiDir, "")
+			result, err := logicwiki.StageAndCommit(getWikiDir(), "")
 			if err != nil {
 				fmt.Printf("  提交失败: %v\n", err)
 				return

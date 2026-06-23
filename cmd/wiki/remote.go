@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	logicwiki "github.com/cicbyte/reference/internal/logic/wiki"
-	"github.com/cicbyte/reference/internal/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -15,10 +14,11 @@ func getRemoteCommand() *cobra.Command {
 		Long: `查看当前远程仓库地址，或设置新的远程仓库地址。
 
   reference wiki remote                        # 查看当前远程地址
-  reference wiki remote https://github.com/...  # 设置远程地址`,
+  reference wiki remote https://github.com/...  # 设置远程地址
+  reference wiki --local remote https://gitea.example.com/...  # 设置 localwiki 远程`,
 		Args: cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			wikiDir := utils.ConfigInstance.GetWikiDir()
+			wikiDir := getWikiDir()
 			if len(args) == 0 {
 				url, err := logicwiki.GetRemoteURL(wikiDir)
 				if err != nil {

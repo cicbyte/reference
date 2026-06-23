@@ -181,7 +181,7 @@ func (p *AddProcessor) addLocal(refDir string) (*AddResult, error) {
 	refName := resolveLocalRefName(p.config.ProjectDir, indexer, filepath.Base(absPath), linkName)
 	linkPath := filepath.Join(refDir, refName)
 
-	wikiSubPath := resolveLocalWikiSubPath(utils.ConfigInstance.GetWikiDir(), absPath)
+	wikiSubPath := resolveLocalWikiSubPath(utils.ConfigInstance.GetLocalWikiDir(), absPath)
 
 	if err := CreateLink(absPath, linkPath); err != nil {
 		return nil, fmt.Errorf("创建链接失败: %w", err)
@@ -236,17 +236,13 @@ func resolveLocalRefName(projectDir string, indexer *RepoIndexer, dirName, fullL
 	return fullLinkName
 }
 
-func resolveLocalWikiSubPath(wikiBase, absPath string) string {
+func resolveLocalWikiSubPath(localWikiDir, absPath string) string {
 	dirName := filepath.Base(absPath)
-	subPath := "local/" + dirName
-	wikiDir := filepath.Join(wikiBase, subPath)
-
-	if _, err := os.Stat(wikiDir); os.IsNotExist(err) {
-		return subPath
+	if _, err := os.Stat(filepath.Join(localWikiDir, dirName)); os.IsNotExist(err) {
+		return dirName
 	}
-
 	h := shortHash(absPath)
-	return "local/" + h + "-" + dirName
+	return h + "-" + dirName
 }
 
 func FormatAddResult(result *AddResult, duration time.Duration) string {
