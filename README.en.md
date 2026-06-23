@@ -49,13 +49,13 @@ Requires Go 1.24+.
 ### 1. Initialize
 
 ```bash
-reference          # First run: interactive assistant selection
+reference          # First run: interactive assistant selection (multi-select supported)
 ```
 
 ```
   Welcome to reference!
 
-  Select your coding assistant:
+  Select your coding assistants (multiple allowed, comma-separated):
     [1] Claude Code
     [2] Codex
     [3] OpenCode
@@ -63,15 +63,16 @@ reference          # First run: interactive assistant selection
     [5] MiMo Code
     [6] None (repository management only)
 
-  Enter option (1/2/3/4/5/6): 1
-  Configured: Claude Code
+  Enter option: 1,2
+  Configured: Claude Code, Codex
   Linked 0 repositories.
 ```
 
 For CI integration, initialize non-interactively:
 
 ```bash
-reference init --agent claude    # or codex / opencode / zcode / mimocode
+reference init --agent claude          # Single assistant
+reference init --agent claude,codex    # Multiple assistants (comma-separated)
 ```
 
 ### 2. Add Repositories
@@ -83,6 +84,9 @@ reference repo add go-git/go-git
 
 # Local repositories
 reference repo add --local ~/projects/my-lib
+
+# Force update existing cache
+reference repo add gin-gonic/gin --update
 ```
 
 After adding, `.reference/` dynamically loads source code and knowledge via Junction links:
@@ -93,11 +97,11 @@ After adding, `.reference/` dynamically loads source code and knowledge via Junc
 │   ├── repos/                  # Repository source code (→ global cache)
 │   │   ├── gin/
 │   │   └── go-git/
-│   ├── wiki/                   # Knowledge base (→ global wiki)
+│   ├── wiki/                   # Knowledge base Junction (→ wiki/ or localwiki/)
 │   │   ├── gin/
 │   │   └── go-git/
 │   ├── reference.map.jsonl    # AI navigation data (JSONL format)
-│   └── reference.settings.json # Project settings
+│   └── reference.settings.json # Project settings (agents array)
 ```
 
 No copying, no wasted space. Global cache is shared across projects — add once, use everywhere.
@@ -161,7 +165,7 @@ All files are pure Markdown + Mermaid. Generated once, reused across projects.
 | **Cursor / Copilot / Windsurf** | — | — | Guide AI to check `.reference/` directory |
 | **No AI** | — | — | Repository management, code statistics, knowledge base |
 
-On initialization, `reference-explorer` + `reference-analyzer` subagents and the `reference` Skill are auto-injected to the corresponding directory based on the selected assistant.
+On initialization, `reference-explorer` + `reference-analyzer` subagents and the `reference` Skill are auto-injected to the corresponding directory based on the selected assistant. Multiple assistants can be selected simultaneously.
 
 ## VS Code Extension
 
@@ -197,12 +201,15 @@ All output commands support the global `--format` / `-f` flag for structured out
 
 ```bash
 reference wiki                        # View wiki status
+reference wiki --local                # View local knowledge base status
 reference wiki commit                 # Commit knowledge base changes
 reference wiki sync                   # Sync knowledge base (pull + commit + push)
 reference wiki remote [url]           # View/set remote repository
 reference wiki trash                  # View deleted knowledge files
 reference wiki restore <path>         # Restore file from Git history
 ```
+
+Knowledge files for remote and local repositories are stored in separate Git repositories (`wiki/` and `localwiki/`). Use the `--local` flag to operate on the local knowledge base.
 
 ### Global Management
 

@@ -49,13 +49,13 @@ go build -o reference .
 ### 1. 初始化
 
 ```bash
-reference          # 首次运行：交互式选择编程助手
+reference          # 首次运行：交互式选择编程助手（支持多选）
 ```
 
 ```
   欢迎使用 reference！
 
-  请选择你的编程助手：
+  请选择你的编程助手（可多选，用逗号分隔）：
     [1] Claude Code
     [2] Codex
     [3] OpenCode
@@ -63,15 +63,16 @@ reference          # 首次运行：交互式选择编程助手
     [5] MiMo Code
     [6] 无（仅使用仓库引用管理功能）
 
-  请输入选项 (1/2/3/4/5/6): 1
-  已配置: Claude Code
+  请输入选项: 1,2
+  已配置: Claude Code, Codex
   已链接 0 个仓库知识。
 ```
 
 CI 集成可非交互式初始化：
 
 ```bash
-reference init --agent claude    # 或 codex / opencode / zcode / mimocode
+reference init --agent claude          # 单个助手
+reference init --agent claude,codex    # 多个助手（逗号分隔）
 ```
 
 ### 2. 添加仓库
@@ -83,6 +84,9 @@ reference repo add go-git/go-git
 
 # 本地仓库
 reference repo add --local ~/projects/my-lib
+
+# 强制更新已有缓存
+reference repo add gin-gonic/gin --update
 ```
 
 添加后，`.reference/` 下通过 Junction 链接动态加载源码和知识：
@@ -93,11 +97,11 @@ reference repo add --local ~/projects/my-lib
 │   ├── repos/                  # 仓库源码（→ 全局缓存）
 │   │   ├── gin/
 │   │   └── go-git/
-│   ├── wiki/                   # 知识库（→ 全局 wiki）
+│   ├── wiki/                   # 知识库 Junction（→ wiki/ 或 localwiki/）
 │   │   ├── gin/
 │   │   └── go-git/
 │   ├── reference.map.jsonl    # AI 读取的仓库导航（JSONL 格式）
-│   └── reference.settings.json # 项目配置
+│   └── reference.settings.json # 项目配置（agents 数组）
 ```
 
 不复制、不占空间，全局缓存多项目共享，一处添加，处处可用。
@@ -161,7 +165,7 @@ flowchart LR
 | **Cursor / Copilot / Windsurf 等** | — | — | 引导 AI 查看 `.reference/` 目录 |
 | **无 AI** | — | — | 仓库管理、代码统计、知识库管理 |
 
-初始化时按所选助手自动注入 `reference-explorer` + `reference-analyzer` 子代理和 `reference` Skill 到对应目录。
+初始化时按所选助手自动注入 `reference-explorer` + `reference-analyzer` 子代理和 `reference` Skill 到对应目录。支持同时选择多个助手。
 
 ## VS Code 扩展
 
@@ -197,12 +201,15 @@ reference repo scc [name] [-n 15]    # 代码统计（语言分布、复杂度�
 
 ```bash
 reference wiki                        # 查看 wiki 状态
+reference wiki --local                # 查看本地知识库状态
 reference wiki commit                 # 提交知识库更改
 reference wiki sync                   # 同步知识库（pull + commit + push）
 reference wiki remote [url]           # 查看/设置远程仓库
 reference wiki trash                  # 查看被删除的知识文件
 reference wiki restore <path>         # 从 Git 历史恢复文件
 ```
+
+远程仓库和本地仓库的知识文件分别存储在独立的 Git 仓库中（`wiki/` 和 `localwiki/`），通过 `--local` 标志切换操作目标。
 
 ### 全局管理
 

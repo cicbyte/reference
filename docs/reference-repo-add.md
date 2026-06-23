@@ -72,6 +72,7 @@ reference repo add --local ~/projects/my-lib --name my-utils
 - 不执行克隆，直接使用本地路径
 - 链接名称默认取目录名
 - 不会在 `repo update` 时被更新
+- 知识文件存储在独立的 `localwiki/` 目录（与公共 wiki 隔离），可通过 `reference wiki --local` 管理
 
 ## 链接命名规则
 

@@ -21,9 +21,10 @@ python scripts/build.py           # 三平台全量编译
 ```bash
 reference [-f table|json|jsonl]        # 全局 --format/-f 标志，适用于所有输出类子命令
 reference version                      # 显示版本信息
-reference init [--agent claude|none]   # 非交互式初始化项目（CI 集成用）
+reference init [--agent claude,codex]  # 非交互式初始化项目（CI 集成用，支持逗号分隔多值）
 reference repo add <url>               # 添加远程仓库（支持 owner/repo 简写）
 reference repo add --local <path>      # 添加本地仓库
+reference repo add <url> --update      # 添加并强制更新已有缓存
 reference repo remove <name>           # 移除引用（按名称）
 reference repo remove --all            # 移除当前项目全部引用
 reference repo remove <name> --purge   # 同时删除缓存（需确认）
@@ -39,6 +40,7 @@ reference proxy set <url|port>        # 设置代理
 reference proxy info                  # 查看代理
 reference proxy clear                 # 清除代理
 reference wiki                         # 查看 wiki 状态
+reference wiki --local                 # 查看本地知识库状态
 reference wiki commit                  # 提交知识库更改
 reference wiki sync                   # 同步知识库（pull + commit + push）
 reference wiki remote [url]           # 查看/设置远程仓库
@@ -68,14 +70,15 @@ reference wiki restore <path>         # 从 Git 历史恢复文件
 | 文件 | 职责 |
 |:---|:---|
 | url.go | Git URL 解析，支持 https/ssh/简写格式，主流平台自动识别 |
-| cache.go | go-git/v5 克隆/拉取/元数据提取/本地仓库校验 |
+| cache.go | go-git/v5 克隆/拉取/元数据提取/本地仓库校验，`--update` 控制是否强制拉取 |
 | linker.go | 跨平台链接（Unix Symlink / Windows PowerShell Junction） |
 | indexer.go | SQLite 仓库索引 CRUD（GORM） |
 | gitignore.go | 确保 .reference/ 在 .gitignore 中 |
 | proxy.go | 代理解析（git_proxy > proxy > 无代理） |
-| inject.go | 生成 reference.map.jsonl + 创建 Wiki Junction + 静默修复软链接 + 注入 Agent 文件（仅 Claude Code 用户） |
+| agent_registry.go | Agent 配置注册表，定义所有支持的 AI 助手及其注入文件，inject/doctor/remove 共用 |
+| inject.go | 生成 reference.map.jsonl + 创建 Wiki Junction + 静默修复软链接 + 注入 Agent 文件（通过 AgentRegistry 查表） |
 | scc.go | 内置 scc 库封装（代码统计 + Top 文件排名），无外部依赖 |
-| doctor.go | 诊断检查：软链接、Wiki Junction、Reference Map、数据库一致性、Wiki Git、Agent 配置 |
+| doctor.go | 诊断检查：软链接、Wiki Junction、Reference Map、数据库一致性、Wiki Git、Agent 配置（遍历 Agents 数组） |
 
 ### Wiki 模块（internal/logic/wiki/）
 
@@ -93,7 +96,7 @@ reference wiki restore <path>         # 从 Git 历史恢复文件
 
 - **AppConfig** — 配置模型（ReposPath、WikiPath、Network、Log）
 - **Repo** — 仓库索引模型（ProjectDir+LinkName 唯一索引；RefName 文件系统短名；WikiSubPath wiki 嵌套路径）
-- **ProjectSettings** — 项目级设置（Agent 选择、Initialized 标志），存储于 `.reference/reference.settings.json`
+- **ProjectSettings** — 项目级设置（Agents 数组、Initialized 标志），存储于 `.reference/reference.settings.json`，旧 `Agent` 单值自动迁移
 
 ### 项目目录（.reference/）
 
@@ -101,9 +104,9 @@ reference wiki restore <path>         # 从 Git 历史恢复文件
 - `repos/<refName>` — 仓库源码 Junction（→ 全局缓存）
 - `wiki/<refName>` — 知识库 Junction（→ 全局 wiki）
 - `reference.map.jsonl` — AI 导航数据（仓库列表，供 Agent 读取）
-- `reference.settings.json` — 项目配置（agent 选择、initialized 标志）
+- `reference.settings.json` — 项目配置（agents 数组、initialized 标志）
 
-`.claude/` 下仅存放 AI 配置（仅 Claude Code 用户）：
+各助手配置目录（如 `.claude/`、`.codex/`、`.zcode/` 等）下存放 AI 配置：
 - `agents/reference-explorer.md`、`agents/reference-analyzer.md` — 子代理提示词
 - `skills/reference/SKILL.md` — Skill 定义
 
@@ -113,7 +116,8 @@ reference wiki restore <path>         # 从 Git 历史恢复文件
 - `config/config.yaml` — 配置文件
 - `db/app.db` — SQLite 数据库（纯 Go，无 CGO）
 - `repos/` — 全局缓存（可通过 config.yaml 中 repos_path 覆盖）
-- `wiki/` — 全局知识库（Git 版本控制，嵌套目录：`<platform>/<namespace>/<repo>/`）
+- `wiki/` — 公共知识库（远程仓库，Git 版本控制，嵌套目录：`<platform>/<namespace>/<repo>/`）
+- `localwiki/` — 本地知识库（本地仓库，独立 Git 仓库，可推送到 Gitea 等私有平台）
 - `logs/` — 日志文件
 
 ### AI Agent 配置体系
@@ -121,16 +125,18 @@ reference wiki restore <path>         # 从 Git 历史恢复文件
 - `prompts/skills/reference/SKILL.md` — Skill 模板（通过读取 `reference.map.jsonl` 发现仓库）
 - `prompts/agents/reference-explorer.md` — 知识探索子代理提示词
 - `prompts/agents/reference-analyzer.md` — 深度分析子代理提示词
-- `reference` 命令（无参数）和 `doctor` 命令都会将上述文件注入到 `.claude/`（仅 Claude Code 用户）
-- 知识文件写入 `~/.cicbyte/reference/wiki/<platform>/<namespace>/<repo>/`，通过 Junction 链接到 `.reference/wiki/<refName>/`
+- `internal/logic/repo/agent_registry.go` — Agent 配置注册表（`AgentRegistry`），定义所有支持的助手及其文件映射
+- 支持多助手同时注入：`ProjectSettings.Agents` 数组，`reference init --agent claude,codex`
+- `reference` 命令（无参数）和 `doctor` 命令都会将上述文件注入到已配置的助手目录
+- 远程仓库知识文件写入 `~/.cicbyte/reference/wiki/`，本地仓库写入 `~/.cicbyte/reference/localwiki/`，通过 Junction 链接到 `.reference/wiki/<refName>/`
 
 ### 应用初始化流程（cmd/root.go init()）
 
-严格按顺序：`InitAppDirs` → `LoadConfig` → `ApplyConfig` → `InitDataDirs` → `InitLog` → `GetGormDB`（含 AutoMigrate） → `MigratePathsIfNeeded` → `EnsureGitInit` → `EnsureAutoPull`，任何步骤失败 `os.Exit(1)`。
+严格按顺序：`InitAppDirs` → `LoadConfig` → `ApplyConfig` → `InitDataDirs`（含 localwiki） → `InitLog` → `GetGormDB`（含 AutoMigrate） → `MigratePathsIfNeeded` → `EnsureGitInit`(wiki) → `EnsureAutoPull`(wiki) → `EnsureGitInit`(localwiki)，任何步骤失败 `os.Exit(1)`。
 
 `MigratePathsIfNeeded` 在启动时 O(1) 比较当前 `repos_path` 与 DB 中记录的值，路径变更时批量更新所有项目的 `CachePath` 记录。Wiki 路径通过 `GetWikiDir()` 动态获取，无需迁移。
 
-无参数运行 `reference` 时，若 `reference.settings.json` 不存在或 `initialized == false`，进入交互式引导（选择编程助手），保存后继续注入流程。
+无参数运行 `reference` 时，若 `reference.settings.json` 不存在或 `initialized == false`，进入交互式引导（支持多选编程助手，逗号分隔），保存后继续注入流程。
 
 ## 版本发布
 

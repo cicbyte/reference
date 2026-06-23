@@ -51,8 +51,9 @@ reference doctor -f jsonl
 
 | 检查项 | 说明 | 修复方式 |
 |:---|:---|:---|
-| Agent 文件 | 按所选助手路径下的 agent 文件是否最新（`.claude/.zcode/.mimocode/.opencode` 的 `*.md`，或 `.codex` 的 `*.toml`） | 从源模板强制覆盖 |
-| SKILL.md | 按所选助手路径下的 `skills/reference/SKILL.md` 是否存在 | 从模板重新渲染 |
+| `<助手名> 配置文件` | 每个已配置助手的 agent 文件和 SKILL.md 是否最新 | 从源模板强制覆盖 |
+
+支持多助手同时检查。例如配置了 `claude,codex` 时，会分别检查 `.claude/` 和 `.codex/` 下的所有注入文件。
 
 ## 输出示例
 

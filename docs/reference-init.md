@@ -5,42 +5,51 @@
 ## 用法
 
 ```bash
-reference init [--agent <type>]
+reference init [--agent <types>]
 ```
 
 ## 标志
 
 | 标志 | 说明 |
 |:---|:---|
-| `--agent <type>` | 编程助手类型，可选值见下表，默认 `none` |
+| `--agent <types>` | 编程助手类型，多个用逗号分隔，默认 `none` |
 
 ## 支持的助手类型
 
-| 值 | 助手 | agents 目录 | skills 目录 | agent 格式 |
-|:---|:---|:---|:---|:---|
-| `claude` | Claude Code | `.claude/agents/` | `.claude/skills/` | Markdown |
-| `codex` | Codex | `.codex/agents/` | `.codex/skills/` | TOML |
-| `opencode` | OpenCode | `.opencode/agents/` | `.opencode/skills/` | Markdown |
-| `zcode` | ZCode | `.zcode/cli/agents/` | `.zcode/skills/` | Markdown |
-| `mimocode` | MiMo Code | `.mimocode/agents/` | `.mimocode/skills/` | Markdown |
-| `none` | 无 | — | — | — |
+| 值 | 助手 | 配置目录 |
+|:---|:---|:---|
+| `claude` | Claude Code | `.claude/` |
+| `codex` | Codex | `.codex/` |
+| `opencode` | OpenCode | `.opencode/` |
+| `zcode` | ZCode | `.zcode/` |
+| `mimocode` | MiMo Code | `.mimocode/` |
+| `none` | 无 | — |
+
+每个助手目录下会注入：
+- `agents/reference-explorer.md` — 知识探索子代理
+- `agents/reference-analyzer.md` — 深度分析子代理
+- `skills/reference/SKILL.md` — Skill 定义
+
+> ZCode 的 agents 子目录为 `cli/agents/`，其余均为 `agents/`。
 
 ## 执行内容
 
 1. **创建 `.reference/` 目录结构**
-2. **生成 `reference.settings.json`** — 记录所选助手类型和初始化状态
+2. **生成 `reference.settings.json`** — 记录所选助手列表和初始化状态
 3. **更新 `.gitignore`** — 确保 `.reference/` 被忽略
 4. **生成 `reference.map.jsonl`** — 仓库导航数据
-5. **注入 AI 配置文件**（指定 `--agent` 时）— 复制子代理 + Skill 到对应目录
+5. **注入 AI 配置文件**（指定 `--agent` 时）— 复制子代理 + Skill 到每个助手目录
 
 ## 示例
 
 ```bash
-# CI/CD 中初始化为 Claude Code 项目
+# 单个助手
 reference init --agent claude
-
-# 初始化为 Codex 项目
 reference init --agent codex
+
+# 多个助手同时配置
+reference init --agent claude,codex
+reference init --agent claude,opencode,zcode
 
 # 仅使用仓库管理功能（不注入 AI 配置）
 reference init
@@ -54,7 +63,7 @@ reference init --agent opencode
 
 | | `reference`（无参数） | `reference init` |
 |:---|:---|:---|
-| 交互方式 | 首次运行交互式引导 | 完全非交互 |
+| 交互方式 | 首次运行交互式引导（支持多选） | 完全非交互 |
 | 适用场景 | 人工使用 | CI/CD、自动化脚本 |
 | 注入流程 | 相同 | 相同 |
 
