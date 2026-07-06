@@ -17,9 +17,9 @@ func getListCommand() *cobra.Command {
 		Short: "列出所有引用仓库",
 		Long:  `列出当前项目所有引用的仓库，显示类型、链接名、目标路径、commit、分支等信息。`,
 		Run: func(cmd *cobra.Command, args []string) {
-			projectDir, err := utils.GetProjectRoot()
+			projectDir, err := utils.GetGitRoot()
 			if err != nil {
-				fmt.Printf("未找到项目根目录: %v\n", err)
+				fmt.Printf("错误: %v\n", err)
 				return
 			}
 

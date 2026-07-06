@@ -33,6 +33,30 @@ func GetProjectRoot() (string, error) {
 	return dir, nil
 }
 
+func GetGitRoot() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	// 向上查找 .git 目录
+	current := dir
+	for {
+		gitDir := filepath.Join(current, ".git")
+		if info, err := os.Stat(gitDir); err == nil && info.IsDir() {
+			return current, nil
+		}
+
+		parent := filepath.Dir(current)
+		if parent == current {
+			break
+		}
+		current = parent
+	}
+
+	return "", fmt.Errorf("未找到 Git 仓库根目录，请在 Git 仓库根目录下执行此命令")
+}
+
 func GetExeDir() string {
 	exe, err := os.Executable()
 	if err != nil {

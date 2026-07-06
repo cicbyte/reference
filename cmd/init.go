@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	logicrepo "github.com/cicbyte/reference/internal/logic/repo"
@@ -35,9 +34,9 @@ func getInitCommand() *cobra.Command {
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
-	projectDir, err := os.Getwd()
+	projectDir, err := utils.GetGitRoot()
 	if err != nil {
-		return err
+		return fmt.Errorf("错误: %v", err)
 	}
 
 	var agents []string

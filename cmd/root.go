@@ -48,9 +48,9 @@ func Execute() {
 
 func runDefault(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
-	projectDir, err := os.Getwd()
+	projectDir, err := utils.GetGitRoot()
 	if err != nil {
-		return err
+		return fmt.Errorf("错误: %v", err)
 	}
 
 	settings := models.LoadProjectSettings(projectDir)

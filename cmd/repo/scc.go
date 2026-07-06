@@ -21,9 +21,9 @@ func getSccCommand() *cobra.Command {
 		Long:  `查看仓库代码统计信息，包括语言分布、代码行数、复杂度和 Top 文件排名。不指定 name 时显示所有仓库的汇总。`,
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			projectDir, err := utils.GetProjectRoot()
+			projectDir, err := utils.GetGitRoot()
 			if err != nil {
-				fmt.Printf("未找到项目根目录: %v\n", err)
+				fmt.Printf("错误: %v\n", err)
 				return
 			}
 

@@ -42,9 +42,9 @@ func getRemoveCommand() *cobra.Command {
 }
 
 func runRemoveCommand(cmd *cobra.Command, args []string) {
-	projectDir, err := utils.GetProjectRoot()
+	projectDir, err := utils.GetGitRoot()
 	if err != nil {
-		fmt.Printf("未找到项目根目录: %v\n", err)
+		fmt.Printf("错误: %v\n", err)
 		return
 	}
 
