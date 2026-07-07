@@ -165,8 +165,6 @@ func init() {
 	wikiDir := utils.ConfigInstance.GetWikiDir()
 	if err := logicwiki.EnsureGitInit(wikiDir); err != nil {
 		log.Warn("wiki git 初始化失败", zap.Error(err))
-	} else {
-		logicwiki.EnsureAutoPull(wikiDir)
 	}
 
 	localWikiDir := utils.ConfigInstance.GetLocalWikiDir()
