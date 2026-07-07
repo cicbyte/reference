@@ -45,12 +45,12 @@ func cloneRepo(opts CloneOptions) error {
 	}
 
 	cloneOpts := &git.CloneOptions{
-		URL:          opts.URL,
-		SingleBranch: true,
+		URL: opts.URL,
 	}
 
 	if opts.Branch != "" {
 		cloneOpts.ReferenceName = plumbing.NewBranchReferenceName(opts.Branch)
+		cloneOpts.SingleBranch = true
 	}
 
 	log.Info("正在克隆仓库", zap.String("url", opts.URL), zap.String("path", opts.Path))
@@ -66,9 +66,9 @@ func cloneRepo(opts CloneOptions) error {
 }
 
 func cloneViaGitCmd(opts CloneOptions) error {
-	args := []string{"clone", "--single-branch"}
+	args := []string{"clone"}
 	if opts.Branch != "" {
-		args = append(args, "--branch", opts.Branch)
+		args = append(args, "--single-branch", "--branch", opts.Branch)
 	}
 	args = append(args, opts.URL, opts.Path)
 
@@ -96,8 +96,7 @@ func pullRepo(opts CloneOptions) error {
 	}
 
 	pullOpts := &git.PullOptions{
-		SingleBranch: true,
-		RemoteName:   "origin",
+		RemoteName: "origin",
 	}
 
 	log.Info("正在更新仓库", zap.String("path", opts.Path))
