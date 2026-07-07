@@ -51,17 +51,34 @@ func NewDoctorProcessor(config *DoctorConfig, db *gorm.DB) *DoctorProcessor {
 }
 
 func (p *DoctorProcessor) Execute(ctx context.Context) (*DoctorResult, error) {
-	settings := models.LoadProjectSettings(p.config.ProjectDir)
+	return RunProjectChecks(p.config.ProjectDir, p.db)
+}
+
+// RunProjectChecks 对指定项目执行诊断检查，可供 global doctor 复用
+func RunProjectChecks(projectDir string, db *gorm.DB) (*DoctorResult, error) {
+	settings := models.LoadProjectSettings(projectDir)
 	if !settings.Initialized {
-		return nil, fmt.Errorf("尚未初始化。请先运行 reference 完成初始化配置。")
+		return &DoctorResult{
+			ProjectDir: projectDir,
+			Checks: []CheckItem{
+				{Name: "初始化状态", Status: "error", Details: "尚未初始化。请先运行 reference 完成初始化配置。", Group: "core"},
+			},
+			Summary: "项目未初始化",
+		}, nil
+	}
+
+	indexer := NewRepoIndexer(db)
+	repos, err := indexer.List(projectDir)
+	if err != nil {
+		return nil, fmt.Errorf("数据库查询失败: %w", err)
 	}
 
 	coreChecks := []checkResult{
-		p.checkSymlinks(),
-		p.checkWikiJunctions(),
-		p.checkReferenceMap(),
-		p.checkDatabaseConsistency(),
-		p.checkWikiGit(),
+		CheckSymlinks(projectDir, repos),
+		CheckWikiJunctions(projectDir, repos),
+		CheckReferenceMap(projectDir, repos, indexer),
+		CheckDatabaseConsistency(projectDir, repos),
+		CheckWikiGit(),
 	}
 
 	var agentChecks []checkResult
@@ -70,38 +87,52 @@ func (p *DoctorProcessor) Execute(ctx context.Context) (*DoctorResult, error) {
 		if !ok {
 			continue
 		}
-		baseDir := filepath.Join(p.config.ProjectDir, cfg.BaseDir)
-		agentChecks = append(agentChecks, p.checkAgentFiles(agentID, baseDir, cfg)...)
+		baseDir := filepath.Join(projectDir, cfg.BaseDir)
+		agentChecks = append(agentChecks, CheckAgentFiles(agentID, baseDir, cfg)...)
 	}
 
 	result := &DoctorResult{
-		ProjectDir: p.config.ProjectDir,
+		ProjectDir: projectDir,
 		Checks:     make([]CheckItem, 0, len(coreChecks)+len(agentChecks)),
 	}
 
-	var fixedCount, warnCount int
+	var fixedCount, warnCount, errorCount int
 	for _, c := range coreChecks {
-		if c.Status == "fixed" {
+		switch c.Status {
+		case "fixed":
 			fixedCount++
-		} else if c.Status == "warn" {
+		case "warn":
 			warnCount++
+		case "error":
+			errorCount++
 		}
 		result.Checks = append(result.Checks, CheckItem{
 			Name: c.Name, Status: c.Status, Details: c.Details, Group: "core",
 		})
 	}
 	for _, c := range agentChecks {
-		if c.Status == "fixed" {
+		switch c.Status {
+		case "fixed":
 			fixedCount++
-		} else if c.Status == "warn" {
+		case "warn":
 			warnCount++
+		case "error":
+			errorCount++
 		}
 		result.Checks = append(result.Checks, CheckItem{
 			Name: c.Name, Status: c.Status, Details: c.Details, Group: "agent",
 		})
 	}
 
-	if fixedCount > 0 || warnCount > 0 {
+	if errorCount > 0 {
+		result.Summary = fmt.Sprintf("%d 个错误", errorCount)
+		if fixedCount > 0 {
+			result.Summary += fmt.Sprintf("，修复 %d 个问题", fixedCount)
+		}
+		if warnCount > 0 {
+			result.Summary += fmt.Sprintf("，%d 个警告", warnCount)
+		}
+	} else if fixedCount > 0 || warnCount > 0 {
 		result.Summary = fmt.Sprintf("修复 %d 个问题", fixedCount)
 		if warnCount > 0 {
 			result.Summary += fmt.Sprintf("，%d 个警告", warnCount)
@@ -113,14 +144,9 @@ func (p *DoctorProcessor) Execute(ctx context.Context) (*DoctorResult, error) {
 	return result, nil
 }
 
-func (p *DoctorProcessor) checkSymlinks() checkResult {
-	indexer := NewRepoIndexer(p.db)
-	repos, err := indexer.List(p.config.ProjectDir)
-	if err != nil {
-		return checkResult{Name: "软链接完整性", Status: "warn", Details: fmt.Sprintf("数据库查询失败: %v", err)}
-	}
-
-	reposDir := filepath.Join(p.config.ProjectDir, ".reference", "repos")
+// CheckSymlinks 检查软链接完整性
+func CheckSymlinks(projectDir string, repos []models.Repo) checkResult {
+	reposDir := filepath.Join(projectDir, ".reference", "repos")
 	total, ok := len(repos), 0
 	var fixed []string
 
@@ -155,7 +181,8 @@ func (p *DoctorProcessor) checkSymlinks() checkResult {
 	return checkResult{Name: "软链接完整性", Status: "ok", Details: details}
 }
 
-func (p *DoctorProcessor) checkAgentFiles(agentID, baseDir string, cfg AgentConfig) []checkResult {
+// CheckAgentFiles 检查 Agent 配置文件
+func CheckAgentFiles(agentID, baseDir string, cfg AgentConfig) []checkResult {
 	var results []checkResult
 	var updated []string
 
@@ -196,15 +223,10 @@ func (p *DoctorProcessor) checkAgentFiles(agentID, baseDir string, cfg AgentConf
 	return results
 }
 
-func (p *DoctorProcessor) checkWikiJunctions() checkResult {
-	indexer := NewRepoIndexer(p.db)
-	repos, err := indexer.List(p.config.ProjectDir)
-	if err != nil {
-		return checkResult{Name: "Wiki Junction", Status: "warn", Details: fmt.Sprintf("数据库查询失败: %v", err)}
-	}
-
-	wikiLinkDir := filepath.Join(p.config.ProjectDir, ".reference", "wiki")
-	reposDir := filepath.Join(p.config.ProjectDir, ".reference", "repos")
+// CheckWikiJunctions 检查 Wiki Junction 链接
+func CheckWikiJunctions(projectDir string, repos []models.Repo) checkResult {
+	wikiLinkDir := filepath.Join(projectDir, ".reference", "wiki")
+	reposDir := filepath.Join(projectDir, ".reference", "repos")
 	total, ok := len(repos), 0
 	var fixed []string
 
@@ -242,13 +264,12 @@ func (p *DoctorProcessor) checkWikiJunctions() checkResult {
 	return checkResult{Name: "Wiki Junction", Status: "ok", Details: details}
 }
 
-func (p *DoctorProcessor) checkReferenceMap() checkResult {
-	refDir := filepath.Join(p.config.ProjectDir, ".reference")
+// CheckReferenceMap 检查 Reference Map 一致性
+func CheckReferenceMap(projectDir string, repos []models.Repo, indexer *RepoIndexer) checkResult {
+	refDir := filepath.Join(projectDir, ".reference")
 	mapPath := filepath.Join(refDir, "reference.map.jsonl")
 
-	indexer := NewRepoIndexer(p.db)
-	repos, err := indexer.List(p.config.ProjectDir)
-	if err != nil || len(repos) == 0 {
+	if len(repos) == 0 {
 		if _, err := os.Stat(mapPath); err == nil {
 			os.Remove(mapPath)
 			return checkResult{Name: "Reference Map", Status: "ok", Details: "已清理（无仓库记录）"}
@@ -256,20 +277,15 @@ func (p *DoctorProcessor) checkReferenceMap() checkResult {
 		return checkResult{Name: "Reference Map", Status: "ok", Details: "正常（无仓库记录）"}
 	}
 
-	if err := RefreshReferenceMap(p.config.ProjectDir, refDir, indexer); err != nil {
+	if err := RefreshReferenceMap(projectDir, refDir, indexer); err != nil {
 		return checkResult{Name: "Reference Map", Status: "warn", Details: "重新生成失败: " + err.Error()}
 	}
 	return checkResult{Name: "Reference Map", Status: "ok", Details: "正常"}
 }
 
-func (p *DoctorProcessor) checkDatabaseConsistency() checkResult {
-	indexer := NewRepoIndexer(p.db)
-	repos, err := indexer.List(p.config.ProjectDir)
-	if err != nil {
-		return checkResult{Name: "数据库一致性", Status: "warn", Details: "查询失败"}
-	}
-
-	reposDir := filepath.Join(p.config.ProjectDir, ".reference", "repos")
+// CheckDatabaseConsistency 检查数据库与文件系统一致性
+func CheckDatabaseConsistency(projectDir string, repos []models.Repo) checkResult {
+	reposDir := filepath.Join(projectDir, ".reference", "repos")
 	var orphaned []string
 
 	for _, r := range repos {
@@ -323,7 +339,8 @@ func (p *DoctorProcessor) checkDatabaseConsistency() checkResult {
 	return checkResult{Name: "数据库一致性", Status: "ok", Details: "正常"}
 }
 
-func (p *DoctorProcessor) checkWikiGit() checkResult {
+// CheckWikiGit 检查 Wiki Git 状态
+func CheckWikiGit() checkResult {
 	wikiDir := utils.ConfigInstance.GetWikiDir()
 
 	if _, err := os.Stat(wikiDir); os.IsNotExist(err) {

@@ -17,5 +17,6 @@ func GetGlobalCommand() *cobra.Command {
 	cmd.AddCommand(getGCCommand())
 	cmd.AddCommand(getStatsCommand())
 	cmd.AddCommand(getRemoveCommand())
+	cmd.AddCommand(getDoctorCommand())
 	return cmd
 }

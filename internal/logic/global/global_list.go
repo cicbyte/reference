@@ -22,10 +22,13 @@ type GlobalListResult struct {
 }
 
 type GlobalProjectItem struct {
-	ProjectDir string           `json:"project_dir"`
-	Exists     bool             `json:"exists"`
-	RepoCount  int              `json:"repo_count"`
-	Repos      []GlobalRepoItem `json:"repos,omitempty"`
+	ProjectDir  string           `json:"project_dir"`
+	Exists      bool             `json:"exists"`
+	Initialized bool             `json:"initialized"`
+	Agents      []string         `json:"agents"`
+	RepoCount   int              `json:"repo_count"`
+	BrokenCount int              `json:"broken_count"`
+	Repos       []GlobalRepoItem `json:"repos,omitempty"`
 }
 
 type GlobalRepoItem struct {
@@ -60,6 +63,27 @@ func (p *GlobalListProcessor) Execute(ctx context.Context) (*GlobalListResult, e
 		_, statErr := os.Stat(dir)
 		dirExists := !os.IsNotExist(statErr)
 
+		// 加载项目设置
+		settings := models.LoadProjectSettings(dir)
+		initialized := settings.Initialized
+		agents := settings.Agents
+		if agents == nil {
+			agents = []string{}
+		}
+
+		// 轻量检查 broken_count
+		brokenCount := 0
+		if dirExists {
+			reposDir := dir + "\\.reference\\repos"
+			for _, r := range repos {
+				refName := r.GetRefName()
+				linkPath := reposDir + "\\" + refName
+				if _, err := os.Stat(linkPath); err != nil {
+					brokenCount++
+				}
+			}
+		}
+
 		repoItems := make([]GlobalRepoItem, 0, len(repos))
 		for _, r := range repos {
 			refName := r.GetRefName()
@@ -75,10 +99,13 @@ func (p *GlobalListProcessor) Execute(ctx context.Context) (*GlobalListResult, e
 		}
 
 		result.Projects = append(result.Projects, GlobalProjectItem{
-			ProjectDir: dir,
-			Exists:     dirExists,
-			RepoCount:  len(repos),
-			Repos:      repoItems,
+			ProjectDir:  dir,
+			Exists:      dirExists,
+			Initialized: initialized,
+			Agents:      agents,
+			RepoCount:   len(repos),
+			BrokenCount: brokenCount,
+			Repos:       repoItems,
 		})
 	}
 

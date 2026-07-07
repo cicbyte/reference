@@ -2,12 +2,15 @@ package repo
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/cicbyte/reference/internal/common"
 	logicrepo "github.com/cicbyte/reference/internal/logic/repo"
 	"github.com/cicbyte/reference/internal/utils"
 	"github.com/spf13/cobra"
 )
+
+var updateProjectDir string
 
 func getUpdateCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -25,14 +28,28 @@ func getUpdateCommand() *cobra.Command {
 		Args: cobra.MaximumNArgs(1),
 		Run:  runUpdateCommand,
 	}
+
+	cmd.Flags().StringVar(&updateProjectDir, "project", "", "目标项目目录路径（默认当前目录）")
+
 	return cmd
 }
 
 func runUpdateCommand(cmd *cobra.Command, args []string) {
-	projectDir, err := utils.GetGitRoot()
-	if err != nil {
-		fmt.Printf("错误: %v\n", err)
-		return
+	var projectDir string
+	var err error
+
+	if updateProjectDir != "" {
+		projectDir, err = filepath.Abs(updateProjectDir)
+		if err != nil {
+			fmt.Printf("解析项目路径失败: %v\n", err)
+			return
+		}
+	} else {
+		projectDir, err = utils.GetGitRoot()
+		if err != nil {
+			fmt.Printf("错误: %v\n", err)
+			return
+		}
 	}
 
 	db, err := utils.GetGormDB()

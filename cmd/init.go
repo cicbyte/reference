@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	logicrepo "github.com/cicbyte/reference/internal/logic/repo"
@@ -11,6 +12,7 @@ import (
 )
 
 var initAgent string
+var initProjectDir string
 
 func getInitCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -30,13 +32,25 @@ func getInitCommand() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&initAgent, "agent", "",
 		"编程助手类型，多个用逗号分隔: claude | codex | opencode | zcode | mimocode | none（默认 none）")
+	cmd.Flags().StringVar(&initProjectDir, "project", "",
+		"目标项目目录路径（默认当前目录）")
 	return cmd
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
-	projectDir, err := utils.GetGitRoot()
-	if err != nil {
-		return fmt.Errorf("错误: %v", err)
+	var projectDir string
+	var err error
+
+	if initProjectDir != "" {
+		projectDir, err = filepath.Abs(initProjectDir)
+		if err != nil {
+			return fmt.Errorf("解析项目路径失败: %w", err)
+		}
+	} else {
+		projectDir, err = utils.GetGitRoot()
+		if err != nil {
+			return fmt.Errorf("错误: %v", err)
+		}
 	}
 
 	var agents []string
