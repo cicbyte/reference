@@ -43,7 +43,10 @@ func LoadProjectSettings(projectDir string) *ProjectSettings {
 	if err := json.Unmarshal(data, &s); err != nil {
 		return &ProjectSettings{}
 	}
-	s.MigrateAgent()
+	if s.Agent != "" && len(s.Agents) == 0 {
+		s.MigrateAgent()
+		SaveProjectSettings(projectDir, &s)
+	}
 	return &s
 }
 

@@ -74,7 +74,18 @@ func runDefault(cmd *cobra.Command, args []string) error {
 
 func initProject(projectDir string, agents []string) error {
 	settings := models.LoadProjectSettings(projectDir)
-	settings.Agents = agents
+
+	// 合并 agents，避免重复
+	existing := make(map[string]bool)
+	for _, a := range settings.Agents {
+		existing[a] = true
+	}
+	for _, a := range agents {
+		if !existing[a] {
+			settings.Agents = append(settings.Agents, a)
+		}
+	}
+
 	settings.Initialized = true
 	return models.SaveProjectSettings(projectDir, settings)
 }
