@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { message } from 'ant-design-vue'
+import { message, Modal } from 'ant-design-vue'
 import {
   FolderOutlined,
   PlusOutlined,
@@ -9,6 +9,11 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   AppstoreOutlined,
+  SwapOutlined,
+  MedicineBoxOutlined,
+  FolderOpenOutlined,
+  CopyOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons-vue'
 import { useProjectStore } from '../../stores/project'
 import { useLayoutStore } from '../../stores/layout'
@@ -33,6 +38,67 @@ async function onAdd() {
   if (ok) {
     message.success(`已切换到 ${project.currentName}`)
   }
+}
+
+const app = window.go?.main?.ReferenceApp
+
+async function onSwitch(p) {
+  await project.switchTo(p.dir)
+}
+
+async function onDoctor(p) {
+  if (!app) return
+  message.loading({ content: `正在修复 ${p.name}...`, key: 'doctor', duration: 0 })
+  try {
+    const res = await app.DoctorProject(p.dir)
+    const fixed = (res.checks || []).filter((c) => c.status === 'fixed').length
+    message.success({ content: `修复完成,${fixed} 项已修复`, key: 'doctor' })
+    await project.loadProjects()
+  } catch (e) {
+    message.error({ content: '修复失败: ' + e, key: 'doctor' })
+  }
+}
+
+async function onOpenInExplorer(p) {
+  if (!app) return
+  try {
+    await app.OpenInExplorer(p.dir)
+  } catch (e) {
+    message.error('打开失败: ' + e)
+  }
+}
+
+async function onCopyPath(p) {
+  if (!app) return
+  try {
+    await app.CopyPath(p.dir)
+    message.success('路径已复制')
+  } catch (e) {
+    message.error('复制失败: ' + e)
+  }
+}
+
+function onRemove(p, clean) {
+  const label = clean ? '移除并清除 .reference' : '移除项目'
+  const content = clean
+    ? `将删除 ${p.name} 的所有引用记录、.reference 目录及注入的 AI 配置文件。此操作不可撤销。`
+    : `将删除 ${p.name} 的所有引用记录和链接,保留 .reference 目录。`
+  Modal.confirm({
+    title: `${label} — ${p.name}`,
+    content,
+    okText: label,
+    okType: clean ? 'danger' : 'primary',
+    cancelText: '取消',
+    async onOk() {
+      try {
+        await app.RemoveProject(p.dir, clean)
+        message.success(`${label}成功`)
+        await project.loadProjects()
+      } catch (e) {
+        message.error(`${label}失败: ` + e)
+      }
+    },
+  })
 }
 </script>
 
@@ -98,26 +164,54 @@ async function onAdd() {
     <!-- expanded: full list -->
     <div v-else class="rail-list">
       <a-spin v-if="project.loading" class="rail-spin" />
-      <div
+      <a-dropdown
         v-for="p in project.projects"
         :key="p.dir"
-        class="rail-item"
-        :class="{ active: p.dir === project.currentDir }"
-        :title="p.dir"
-        @click="project.switchTo(p.dir)"
+        :trigger="['contextmenu']"
       >
-        <div class="rail-item-icon">
-          <WarningOutlined v-if="!p.exists" class="warn" />
-          <FolderOutlined v-else />
-        </div>
-        <div class="rail-item-body">
-          <div class="rail-item-name">{{ p.name }}</div>
-          <div class="rail-item-meta">
-            <span class="rail-count">{{ p.repoCount }} 个引用</span>
-            <span v-if="p.brokenCount > 0" class="rail-broken">{{ p.brokenCount }} 断链</span>
+        <div
+          class="rail-item"
+          :class="{ active: p.dir === project.currentDir }"
+          :title="p.dir"
+          @click="project.switchTo(p.dir)"
+        >
+          <div class="rail-item-icon">
+            <WarningOutlined v-if="!p.exists" class="warn" />
+            <FolderOutlined v-else />
+          </div>
+          <div class="rail-item-body">
+            <div class="rail-item-name">{{ p.name }}</div>
+            <div class="rail-item-meta">
+              <span class="rail-count">{{ p.repoCount }} 个引用</span>
+              <span v-if="p.brokenCount > 0" class="rail-broken">{{ p.brokenCount }} 断链</span>
+            </div>
           </div>
         </div>
-      </div>
+        <template #overlay>
+          <a-menu>
+            <a-menu-item key="switch" @click="onSwitch(p)">
+              <SwapOutlined /> 切换到此项目
+            </a-menu-item>
+            <a-menu-divider />
+            <a-menu-item key="doctor" @click="onDoctor(p)">
+              <MedicineBoxOutlined /> 修复断裂链接
+            </a-menu-item>
+            <a-menu-item key="open" @click="onOpenInExplorer(p)">
+              <FolderOpenOutlined /> 在文件管理器中打开
+            </a-menu-item>
+            <a-menu-item key="copy" @click="onCopyPath(p)">
+              <CopyOutlined /> 复制路径
+            </a-menu-item>
+            <a-menu-divider />
+            <a-menu-item key="remove" danger @click="onRemove(p, false)">
+              <DeleteOutlined /> 移除项目
+            </a-menu-item>
+            <a-menu-item key="clean" danger @click="onRemove(p, true)">
+              <DeleteOutlined /> 移除并清除 .reference
+            </a-menu-item>
+          </a-menu>
+        </template>
+      </a-dropdown>
 
       <div v-if="!project.loading && project.projects.length === 0" class="rail-empty">
         <FolderOutlined class="rail-empty-icon" />

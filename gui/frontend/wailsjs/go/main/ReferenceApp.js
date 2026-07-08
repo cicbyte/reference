@@ -10,6 +10,14 @@ export function ClearProxy() {
   return window['go']['main']['ReferenceApp']['ClearProxy']();
 }
 
+export function CopyPath(arg1) {
+  return window['go']['main']['ReferenceApp']['CopyPath'](arg1);
+}
+
+export function DoctorProject(arg1) {
+  return window['go']['main']['ReferenceApp']['DoctorProject'](arg1);
+}
+
 export function GetAppConfig() {
   return window['go']['main']['ReferenceApp']['GetAppConfig']();
 }
@@ -54,8 +62,16 @@ export function ListRepos() {
   return window['go']['main']['ReferenceApp']['ListRepos']();
 }
 
+export function OpenInExplorer(arg1) {
+  return window['go']['main']['ReferenceApp']['OpenInExplorer'](arg1);
+}
+
 export function PickProjectFolder() {
   return window['go']['main']['ReferenceApp']['PickProjectFolder']();
+}
+
+export function RemoveProject(arg1, arg2) {
+  return window['go']['main']['ReferenceApp']['RemoveProject'](arg1, arg2);
 }
 
 export function RemoveRepo(arg1, arg2) {

@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"os/exec"
+	"runtime"
 
 	"github.com/cicbyte/reference/cmd/version"
 	"github.com/cicbyte/reference/internal/common"
@@ -11,7 +13,7 @@ import (
 	"github.com/cicbyte/reference/internal/logic/wiki"
 	"github.com/cicbyte/reference/internal/models"
 	"github.com/cicbyte/reference/internal/utils"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // --- Project methods ---
@@ -98,13 +100,106 @@ func (a *ReferenceApp) PickProjectFolder() (string, error) {
 	if ctx == nil {
 		return "", nil
 	}
-	dir, err := runtime.OpenDirectoryDialog(ctx, runtime.OpenDialogOptions{
+	dir, err := wailsruntime.OpenDirectoryDialog(ctx, wailsruntime.OpenDialogOptions{
 		Title: "选择项目目录",
 	})
 	if err != nil {
 		return "", err
 	}
 	return dir, nil
+}
+
+// --- Project actions (context menu) ---
+// These take an explicit projectDir so they can operate on the right-clicked
+// project even if it isn't the currently active one.
+
+// RemoveProject deletes all of a project's reference records from the DB and
+// removes the junction links. When clean=true it also removes the .reference/
+// directory and any injected AI config files.
+func (a *ReferenceApp) RemoveProject(projectDir string, clean bool) error {
+	if projectDir == "" {
+		return fmt.Errorf("项目路径不能为空")
+	}
+	db, err := utils.GetGormDB()
+	if err != nil {
+		return err
+	}
+	config := &repo.RemoveConfig{
+		ProjectDir: projectDir,
+		All:        true,
+		Clean:      clean,
+		Yes:        true, // GUI confirms via the menu, skip CLI prompt
+	}
+	processor := repo.NewRemoveProcessor(config, common.AppConfigModel, db)
+	if err := processor.Execute(context.Background()); err != nil {
+		return err
+	}
+	// if we just removed the active project, clear it
+	a.appMu.RLock()
+	cur := a.currentProject
+	a.appMu.RUnlock()
+	if cur == projectDir {
+		a.setCurrentProject("")
+	}
+	return nil
+}
+
+// DoctorProject runs diagnosis + auto-repair on a specific project (broken
+// junctions are rebuilt, reference.map.jsonl regenerated). Returns the same
+// DoctorResult shape as RunDoctor so the UI can reuse rendering.
+func (a *ReferenceApp) DoctorProject(projectDir string) (*DoctorResult, error) {
+	if projectDir == "" {
+		return nil, fmt.Errorf("项目路径不能为空")
+	}
+	db, err := utils.GetGormDB()
+	if err != nil {
+		return nil, err
+	}
+	config := &repo.DoctorConfig{ProjectDir: projectDir}
+	processor := repo.NewDoctorProcessor(config, db)
+	result, err := processor.Execute(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	checks := make([]DoctorCheck, len(result.Checks))
+	for i, c := range result.Checks {
+		checks[i] = DoctorCheck{
+			Group:   c.Group,
+			Name:    c.Name,
+			Status:  c.Status,
+			Details: c.Details,
+		}
+	}
+	return &DoctorResult{Checks: checks, Summary: result.Summary}, nil
+}
+
+// OpenInExplorer reveals the project directory in the platform file manager
+// (Explorer on Windows, Finder on macOS, xdg-open on Linux).
+func (a *ReferenceApp) OpenInExplorer(dir string) error {
+	if dir == "" {
+		return fmt.Errorf("路径不能为空")
+	}
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("explorer", dir)
+	case "darwin":
+		cmd = exec.Command("open", dir)
+	default:
+		cmd = exec.Command("xdg-open", dir)
+	}
+	return cmd.Start()
+}
+
+// CopyPath copies text to the system clipboard via the Wails runtime.
+func (a *ReferenceApp) CopyPath(text string) error {
+	a.appMu.RLock()
+	ctx := a.ctx
+	a.appMu.RUnlock()
+	if ctx == nil {
+		return fmt.Errorf("应用未就绪")
+	}
+	return wailsruntime.ClipboardSetText(ctx, text)
 }
 
 // --- Repo methods ---
@@ -630,7 +725,7 @@ func (a *ReferenceApp) WindowMinimize() {
 	if ctx == nil {
 		return
 	}
-	runtime.WindowMinimise(ctx)
+	wailsruntime.WindowMinimise(ctx)
 }
 
 func (a *ReferenceApp) WindowMaximize() {
@@ -642,7 +737,7 @@ func (a *ReferenceApp) WindowMaximize() {
 	if ctx == nil {
 		return
 	}
-	runtime.WindowToggleMaximise(ctx)
+	wailsruntime.WindowToggleMaximise(ctx)
 }
 
 func (a *ReferenceApp) WindowClose() {
@@ -652,5 +747,5 @@ func (a *ReferenceApp) WindowClose() {
 	if ctx == nil {
 		return
 	}
-	runtime.Quit(ctx)
+	wailsruntime.Quit(ctx)
 }

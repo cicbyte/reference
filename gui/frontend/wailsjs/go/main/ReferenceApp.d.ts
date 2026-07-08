@@ -6,6 +6,10 @@ export function AddRepo(arg1:string,arg2:boolean,arg3:string,arg4:string):Promis
 
 export function ClearProxy():Promise<void>;
 
+export function CopyPath(arg1:string):Promise<void>;
+
+export function DoctorProject(arg1:string):Promise<main.DoctorResult>;
+
 export function GetAppConfig():Promise<main.AppConfigDTO>;
 
 export function GetCurrentProject():Promise<main.ProjectInfo>;
@@ -28,7 +32,11 @@ export function ListProjects():Promise<Array<main.ProjectItem>>;
 
 export function ListRepos():Promise<Array<main.RepoItem>>;
 
+export function OpenInExplorer(arg1:string):Promise<void>;
+
 export function PickProjectFolder():Promise<string>;
+
+export function RemoveProject(arg1:string,arg2:boolean):Promise<void>;
 
 export function RemoveRepo(arg1:string,arg2:boolean):Promise<void>;
 
