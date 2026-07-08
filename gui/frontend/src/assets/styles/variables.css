@@ -1,0 +1,169 @@
+:root {
+  /* Colors - Light Theme */
+  --color-background: #ffffff;
+  --color-surface: #f8fafc;
+  --color-surface-raised: #f1f5f9;
+
+  --color-primary: #BD93F9;
+  --color-primary-hover: #a87bf0;
+  --color-primary-bg: rgba(189, 147, 249, 0.1);
+
+  --color-accent: #FF79C6;
+  --color-accent-bg: rgba(255, 121, 198, 0.1);
+
+  --color-text: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-text-tertiary: #94a3b8;
+
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f5f9;
+
+  --color-success: #16a34a;
+  --color-success-bg: rgba(22, 163, 74, 0.12);
+  --color-warning: #d97706;
+  --color-warning-bg: rgba(217, 119, 6, 0.12);
+  --color-error: #dc2626;
+  --color-error-bg: rgba(220, 38, 38, 0.12);
+  --color-info: #0e7490;
+  --color-info-bg: rgba(14, 116, 144, 0.12);
+
+  --color-hover: rgba(189, 147, 249, 0.12);
+  --color-active: rgba(189, 147, 249, 0.18);
+
+  /* Heatmap scale (light) - 0(empty) → 4(most active) */
+  --heat-0: #ebedf0;
+  --heat-1: #d8c7f5;
+  --heat-2: #b88ef0;
+  --heat-3: #9a5de8;
+  --heat-4: #7c2de0;
+
+  /* Dracula-inspired syntax colors for log/diff.
+     Deeper variants for light mode — the raw Dracula neons (#50FA7B etc.)
+     have poor contrast on white, so we use darker, readable versions. */
+  --color-hash: #6272A4;
+  --color-feat: #16a34a;
+  --color-fix: #d97706;
+  --color-refactor: #7c3aed;
+  --color-perf: #db2777;
+  --color-docs: #0e7490;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Border Radius */
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+  --shadow-primary: 0 4px 14px rgba(189, 147, 249, 0.25);
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Layout */
+  --sidebar-width: 60px;
+  --sidebar-width-expanded: 200px;
+  --navbar-height: 45px;
+  --footer-height: 48px;
+
+  /* z-index */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-tooltip: 1070;
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+  --color-background: #0f172a;
+  --color-surface: #1e293b;
+  --color-surface-raised: #3d4d63;
+
+  --color-primary: #BD93F9;
+  --color-primary-hover: #caa8fd;
+  --color-primary-bg: rgba(189, 147, 249, 0.15);
+
+  --color-text: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-tertiary: #64748b;
+
+  --color-border: #3d4d63;
+  --color-border-light: #2d3e50;
+
+  /* Dracula neons — readable on dark surfaces (light mode uses deeper vars). */
+  --color-success: #50FA7B;
+  --color-error: #FF5555;
+  --color-warning: #FFB86C;
+  --color-info: #8BE9FD;
+  --color-hash: #6272A4;
+  --color-feat: #50FA7B;
+  --color-fix: #FFB86C;
+  --color-refactor: #BD93F9;
+  --color-perf: #FF79C6;
+  --color-docs: #8BE9FD;
+
+  /* Boost -bg opacity in dark mode: the same 0.1 alpha that works on white
+     is nearly invisible on dark surfaces, so we bump it to 0.18. */
+  --color-accent-bg: rgba(255, 121, 198, 0.18);
+  --color-success-bg: rgba(80, 250, 123, 0.18);
+  --color-warning-bg: rgba(255, 184, 108, 0.18);
+  --color-error-bg: rgba(255, 85, 85, 0.18);
+  --color-info-bg: rgba(139, 233, 253, 0.18);
+
+  --color-hover: rgba(189, 147, 249, 0.08);
+  --color-active: rgba(189, 147, 249, 0.12);
+
+  /* Heatmap scale (dark) - 0(empty) → 4(most active)
+     Note: heat-0 must differ from both --color-surface (#1e293b) and
+     --color-background (#0f172a) so empty cells stay visible. */
+  --heat-0: #161b22;
+  --heat-1: #3a2a5a;
+  --heat-2: #6b3fb5;
+  --heat-3: #9a5de8;
+  --heat-4: #caa8fd;
+
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.2);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.3), 0 4px 6px rgba(0,0,0,0.2);
+}
+
+/*
+ * Commit hover-card tooltip theming.
+ *
+ * <CommitHoverCard> renders inside an <a-tooltip> whose overlay class is one
+ * of lv-tip / tt-tip / mr-tip / ar-tip (per view). The card uses a fixed
+ * light-on-dark palette (see CommitHoverCard.vue), so the tooltip container
+ * itself must also be dark in BOTH themes — otherwise light-mode's
+ * defaultAlgorithm paints the tooltip white and the light card text becomes
+ * invisible. We force a dark background on the inner box + arrow here.
+ */
+.lv-tip, .tt-tip, .mr-tip, .ar-tip { max-width: 460px; }
+.lv-tip .ant-tooltip-inner,
+.tt-tip .ant-tooltip-inner,
+.mr-tip .ant-tooltip-inner,
+.ar-tip .ant-tooltip-inner {
+  background: #1e293b;
+  padding: 10px 12px;
+}
+.lv-tip .ant-tooltip-arrow-content,
+.tt-tip .ant-tooltip-arrow-content,
+.mr-tip .ant-tooltip-arrow-content,
+.ar-tip .ant-tooltip-arrow-content {
+  background: #1e293b;
+}

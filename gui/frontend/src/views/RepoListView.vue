@@ -1,0 +1,121 @@
+<script setup>
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { PlusOutlined, SyncOutlined, DeleteOutlined, BarChartOutlined } from '@ant-design/icons-vue'
+
+const router = useRouter()
+const repos = ref([])
+const loading = ref(true)
+const searchText = ref('')
+
+const filteredRepos = computed(() => {
+  if (!searchText.value) return repos.value
+  const q = searchText.value.toLowerCase()
+  return repos.value.filter(r => r.name.toLowerCase().includes(q) || r.source.toLowerCase().includes(q))
+})
+
+const columns = [
+  { title: '名称', dataIndex: 'name', key: 'name' },
+  { title: '类型', dataIndex: 'type', key: 'type', width: 80 },
+  { title: '来源', dataIndex: 'source', key: 'source', ellipsis: true },
+  { title: '分支', dataIndex: 'branch', key: 'branch', width: 120 },
+  { title: '更新时间', dataIndex: 'commit_at', key: 'commit_at', width: 180 },
+  { title: '操作', key: 'actions', width: 200 },
+]
+
+onMounted(async () => {
+  try {
+    if (window.go?.main?.ReferenceApp) {
+      repos.value = await window.go.main.ReferenceApp.ListRepos()
+    }
+  } catch (e) {
+    console.error('Failed to load repos:', e)
+  } finally {
+    loading.value = false
+  }
+})
+
+async function updateRepo(name) {
+  try {
+    await window.go.main.ReferenceApp.UpdateRepo(name)
+    repos.value = await window.go.main.ReferenceApp.ListRepos()
+  } catch (e) {
+    console.error('Failed to update repo:', e)
+  }
+}
+
+async function removeRepo(name) {
+  try {
+    await window.go.main.ReferenceApp.RemoveRepo(name, false)
+    repos.value = await window.go.main.ReferenceApp.ListRepos()
+  } catch (e) {
+    console.error('Failed to remove repo:', e)
+  }
+}
+</script>
+
+<template>
+  <div class="repo-list">
+    <div class="page-header">
+      <h2>仓库列表</h2>
+      <div class="header-actions">
+        <a-input-search
+          v-model:value="searchText"
+          placeholder="搜索仓库..."
+          style="width: 250px"
+          allow-clear
+        />
+        <a-button type="primary" @click="router.push('/repos/add')">
+          <template #icon><PlusOutlined /></template>
+          添加仓库
+        </a-button>
+      </div>
+    </div>
+
+    <a-table
+      :columns="columns"
+      :data-source="filteredRepos"
+      :loading="loading"
+      :pagination="false"
+      size="middle"
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'type'">
+          <a-tag :color="record.type === 'remote' ? 'blue' : 'green'">
+            {{ record.type === 'remote' ? '远程' : '本地' }}
+          </a-tag>
+        </template>
+        <template v-if="column.key === 'actions'">
+          <a-space>
+            <a-button size="small" @click="updateRepo(record.name)">
+              <template #icon><SyncOutlined /></template>
+              更新
+            </a-button>
+            <a-button size="small" @click="router.push('/scc?repo=' + record.name)">
+              <template #icon><BarChartOutlined /></template>
+              统计
+            </a-button>
+            <a-popconfirm title="确定移除此仓库引用？" @confirm="removeRepo(record.name)">
+              <a-button size="small" danger>
+                <template #icon><DeleteOutlined /></template>
+                移除
+              </a-button>
+            </a-popconfirm>
+          </a-space>
+        </template>
+      </template>
+    </a-table>
+  </div>
+</template>
+
+<style scoped>
+.repo-list { max-width: 1200px; }
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+.page-header h2 { font-size: 20px; font-weight: 600; color: var(--color-text); }
+.header-actions { display: flex; gap: var(--spacing-sm); }
+</style>

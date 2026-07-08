@@ -12,9 +12,27 @@ reference 是一个面向 AI 辅助编程时代的本地代码仓库引用管理
 go build -o reference.exe   # Windows（开发用，版本号为 dev）
 go build -o reference        # Linux/macOS
 go mod tidy                  # 整理依赖
-python scripts/build.py --local   # 交叉编译 + UPX 压缩（注入版本号，输出到 dist/）
-python scripts/build.py           # 三平台全量编译
+python scripts/build.py --local              # 仅编译当前平台（输出到 dist/）
+python scripts/build.py --platform windows   # 仅编译指定平台
+python scripts/build.py                      # 三平台全量编译
 ```
+
+版本注入通过 ldflags 实现，包路径为 `github.com/cicbyte/reference/cmd/version`：
+```bash
+go build -ldflags "-s -w -X github.com/cicbyte/reference/cmd/version.Version=v0.2.0 \
+  -X github.com/cicbyte/reference/cmd/version.GitCommit=$(git rev-parse HEAD) \
+  -X github.com/cicbyte/reference/cmd/version.BuildTime=$(date -u '+%Y-%m-%dT%H:%M:%S')"
+```
+
+## 测试
+
+```bash
+go test ./...                             # 运行全部测试
+go test ./internal/logic/repo/...         # 运行 repo 模块测试
+go test -run TestShortHash ./internal/logic/repo/...  # 运行单个测试
+```
+
+测试文件位于 `internal/logic/repo/`，使用内存 SQLite（`file::memory:?cache=shared`）作为测试数据库，无需外部依赖。
 
 ## 命令行用法
 
@@ -36,6 +54,8 @@ reference doctor                       # 诊断并修复引用健康状态
 reference global list                  # 列出所有项目及其引用关系
 reference global gc [--dry-run] [-y] [--cache]  # 清理过期 DB 记录（--cache 额外清理孤立缓存）
 reference global stats                 # 显示全局统计信息
+reference global remove <name> [--purge]  # 跨项目移除仓库引用
+reference global doctor                # 跨项目诊断修复
 reference proxy set <url|port>        # 设置代理
 reference proxy info                  # 查看代理
 reference proxy clear                 # 清除代理
@@ -132,11 +152,15 @@ reference wiki restore <path>         # 从 Git 历史恢复文件
 
 ### 应用初始化流程（cmd/root.go init()）
 
-严格按顺序：`InitAppDirs` → `LoadConfig` → `ApplyConfig` → `InitDataDirs`（含 localwiki） → `InitLog` → `GetGormDB`（含 AutoMigrate） → `MigratePathsIfNeeded` → `EnsureGitInit`(wiki) → `EnsureAutoPull`(wiki) → `EnsureGitInit`(localwiki)，任何步骤失败 `os.Exit(1)`。
+严格按顺序：`InitAppDirs` → `LoadConfig` → `ApplyConfig` → `InitDataDirs` → `InitLog` → `GetGormDB`（含 AutoMigrate） → `MigratePathsIfNeeded` → `EnsureGitInit`(wiki) → `EnsureGitInit`(localwiki)，任何步骤失败 `os.Exit(1)`。注意 `EnsureAutoPull` 定义在 `internal/logic/wiki/init.go` 但未在根命令 `init()` 中调用。
 
 `MigratePathsIfNeeded` 在启动时 O(1) 比较当前 `repos_path` 与 DB 中记录的值，路径变更时批量更新所有项目的 `CachePath` 记录。Wiki 路径通过 `GetWikiDir()` 动态获取，无需迁移。
 
 无参数运行 `reference` 时，若 `reference.settings.json` 不存在或 `initialized == false`，进入交互式引导（支持多选编程助手，逗号分隔），保存后继续注入流程。
+
+### Go API（pkg/）
+
+`pkg/` 包提供公共 Go SDK，通过 `Engine` 结构体封装所有核心操作（AddRepo、RemoveRepo、ListRepos、UpdateRepos、Doctor、Inject、SCC）。类型定义在 `pkg/types.go`，选项在 `pkg/options.go`，错误在 `pkg/errors.go`。引擎内部委托给 `internal/logic/repo/` 的 Processor。
 
 ## 版本发布
 
