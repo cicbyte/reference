@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cicbyte/reference/cmd/version"
 	"github.com/cicbyte/reference/internal/common"
 	"github.com/cicbyte/reference/internal/logic/global"
 	"github.com/cicbyte/reference/internal/logic/repo"
@@ -390,6 +391,136 @@ func (a *ReferenceApp) InitProject(agents []string) error {
 	}
 	settings.Initialized = true
 	return models.SaveProjectSettings(projectDir, settings)
+}
+
+// --- AppConfig methods ---
+// Unified config read/write so the settings page can manage storage paths,
+// network and log settings in one place. These supersede the narrow
+// GetProxyInfo/SetProxy/ClearProxy trio (kept for compatibility).
+
+// AppConfigDTO is the shape the settings page reads. Paths marked "actual"
+// are resolved from the Config singleton (post-ApplyConfig) and are read-only.
+type AppConfigDTO struct {
+	// editable
+	ReposPath string `json:"reposPath"`
+	WikiPath  string `json:"wikiPath"`
+	Network   struct {
+		Proxy    string `json:"proxy"`
+		GitProxy string `json:"gitProxy"`
+		Timeout  int    `json:"timeout"`
+	} `json:"network"`
+	Log struct {
+		Level      string `json:"level"`
+		MaxSize    int    `json:"maxSize"`
+		MaxBackups int    `json:"maxBackups"`
+		MaxAge     int    `json:"maxAge"`
+		Compress   bool   `json:"compress"`
+	} `json:"log"`
+	// read-only resolved paths (informational)
+	Paths struct {
+		Config string `json:"config"`
+		Db     string `json:"db"`
+		LogDir string `json:"logDir"`
+		Repos  string `json:"repos"` // actual repos dir (after ApplyConfig)
+		Wiki   string `json:"wiki"`  // actual wiki dir
+	} `json:"paths"`
+}
+
+func (a *ReferenceApp) GetAppConfig() (*AppConfigDTO, error) {
+	cfg := utils.ConfigInstance.LoadConfig() // fresh from disk
+	dto := &AppConfigDTO{
+		ReposPath: cfg.ReposPath,
+		WikiPath:  cfg.WikiPath,
+	}
+	dto.Network.Proxy = cfg.Network.Proxy
+	dto.Network.GitProxy = cfg.Network.GitProxy
+	dto.Network.Timeout = cfg.Network.Timeout
+	dto.Log.Level = cfg.Log.Level
+	dto.Log.MaxSize = cfg.Log.MaxSize
+	dto.Log.MaxBackups = cfg.Log.MaxBackups
+	dto.Log.MaxAge = cfg.Log.MaxAge
+	dto.Log.Compress = cfg.Log.Compress
+	dto.Paths.Config = utils.ConfigInstance.GetConfigPath()
+	dto.Paths.Db = utils.ConfigInstance.GetDbPath()
+	dto.Paths.LogDir = utils.ConfigInstance.GetLogDir()
+	dto.Paths.Repos = utils.ConfigInstance.GetReposDir()
+	dto.Paths.Wiki = utils.ConfigInstance.GetWikiDir()
+	return dto, nil
+}
+
+// SaveAppConfig applies a partial patch to config.yaml. Only the editable
+// fields are honoured; unknown keys are ignored. After writing it re-syncs the
+// in-memory singleton (common.AppConfigModel) and re-applies paths, fixing the
+// stale-memory bug the old SetProxy had.
+func (a *ReferenceApp) SaveAppConfig(patch map[string]interface{}) error {
+	cfg := utils.ConfigInstance.LoadConfig() // merge onto disk-latest
+
+	// top-level paths
+	if v, ok := patch["reposPath"].(string); ok {
+		cfg.ReposPath = v
+	}
+	if v, ok := patch["wikiPath"].(string); ok {
+		cfg.WikiPath = v
+	}
+	// network group
+	if net, ok := patch["network"].(map[string]interface{}); ok {
+		if v, ok := net["proxy"].(string); ok {
+			cfg.Network.Proxy = v
+		}
+		if v, ok := net["gitProxy"].(string); ok {
+			cfg.Network.GitProxy = v
+		}
+		if v, ok := toInt(net["timeout"]); ok {
+			cfg.Network.Timeout = v
+		}
+	}
+	// log group (currently read-only in UI but supported for completeness)
+	if lg, ok := patch["log"].(map[string]interface{}); ok {
+		if v, ok := lg["level"].(string); ok {
+			cfg.Log.Level = v
+		}
+		if v, ok := toInt(lg["maxSize"]); ok {
+			cfg.Log.MaxSize = v
+		}
+		if v, ok := toInt(lg["maxBackups"]); ok {
+			cfg.Log.MaxBackups = v
+		}
+		if v, ok := toInt(lg["maxAge"]); ok {
+			cfg.Log.MaxAge = v
+		}
+		if v, ok := lg["compress"].(bool); ok {
+			cfg.Log.Compress = v
+		}
+	}
+
+	if err := utils.ConfigInstance.SaveConfig(cfg); err != nil {
+		return err
+	}
+	// keep the in-memory bridge consistent so subsequent reads see new values
+	common.AppConfigModel = cfg
+	utils.ConfigInstance.ApplyConfig(cfg)
+	return nil
+}
+
+// GetVersionInfo exposes the ldflags-injected version triplet for the About tab.
+func (a *ReferenceApp) GetVersionInfo() map[string]interface{} {
+	return map[string]interface{}{
+		"version":   version.Version,
+		"commit":    version.GitCommit,
+		"buildTime": version.BuildTime,
+	}
+}
+
+// toInt coerces JSON numbers (float64) to int.
+func toInt(v interface{}) (int, bool) {
+	switch n := v.(type) {
+	case float64:
+		return int(n), true
+	case int:
+		return n, true
+	default:
+		return 0, false
+	}
 }
 
 // --- Window methods (Wails frameless window) ---

@@ -14,6 +14,47 @@ export namespace main {
 	        this.display_name = source["display_name"];
 	    }
 	}
+	export class AppConfigDTO {
+	    reposPath: string;
+	    wikiPath: string;
+	    // Go type: struct { Proxy string "json:\"proxy\""; GitProxy string "json:\"gitProxy\""; Timeout int "json:\"timeout\"" }
+	    network: any;
+	    // Go type: struct { Level string "json:\"level\""; MaxSize int "json:\"maxSize\""; MaxBackups int "json:\"maxBackups\""; MaxAge int "json:\"maxAge\""; Compress bool "json:\"compress\"" }
+	    log: any;
+	    // Go type: struct { Config string "json:\"config\""; Db string "json:\"db\""; LogDir string "json:\"logDir\""; Repos string "json:\"repos\""; Wiki string "json:\"wiki\"" }
+	    paths: any;
+	
+	    static createFrom(source: any = {}) {
+	        return new AppConfigDTO(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.reposPath = source["reposPath"];
+	        this.wikiPath = source["wikiPath"];
+	        this.network = this.convertValues(source["network"], Object);
+	        this.log = this.convertValues(source["log"], Object);
+	        this.paths = this.convertValues(source["paths"], Object);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class DoctorCheck {
 	    group: string;
 	    name: string;

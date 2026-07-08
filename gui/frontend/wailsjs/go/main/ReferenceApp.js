@@ -10,8 +10,16 @@ export function ClearProxy() {
   return window['go']['main']['ReferenceApp']['ClearProxy']();
 }
 
+export function GetAppConfig() {
+  return window['go']['main']['ReferenceApp']['GetAppConfig']();
+}
+
 export function GetProxyInfo() {
   return window['go']['main']['ReferenceApp']['GetProxyInfo']();
+}
+
+export function GetVersionInfo() {
+  return window['go']['main']['ReferenceApp']['GetVersionInfo']();
 }
 
 export function GlobalGC(arg1) {
@@ -48,6 +56,10 @@ export function RunDoctor() {
 
 export function RunSCC(arg1) {
   return window['go']['main']['ReferenceApp']['RunSCC'](arg1);
+}
+
+export function SaveAppConfig(arg1) {
+  return window['go']['main']['ReferenceApp']['SaveAppConfig'](arg1);
 }
 
 export function SetProxy(arg1) {

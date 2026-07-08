@@ -16,7 +16,6 @@ import {
   PieChartOutlined,
   ReadOutlined,
   SyncOutlined,
-  GlobalOutlined,
   SettingOutlined,
   BulbOutlined,
   BulbFilled,
@@ -63,8 +62,7 @@ const menuGroups = [
   {
     key: 'config', label: '配置', icon: SettingOutlined,
     children: [
-      { key: '/proxy', icon: GlobalOutlined, label: '代理设置' },
-      { key: '/init', icon: SettingOutlined, label: '项目初始化' },
+      { key: '/settings', icon: SettingOutlined, label: '设置' },
     ],
   },
 ]

@@ -11,8 +11,6 @@ const routes = [
   { path: '/global/gc', name: 'global-gc', component: () => import('../views/GlobalGCView.vue'), meta: { title: '垃圾回收' } },
   { path: '/wiki', name: 'wiki', component: () => import('../views/WikiBrowseView.vue'), meta: { title: '知识库' } },
   { path: '/wiki/sync', name: 'wiki-sync', component: () => import('../views/WikiSyncView.vue'), meta: { title: '知识同步' } },
-  { path: '/proxy', name: 'proxy', component: () => import('../views/ProxyView.vue'), meta: { title: '代理设置' } },
-  { path: '/init', name: 'init', component: () => import('../views/InitView.vue'), meta: { title: '项目初始化' } },
   { path: '/settings', name: 'settings', component: () => import('../views/SettingsView.vue'), meta: { title: '设置' } },
 ]
 

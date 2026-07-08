@@ -6,7 +6,11 @@ export function AddRepo(arg1:string,arg2:boolean,arg3:string,arg4:string):Promis
 
 export function ClearProxy():Promise<void>;
 
+export function GetAppConfig():Promise<main.AppConfigDTO>;
+
 export function GetProxyInfo():Promise<Record<string, any>>;
+
+export function GetVersionInfo():Promise<Record<string, any>>;
 
 export function GlobalGC(arg1:boolean):Promise<Record<string, any>>;
 
@@ -25,6 +29,8 @@ export function RemoveRepo(arg1:string,arg2:boolean):Promise<void>;
 export function RunDoctor():Promise<main.DoctorResult>;
 
 export function RunSCC(arg1:string):Promise<main.SCCResult>;
+
+export function SaveAppConfig(arg1:Record<string, any>):Promise<void>;
 
 export function SetProxy(arg1:string):Promise<void>;
 

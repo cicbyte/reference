@@ -128,3 +128,5 @@ typings/
 .tern-port
 
 .playwright-cli/
+
+*.syso
