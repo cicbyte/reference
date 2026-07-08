@@ -12,6 +12,7 @@ import {
 } from '@ant-design/icons-vue'
 import { useProjectStore } from '../stores/project'
 import AddRepoModal from '../components/repo/AddRepoModal.vue'
+import SccModal from '../components/repo/SccModal.vue'
 
 const router = useRouter()
 const project = useProjectStore()
@@ -19,6 +20,13 @@ const repos = ref([])
 const loading = ref(true)
 const searchText = ref('')
 const addOpen = ref(false)
+const sccOpen = ref(false)
+const sccRepo = ref('')
+
+function openScc(name) {
+  sccRepo.value = name
+  sccOpen.value = true
+}
 
 const filteredRepos = computed(() => {
   if (!searchText.value) return repos.value
@@ -86,10 +94,6 @@ async function removeRepo(name) {
         >
           <template #prefix><SearchOutlined /></template>
         </a-input-search>
-        <a-button @click="router.push('/scc')">
-          <template #icon><BarChartOutlined /></template>
-          代码统计
-        </a-button>
         <a-button @click="router.push('/doctor')">
           <template #icon><MedicineBoxOutlined /></template>
           诊断修复
@@ -120,7 +124,7 @@ async function removeRepo(name) {
               <template #icon><SyncOutlined /></template>
               更新
             </a-button>
-            <a-button size="small" @click="router.push('/scc?repo=' + record.name)">
+            <a-button size="small" @click="openScc(record.name)">
               <template #icon><BarChartOutlined /></template>
               统计
             </a-button>
@@ -136,6 +140,7 @@ async function removeRepo(name) {
     </a-table>
 
     <AddRepoModal v-model:open="addOpen" @added="loadRepos" />
+    <SccModal v-model:open="sccOpen" :repo-name="sccRepo" />
   </div>
 </template>
 

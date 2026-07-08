@@ -28,7 +28,7 @@ const theme = useThemeStore()
 const project = useProjectStore()
 
 // project-scoped routes require a selected project; disable them otherwise.
-const PROJECT_SCOPED_KEYS = new Set(['/', '/repos', '/scc', '/doctor'])
+const PROJECT_SCOPED_KEYS = new Set(['/', '/repos', '/doctor'])
 function isDisabled(key) {
   return PROJECT_SCOPED_KEYS.has(key) && !project.hasProject
 }
