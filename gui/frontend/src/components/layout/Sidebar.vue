@@ -22,6 +22,7 @@ import {
   BulbFilled,
   CaretRightFilled,
 } from '@ant-design/icons-vue'
+import logoUrl from '../../assets/logo.svg'
 
 const route = useRoute()
 const router = useRouter()
@@ -118,7 +119,7 @@ const expandedWidth = 200
     :style="{ width: layout.sidebarCollapsed ? collapsedWidth + 'px' : expandedWidth + 'px' }"
   >
     <div class="sidebar-logo" @click="router.push('/')">
-      <div class="logo-icon">R</div>
+      <img :src="logoUrl" alt="reference" class="logo-img" />
       <span v-if="!layout.sidebarCollapsed" class="logo-text">reference</span>
     </div>
 
@@ -219,18 +220,12 @@ const expandedWidth = 200
   border-bottom: 1px solid var(--color-border);
 }
 
-.logo-icon {
+.logo-img {
   width: 28px;
   height: 28px;
   border-radius: 7px;
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-primary);
-  color: white;
-  font-weight: 700;
-  font-size: 16px;
+  object-fit: contain;
 }
 
 .logo-text { font-size: 16px; font-weight: 700; white-space: nowrap; color: var(--color-text); }

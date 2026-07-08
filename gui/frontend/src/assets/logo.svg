@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Outer rounded square -->
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="#BD93F9"/>
+  <!-- Letter R -->
+  <path d="M18 16h14c7.732 0 14 5.373 14 12s-6.268 12-14 12H18V16zm6 5v14h8c4.418 0 8-3.134 8-7s-3.582-7-8-7h-8z" fill="white"/>
+  <!-- Branch-like accent (bottom-right) -->
+  <circle cx="46" cy="46" r="4" fill="#FF79C6"/>
+  <circle cx="46" cy="36" r="3" fill="#FF79C6" opacity="0.7"/>
+  <line x1="46" y1="39" x2="46" y2="42" stroke="#FF79C6" stroke-width="2" stroke-linecap="round"/>
+</svg>
