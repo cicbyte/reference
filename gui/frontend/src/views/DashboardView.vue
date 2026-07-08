@@ -130,7 +130,7 @@ function agentDisplayName(id) {
 
       <!-- quick actions -->
       <div class="quick-actions">
-        <a-button type="primary" @click="router.push('/repos/add')">
+        <a-button type="primary" @click="router.push('/repos')">
           <template #icon><PlusOutlined /></template>
           添加仓库
         </a-button>
@@ -224,7 +224,7 @@ function agentDisplayName(id) {
           </div>
         </div>
         <a-empty v-else-if="!loading" description="暂无引用仓库">
-          <a-button type="primary" @click="router.push('/repos/add')">添加第一个仓库</a-button>
+          <a-button type="primary" @click="router.push('/repos')">添加第一个仓库</a-button>
         </a-empty>
       </a-spin>
     </template>

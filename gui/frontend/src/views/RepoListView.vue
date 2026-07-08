@@ -2,14 +2,23 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { PlusOutlined, SyncOutlined, DeleteOutlined, BarChartOutlined } from '@ant-design/icons-vue'
+import {
+  PlusOutlined,
+  SyncOutlined,
+  DeleteOutlined,
+  BarChartOutlined,
+  MedicineBoxOutlined,
+  SearchOutlined,
+} from '@ant-design/icons-vue'
 import { useProjectStore } from '../stores/project'
+import AddRepoModal from '../components/repo/AddRepoModal.vue'
 
 const router = useRouter()
 const project = useProjectStore()
 const repos = ref([])
 const loading = ref(true)
 const searchText = ref('')
+const addOpen = ref(false)
 
 const filteredRepos = computed(() => {
   if (!searchText.value) return repos.value
@@ -23,7 +32,7 @@ const columns = [
   { title: '来源', dataIndex: 'source', key: 'source', ellipsis: true },
   { title: '分支', dataIndex: 'branch', key: 'branch', width: 120 },
   { title: '更新时间', dataIndex: 'commit_at', key: 'commit_at', width: 180 },
-  { title: '操作', key: 'actions', width: 200 },
+  { title: '操作', key: 'actions', width: 180, align: 'right' },
 ]
 
 async function loadRepos() {
@@ -72,10 +81,20 @@ async function removeRepo(name) {
         <a-input-search
           v-model:value="searchText"
           placeholder="搜索仓库..."
-          style="width: 250px"
+          style="width: 220px"
           allow-clear
-        />
-        <a-button type="primary" @click="router.push('/repos/add')">
+        >
+          <template #prefix><SearchOutlined /></template>
+        </a-input-search>
+        <a-button @click="router.push('/scc')">
+          <template #icon><BarChartOutlined /></template>
+          代码统计
+        </a-button>
+        <a-button @click="router.push('/doctor')">
+          <template #icon><MedicineBoxOutlined /></template>
+          诊断修复
+        </a-button>
+        <a-button type="primary" @click="addOpen = true">
           <template #icon><PlusOutlined /></template>
           添加仓库
         </a-button>
@@ -115,6 +134,8 @@ async function removeRepo(name) {
         </template>
       </template>
     </a-table>
+
+    <AddRepoModal v-model:open="addOpen" @added="loadRepos" />
   </div>
 </template>
 
@@ -125,7 +146,9 @@ async function removeRepo(name) {
   justify-content: space-between;
   align-items: center;
   margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
 }
-.page-header h2 { font-size: 20px; font-weight: 600; color: var(--color-text); }
-.header-actions { display: flex; gap: var(--spacing-sm); }
+.page-header h2 { font-size: 20px; font-weight: 600; color: var(--color-text); margin: 0; }
+.header-actions { display: flex; gap: var(--spacing-sm); flex-wrap: wrap; }
 </style>

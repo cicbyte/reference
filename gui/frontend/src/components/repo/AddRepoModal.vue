@@ -1,17 +1,25 @@
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
-import { useProjectStore } from '../stores/project'
+import { useProjectStore } from '../../stores/project'
 
-const router = useRouter()
+const props = defineProps({
+  open: { type: Boolean, default: false },
+})
+const emit = defineEmits(['update:open', 'added'])
+
 const project = useProjectStore()
 const form = ref({ target: '', local: false, name: '', branch: '' })
 const loading = ref(false)
 
+function close() {
+  emit('update:open', false)
+  form.value = { target: '', local: false, name: '', branch: '' }
+}
+
 async function handleSubmit() {
   if (!project.hasProject) {
-    message.warning('请先从左侧选择一个项目')
+    message.warning('请先选择一个项目')
     return
   }
   if (!form.value.target) {
@@ -28,7 +36,8 @@ async function handleSubmit() {
         form.value.branch,
       )
       message.success('仓库添加成功')
-      router.push('/repos')
+      emit('added')
+      close()
     }
   } catch (e) {
     message.error('添加失败: ' + e)
@@ -39,12 +48,16 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <div class="repo-add">
-    <div class="page-header">
-      <h2>添加仓库</h2>
-    </div>
-
-    <a-form layout="vertical" :model="form" @finish="handleSubmit" style="max-width: 600px">
+  <a-modal
+    :open="open"
+    :title="'添加仓库到 ' + (project.currentName || '当前项目')"
+    :footer="null"
+    :mask-closable="true"
+    destroy-on-close
+    width="520px"
+    @update:open="emit('update:open', $event)"
+  >
+    <a-form layout="vertical" :model="form" @finish="handleSubmit">
       <a-form-item label="仓库类型">
         <a-radio-group v-model:value="form.local">
           <a-radio :value="false">远程仓库 (Git URL)</a-radio>
@@ -56,29 +69,24 @@ async function handleSubmit() {
         <a-input
           v-model:value="form.target"
           :placeholder="form.local ? '/path/to/repo' : 'https://github.com/owner/repo 或 owner/repo'"
+          allow-clear
         />
       </a-form-item>
 
       <a-form-item label="自定义名称（可选）">
-        <a-input v-model:value="form.name" placeholder="留空则自动识别" />
+        <a-input v-model:value="form.name" placeholder="留空则自动识别" allow-clear />
       </a-form-item>
 
       <a-form-item label="指定分支（可选）" v-if="!form.local">
-        <a-input v-model:value="form.branch" placeholder="留空则使用默认分支" />
+        <a-input v-model:value="form.branch" placeholder="留空则使用默认分支" allow-clear />
       </a-form-item>
 
       <a-form-item>
         <a-space>
           <a-button type="primary" html-type="submit" :loading="loading">添加</a-button>
-          <a-button @click="router.push('/repos')">取消</a-button>
+          <a-button @click="close">取消</a-button>
         </a-space>
       </a-form-item>
     </a-form>
-  </div>
+  </a-modal>
 </template>
-
-<style scoped>
-.repo-add { width: 100%; }
-.page-header { margin-bottom: var(--spacing-lg); }
-.page-header h2 { font-size: 20px; font-weight: 600; color: var(--color-text); }
-</style>

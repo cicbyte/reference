@@ -7,7 +7,6 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 const routes = [
   { path: '/', name: 'dashboard', component: () => import('../views/DashboardView.vue'), meta: { title: 'Dashboard', projectScoped: true } },
   { path: '/repos', name: 'repos', component: () => import('../views/RepoListView.vue'), meta: { title: '仓库列表', projectScoped: true } },
-  { path: '/repos/add', name: 'repo-add', component: () => import('../views/RepoAddView.vue'), meta: { title: '添加仓库', projectScoped: true } },
   { path: '/scc', name: 'scc', component: () => import('../views/SccView.vue'), meta: { title: '代码统计', projectScoped: true } },
   { path: '/doctor', name: 'doctor', component: () => import('../views/DoctorView.vue'), meta: { title: '诊断修复', projectScoped: true } },
   { path: '/global', name: 'global', component: () => import('../views/GlobalListView.vue'), meta: { title: '全局项目', projectScoped: false } },

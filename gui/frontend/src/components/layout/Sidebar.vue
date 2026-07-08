@@ -7,10 +7,7 @@ import { useProjectStore } from '../../stores/project'
 import {
   DashboardOutlined,
   CloudDownloadOutlined,
-  PlusOutlined,
   UnorderedListOutlined,
-  BarChartOutlined,
-  MedicineBoxOutlined,
   ApartmentOutlined,
   DatabaseOutlined,
   DeleteOutlined,
@@ -31,7 +28,7 @@ const theme = useThemeStore()
 const project = useProjectStore()
 
 // project-scoped routes require a selected project; disable them otherwise.
-const PROJECT_SCOPED_KEYS = new Set(['/', '/repos', '/repos/add', '/scc', '/doctor'])
+const PROJECT_SCOPED_KEYS = new Set(['/', '/repos', '/scc', '/doctor'])
 function isDisabled(key) {
   return PROJECT_SCOPED_KEYS.has(key) && !project.hasProject
 }
@@ -47,9 +44,6 @@ const menuGroups = [
     key: 'repo', label: '仓库管理', icon: CloudDownloadOutlined,
     children: [
       { key: '/repos', icon: UnorderedListOutlined, label: '仓库列表' },
-      { key: '/repos/add', icon: PlusOutlined, label: '添加仓库' },
-      { key: '/scc', icon: BarChartOutlined, label: '代码统计' },
-      { key: '/doctor', icon: MedicineBoxOutlined, label: '诊断修复' },
     ],
   },
   {
