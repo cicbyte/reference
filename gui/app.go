@@ -21,7 +21,9 @@ func NewReferenceApp() *ReferenceApp {
 }
 
 func (a *ReferenceApp) startup(ctx context.Context) {
+	a.appMu.Lock()
 	a.ctx = ctx
+	a.appMu.Unlock()
 
 	go func() {
 		sigCh := make(chan os.Signal, 1)

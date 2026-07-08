@@ -10,6 +10,7 @@ import (
 	"github.com/cicbyte/reference/internal/logic/wiki"
 	"github.com/cicbyte/reference/internal/models"
 	"github.com/cicbyte/reference/internal/utils"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // --- Repo methods ---
@@ -392,9 +393,40 @@ func (a *ReferenceApp) InitProject(agents []string) error {
 }
 
 // --- Window methods (Wails frameless window) ---
+// Called from the Navbar's custom title-bar buttons. The frameless window has
+// no native controls, so we drive the window via the Wails runtime using the
+// context captured in startup(). The nil-ctx guard is defensive: Wails only
+// dispatches bound calls after OnStartup, but window control should never
+// panic even if invoked in a race with shutdown.
 
-func (a *ReferenceApp) WindowMinimize() {}
+func (a *ReferenceApp) WindowMinimize() {
+	a.appMu.RLock()
+	ctx := a.ctx
+	a.appMu.RUnlock()
+	if ctx == nil {
+		return
+	}
+	runtime.WindowMinimise(ctx)
+}
 
-func (a *ReferenceApp) WindowMaximize() {}
+func (a *ReferenceApp) WindowMaximize() {
+	// Toggle so the button also restores the window when already maximised
+	// (matches native Windows title-bar behaviour).
+	a.appMu.RLock()
+	ctx := a.ctx
+	a.appMu.RUnlock()
+	if ctx == nil {
+		return
+	}
+	runtime.WindowToggleMaximise(ctx)
+}
 
-func (a *ReferenceApp) WindowClose() {}
+func (a *ReferenceApp) WindowClose() {
+	a.appMu.RLock()
+	ctx := a.ctx
+	a.appMu.RUnlock()
+	if ctx == nil {
+		return
+	}
+	runtime.Quit(ctx)
+}
