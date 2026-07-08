@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>reference — Logo</title>
+<style>
+  /* ============================================================
+     Logo 设计源文件
+     ------------------------------------------------------------
+     修改 <svg class="design-svg"> 内的图形即可改变 logo。
+     运行 `python scripts/generate_logo.py` 会：
+       1. 从本文件抽取 design-svg → 写出 logo.svg
+       2. 在透明背景下截取各尺寸 → logo-*.png / icon.png / appicon.png
+     ============================================================ */
+
+  :root {
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --checker: rgba(127,127,127,0.18);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: #f8fafc;
+    color: var(--ink);
+    padding: 40px 32px 64px;
+  }
+
+  .wrap { max-width: 980px; margin: 0 auto; }
+
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 32px; }
+
+  .section { margin-bottom: 36px; }
+  .section h2 {
+    font-size: 12px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--muted); margin-bottom: 12px;
+  }
+
+  /* —— 透明棋盘格(验证透明背景)—— */
+  .checker {
+    background-image:
+      linear-gradient(45deg, var(--checker) 25%, transparent 25%),
+      linear-gradient(-45deg, var(--checker) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, var(--checker) 75%),
+      linear-gradient(-45deg, transparent 75%, var(--checker) 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 32px;
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 28px;
+  }
+
+  /* —— 浅 / 深底预览(验证两种 UI 下都可读)—— */
+  .surfaces { display: flex; gap: 16px; }
+  .surface {
+    width: 180px; height: 120px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--line);
+  }
+  .surface.light { background: #ffffff; }
+  .surface.dark  { background: #1e293b; }
+
+  /* —— 设计稿主 SVG —— */
+  .design-svg { display: block; }
+
+  /* —— 截图区:不可见,但保留渲染盒子供 Playwright 截取 —— */
+  .capture-area {
+    position: fixed; top: 0; left: 0; z-index: -1;
+    background: transparent;
+    display: flex; gap: 4px;
+  }
+
+  .note {
+    margin-top: 24px; padding: 14px 16px; border-radius: 10px;
+    background: #ecfeff; border: 1px solid #a5f3fc; color: #155e75;
+    font-size: 12.5px; line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>reference</h1>
+    <p class="sub">Logo 设计源 · 透明背景 · 青绿主题</p>
+
+    <!-- ======================================================
+         ⬇⬇⬇  设计源:修改这里改变 logo  ⬇⬇⬇
+         概念 <◇> :代码尖括号 < > 通过连接线指向中央菱形节点
+         (代码 ↔ 引用知识核心)。透明背景,几何统一。
+         ====================================================== -->
+    <svg class="design-svg" width="160" height="160" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+      <!-- 左尖括号 < -->
+      <path d="M94 86 L62 128 L94 170"
+            fill="none" stroke="#0d9488" stroke-width="20"
+            stroke-linecap="round" stroke-linejoin="round" />
+      <!-- 右尖括号 > -->
+      <path d="M162 86 L194 128 L162 170"
+            fill="none" stroke="#0d9488" stroke-width="20"
+            stroke-linecap="round" stroke-linejoin="round" />
+      <!-- 连接线:括号 → 节点 -->
+      <path d="M94 128 L106 128"
+            fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round" />
+      <path d="M162 128 L150 128"
+            fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round" />
+      <!-- 中央菱形节点(焦点,亮一档) -->
+      <path d="M128 104 L152 128 L128 152 L104 128 Z" fill="#2dd4bf" />
+    </svg>
+    <!-- ⬆⬆⬇  设计源结束  ⬆⬆⬆ -->
+
+    <div class="section">
+      <h2>透明背景(棋盘格)</h2>
+      <div class="checker">
+        <!-- 各尺寸预览,验证小尺寸可辨识 -->
+        <svg class="design-svg" width="96" height="96" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+          <path d="M94 86 L62 128 L94 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M162 86 L194 128 L162 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M94 128 L106 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"/>
+          <path d="M162 128 L150 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"/>
+          <path d="M128 104 L152 128 L128 152 L104 128 Z" fill="#2dd4bf"/>
+        </svg>
+        <svg class="design-svg" width="48" height="48" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+          <path d="M94 86 L62 128 L94 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M162 86 L194 128 L162 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M94 128 L106 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"/>
+          <path d="M162 128 L150 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"/>
+          <path d="M128 104 L152 128 L128 152 L104 128 Z" fill="#2dd4bf"/>
+        </svg>
+        <svg class="design-svg" width="24" height="24" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+          <path d="M94 86 L62 128 L94 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M162 86 L194 128 L162 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M94 128 L106 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"/>
+          <path d="M162 128 L150 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"/>
+          <path d="M128 104 L152 128 L128 152 L104 128 Z" fill="#2dd4bf"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>浅色 / 深色 UI 适配</h2>
+      <div class="surfaces">
+        <div class="surface light">
+          <svg class="design-svg" width="56" height="56" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+            <path d="M94 86 L62 128 L94 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M162 86 L194 128 L162 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M94 128 L106 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"/>
+            <path d="M162 128 L150 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"/>
+            <path d="M128 104 L152 128 L128 152 L104 128 Z" fill="#2dd4bf"/>
+          </svg>
+        </div>
+        <div class="surface dark">
+          <svg class="design-svg" width="56" height="56" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+            <path d="M94 86 L62 128 L94 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M162 86 L194 128 L162 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M94 128 L106 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"/>
+            <path d="M162 128 L150 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"/>
+            <path d="M128 104 L152 128 L128 152 L104 128 Z" fill="#2dd4bf"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <p class="note">
+      <strong>用法:</strong> 修改上方 <code>&lt;svg class="design-svg"&gt;</code> 内的图形,
+      然后运行 <code>python scripts/generate_logo.py</code> 重新生成所有图片产物。
+      截图区(下方不可见)由脚本读取,会自动同步各尺寸。
+    </p>
+  </div>
+
+  <!-- 截图区:JS 把 design-svg 克隆成各精确尺寸,供脚本截取 -->
+  <div class="capture-area" aria-hidden="true"></div>
+  <script>
+    const SIZES = [256, 128, 64, 32];
+    const src = document.querySelector('.design-svg').outerHTML;
+    const area = document.querySelector('.capture-area');
+    SIZES.forEach((s) => {
+      const wrap = document.createElement('div');
+      wrap.innerHTML = src;
+      const svg = wrap.firstElementChild;
+      svg.setAttribute('width', s);
+      svg.setAttribute('height', s);
+      svg.setAttribute('data-size', s);
+      area.appendChild(svg);
+    });
+  </script>
+</body>
+</html>
