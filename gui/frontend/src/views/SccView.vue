@@ -74,7 +74,7 @@ async function runScc() {
 </template>
 
 <style scoped>
-.scc-view { max-width: 1200px; }
+.scc-view { width: 100%; }
 .page-header { margin-bottom: var(--spacing-lg); }
 .page-header h2 { font-size: 20px; font-weight: 600; color: var(--color-text); }
 .scc-form { margin-bottom: var(--spacing-lg); }

@@ -119,7 +119,7 @@ async function removeRepo(name) {
 </template>
 
 <style scoped>
-.repo-list { max-width: 1200px; }
+.repo-list { width: 100%; }
 .page-header {
   display: flex;
   justify-content: space-between;

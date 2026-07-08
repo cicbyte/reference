@@ -33,7 +33,7 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.wiki-browse { max-width: 1000px; }
+.wiki-browse { width: 100%; }
 .page-header { margin-bottom: var(--spacing-lg); }
 .page-header h2 { font-size: 20px; font-weight: 600; color: var(--color-text); }
 </style>

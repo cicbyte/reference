@@ -79,7 +79,7 @@ function statusColor(status) {
 </template>
 
 <style scoped>
-.doctor-view { max-width: 800px; }
+.doctor-view { width: 100%; }
 .page-header {
   display: flex;
   justify-content: space-between;

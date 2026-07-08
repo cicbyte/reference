@@ -78,7 +78,7 @@ async function handleSubmit() {
 </template>
 
 <style scoped>
-.repo-add { max-width: 800px; }
+.repo-add { width: 100%; }
 .page-header { margin-bottom: var(--spacing-lg); }
 .page-header h2 { font-size: 20px; font-weight: 600; color: var(--color-text); }
 </style>

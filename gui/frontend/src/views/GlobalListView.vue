@@ -31,7 +31,7 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.global-list { max-width: 1200px; }
+.global-list { width: 100%; }
 .page-header { margin-bottom: var(--spacing-lg); }
 .page-header h2 { font-size: 20px; font-weight: 600; color: var(--color-text); }
 </style>

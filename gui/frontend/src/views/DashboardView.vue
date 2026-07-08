@@ -95,8 +95,7 @@ watch(() => project.projectEpoch, loadRepos)
 
 <style scoped>
 .dashboard {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .dashboard-header {

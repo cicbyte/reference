@@ -38,7 +38,7 @@ async function runGC() {
 </template>
 
 <style scoped>
-.global-gc { max-width: 800px; }
+.global-gc { width: 100%; }
 .page-header { margin-bottom: var(--spacing-lg); }
 .page-header h2 { font-size: 20px; font-weight: 600; color: var(--color-text); }
 </style>
