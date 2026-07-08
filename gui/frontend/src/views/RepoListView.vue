@@ -40,7 +40,7 @@ const columns = [
   { title: '来源', dataIndex: 'source', key: 'source', ellipsis: true },
   { title: '分支', dataIndex: 'branch', key: 'branch', width: 120 },
   { title: '更新时间', dataIndex: 'commit_at', key: 'commit_at', width: 180 },
-  { title: '操作', key: 'actions', width: 180, align: 'right' },
+  { title: '操作', key: 'actions', width: 120, align: 'center', fixed: 'right' },
 ]
 
 async function loadRepos() {
@@ -110,6 +110,7 @@ async function removeRepo(name) {
       :data-source="filteredRepos"
       :loading="loading"
       :pagination="false"
+      :scroll="{ x: 900 }"
       size="middle"
     >
       <template #bodyCell="{ column, record }">
@@ -119,22 +120,23 @@ async function removeRepo(name) {
           </a-tag>
         </template>
         <template v-if="column.key === 'actions'">
-          <a-space>
-            <a-button size="small" @click="updateRepo(record.name)">
+          <a-tooltip title="更新仓库">
+            <a-button size="small" type="text" @click="updateRepo(record.name)">
               <template #icon><SyncOutlined /></template>
-              更新
             </a-button>
-            <a-button size="small" @click="openScc(record.name)">
+          </a-tooltip>
+          <a-tooltip title="代码统计">
+            <a-button size="small" type="text" @click="openScc(record.name)">
               <template #icon><BarChartOutlined /></template>
-              统计
             </a-button>
-            <a-popconfirm title="确定移除此仓库引用？" @confirm="removeRepo(record.name)">
-              <a-button size="small" danger>
+          </a-tooltip>
+          <a-popconfirm title="确定移除此仓库引用？" @confirm="removeRepo(record.name)">
+            <a-tooltip title="移除引用">
+              <a-button size="small" type="text" danger>
                 <template #icon><DeleteOutlined /></template>
-                移除
               </a-button>
-            </a-popconfirm>
-          </a-space>
+            </a-tooltip>
+          </a-popconfirm>
         </template>
       </template>
     </a-table>
