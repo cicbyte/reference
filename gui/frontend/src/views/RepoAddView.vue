@@ -2,12 +2,18 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
+import { useProjectStore } from '../stores/project'
 
 const router = useRouter()
+const project = useProjectStore()
 const form = ref({ target: '', local: false, name: '', branch: '' })
 const loading = ref(false)
 
 async function handleSubmit() {
+  if (!project.hasProject) {
+    message.warning('请先从左侧选择一个项目')
+    return
+  }
   if (!form.value.target) {
     message.warning('请输入仓库地址或路径')
     return

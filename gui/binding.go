@@ -14,6 +14,99 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
+// --- Project methods ---
+// Multi-project support: an explicit "current project" that scopes all
+// project-level operations (repo list / add / scc / doctor / init). Switched
+// from the left-hand project rail in the UI.
+
+// ProjectItem is one row in the project rail (sourced from GlobalList, full fields).
+type ProjectItem struct {
+	Dir         string   `json:"dir"`
+	Name        string   `json:"name"`
+	Exists      bool     `json:"exists"`
+	Initialized bool     `json:"initialized"`
+	Agents      []string `json:"agents"`
+	RepoCount   int      `json:"repoCount"`
+	BrokenCount int      `json:"brokenCount"`
+}
+
+// ProjectInfo describes the currently active project for the rail/status bar.
+type ProjectInfo struct {
+	Dir    string `json:"dir"`
+	Name   string `json:"name"`
+	Exists bool   `json:"exists"`
+}
+
+// ListProjects returns all known projects from the DB (full fields, unlike the
+// trimmed GlobalList). Powers the left-hand project rail.
+func (a *ReferenceApp) ListProjects() ([]ProjectItem, error) {
+	db, err := utils.GetGormDB()
+	if err != nil {
+		return nil, err
+	}
+	processor := global.NewGlobalListProcessor(db)
+	result, err := processor.Execute(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	items := make([]ProjectItem, len(result.Projects))
+	for i, p := range result.Projects {
+		agents := p.Agents
+		if agents == nil {
+			agents = []string{}
+		}
+		items[i] = ProjectItem{
+			Dir:         p.ProjectDir,
+			Name:        baseName(p.ProjectDir),
+			Exists:      p.Exists,
+			Initialized: p.Initialized,
+			Agents:      agents,
+			RepoCount:   p.RepoCount,
+			BrokenCount: p.BrokenCount,
+		}
+	}
+	return items, nil
+}
+
+// SwitchProject sets the active project dir. No existence check — allows
+// switching to a project whose dir was removed (UI shows a warning instead).
+func (a *ReferenceApp) SwitchProject(dir string) (ProjectInfo, error) {
+	if dir == "" {
+		return ProjectInfo{}, fmt.Errorf("项目路径不能为空")
+	}
+	a.setCurrentProject(dir)
+	return ProjectInfo{Dir: dir, Name: baseName(dir), Exists: dirExists(dir)}, nil
+}
+
+// GetCurrentProject returns the active project, falling back to GetGitRoot if
+// none was explicitly switched. Returns empty ProjectInfo (no error) if there
+// is no project context at all — the UI shows its empty state.
+func (a *ReferenceApp) GetCurrentProject() (ProjectInfo, error) {
+	dir, err := a.getCurrentProject()
+	if err != nil {
+		return ProjectInfo{}, nil // no error: empty state is valid
+	}
+	return ProjectInfo{Dir: dir, Name: baseName(dir), Exists: dirExists(dir)}, nil
+}
+
+// PickProjectFolder opens a native directory picker and returns the chosen
+// path (empty string if cancelled). Used by the rail's "+ add project" button.
+func (a *ReferenceApp) PickProjectFolder() (string, error) {
+	a.appMu.RLock()
+	ctx := a.ctx
+	a.appMu.RUnlock()
+	if ctx == nil {
+		return "", nil
+	}
+	dir, err := runtime.OpenDirectoryDialog(ctx, runtime.OpenDialogOptions{
+		Title: "选择项目目录",
+	})
+	if err != nil {
+		return "", err
+	}
+	return dir, nil
+}
+
 // --- Repo methods ---
 
 type RepoItem struct {
@@ -26,7 +119,7 @@ type RepoItem struct {
 }
 
 func (a *ReferenceApp) ListRepos() ([]RepoItem, error) {
-	projectDir, err := utils.GetGitRoot()
+	projectDir, err := a.getCurrentProject()
 	if err != nil {
 		return nil, fmt.Errorf("无法获取 Git 根目录: %w", err)
 	}
@@ -58,7 +151,7 @@ func (a *ReferenceApp) ListRepos() ([]RepoItem, error) {
 }
 
 func (a *ReferenceApp) AddRepo(target string, isLocal bool, name string, branch string) error {
-	projectDir, err := utils.GetGitRoot()
+	projectDir, err := a.getCurrentProject()
 	if err != nil {
 		return err
 	}
@@ -81,7 +174,7 @@ func (a *ReferenceApp) AddRepo(target string, isLocal bool, name string, branch 
 }
 
 func (a *ReferenceApp) RemoveRepo(identifier string, purge bool) error {
-	projectDir, err := utils.GetGitRoot()
+	projectDir, err := a.getCurrentProject()
 	if err != nil {
 		return err
 	}
@@ -102,7 +195,7 @@ func (a *ReferenceApp) RemoveRepo(identifier string, purge bool) error {
 }
 
 func (a *ReferenceApp) UpdateRepo(identifier string) error {
-	projectDir, err := utils.GetGitRoot()
+	projectDir, err := a.getCurrentProject()
 	if err != nil {
 		return err
 	}
@@ -143,7 +236,7 @@ type SCCFileStat struct {
 }
 
 func (a *ReferenceApp) RunSCC(repoName string) (*SCCResult, error) {
-	projectDir, err := utils.GetGitRoot()
+	projectDir, err := a.getCurrentProject()
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +302,7 @@ type DoctorCheck struct {
 }
 
 func (a *ReferenceApp) RunDoctor() (*DoctorResult, error) {
-	projectDir, err := utils.GetGitRoot()
+	projectDir, err := a.getCurrentProject()
 	if err != nil {
 		return nil, err
 	}
@@ -374,7 +467,7 @@ func (a *ReferenceApp) ListAgents() ([]AgentInfo, error) {
 }
 
 func (a *ReferenceApp) InitProject(agents []string) error {
-	projectDir, err := utils.GetGitRoot()
+	projectDir, err := a.getCurrentProject()
 	if err != nil {
 		return err
 	}

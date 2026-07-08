@@ -14,6 +14,10 @@ export function GetAppConfig() {
   return window['go']['main']['ReferenceApp']['GetAppConfig']();
 }
 
+export function GetCurrentProject() {
+  return window['go']['main']['ReferenceApp']['GetCurrentProject']();
+}
+
 export function GetProxyInfo() {
   return window['go']['main']['ReferenceApp']['GetProxyInfo']();
 }
@@ -42,8 +46,16 @@ export function ListAgents() {
   return window['go']['main']['ReferenceApp']['ListAgents']();
 }
 
+export function ListProjects() {
+  return window['go']['main']['ReferenceApp']['ListProjects']();
+}
+
 export function ListRepos() {
   return window['go']['main']['ReferenceApp']['ListRepos']();
+}
+
+export function PickProjectFolder() {
+  return window['go']['main']['ReferenceApp']['PickProjectFolder']();
 }
 
 export function RemoveRepo(arg1, arg2) {
@@ -64,6 +76,10 @@ export function SaveAppConfig(arg1) {
 
 export function SetProxy(arg1) {
   return window['go']['main']['ReferenceApp']['SetProxy'](arg1);
+}
+
+export function SwitchProject(arg1) {
+  return window['go']['main']['ReferenceApp']['SwitchProject'](arg1);
 }
 
 export function UpdateRepo(arg1) {

@@ -1,16 +1,22 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useProjectStore } from '../stores/project'
 
+const project = useProjectStore()
 const repoName = ref('')
 const loading = ref(false)
 const result = ref(null)
 const repos = ref([])
 
 async function loadRepos() {
+  if (!project.hasProject) { repos.value = []; return }
   if (window.go?.main?.ReferenceApp) {
     repos.value = await window.go.main.ReferenceApp.ListRepos()
   }
 }
+
+onMounted(loadRepos)
+watch(() => project.projectEpoch, loadRepos)
 
 async function runScc() {
   if (!repoName.value) return
@@ -25,8 +31,6 @@ async function runScc() {
     loading.value = false
   }
 }
-
-loadRepos()
 </script>
 
 <template>

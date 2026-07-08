@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 
 export const useLayoutStore = defineStore('layout', () => {
   const sidebarCollapsed = ref(false)
+  const projectRailCollapsed = ref(false)
   const windowWidth = ref(window.innerWidth)
 
   const isMobile = computed(() => windowWidth.value < 768)
@@ -12,12 +13,26 @@ export const useLayoutStore = defineStore('layout', () => {
     sidebarCollapsed.value = !sidebarCollapsed.value
   }
 
+  function toggleProjectRail() {
+    projectRailCollapsed.value = !projectRailCollapsed.value
+  }
+
   function handleResize() {
     windowWidth.value = window.innerWidth
     if (isMobile.value) {
       sidebarCollapsed.value = true
+      projectRailCollapsed.value = true
     }
   }
 
-  return { sidebarCollapsed, windowWidth, isMobile, isTablet, toggleSidebar, handleResize }
+  return {
+    sidebarCollapsed,
+    projectRailCollapsed,
+    windowWidth,
+    isMobile,
+    isTablet,
+    toggleSidebar,
+    toggleProjectRail,
+    handleResize,
+  }
 })

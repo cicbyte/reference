@@ -1,11 +1,14 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { CheckCircleOutlined, ExclamationCircleOutlined, CloseCircleOutlined, SyncOutlined } from '@ant-design/icons-vue'
+import { useProjectStore } from '../stores/project'
 
+const project = useProjectStore()
 const loading = ref(false)
 const result = ref(null)
 
 async function runDoctor() {
+  if (!project.hasProject) { result.value = null; return }
   loading.value = true
   try {
     if (window.go?.main?.ReferenceApp) {
@@ -19,6 +22,7 @@ async function runDoctor() {
 }
 
 onMounted(runDoctor)
+watch(() => project.projectEpoch, runDoctor)
 
 function statusIcon(status) {
   if (status === 'pass' || status === 'ok') return CheckCircleOutlined

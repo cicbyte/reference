@@ -8,6 +8,8 @@ export function ClearProxy():Promise<void>;
 
 export function GetAppConfig():Promise<main.AppConfigDTO>;
 
+export function GetCurrentProject():Promise<main.ProjectInfo>;
+
 export function GetProxyInfo():Promise<Record<string, any>>;
 
 export function GetVersionInfo():Promise<Record<string, any>>;
@@ -22,7 +24,11 @@ export function InitProject(arg1:Array<string>):Promise<void>;
 
 export function ListAgents():Promise<Array<main.AgentInfo>>;
 
+export function ListProjects():Promise<Array<main.ProjectItem>>;
+
 export function ListRepos():Promise<Array<main.RepoItem>>;
+
+export function PickProjectFolder():Promise<string>;
 
 export function RemoveRepo(arg1:string,arg2:boolean):Promise<void>;
 
@@ -33,6 +39,8 @@ export function RunSCC(arg1:string):Promise<main.SCCResult>;
 export function SaveAppConfig(arg1:Record<string, any>):Promise<void>;
 
 export function SetProxy(arg1:string):Promise<void>;
+
+export function SwitchProject(arg1:string):Promise<main.ProjectInfo>;
 
 export function UpdateRepo(arg1:string):Promise<void>;
 

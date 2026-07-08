@@ -1,13 +1,21 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { PlusOutlined, SyncOutlined, MedicineBoxOutlined, CloudDownloadOutlined } from '@ant-design/icons-vue'
+import { useProjectStore } from '../stores/project'
 
 const router = useRouter()
+const project = useProjectStore()
 const repos = ref([])
 const loading = ref(true)
 
-onMounted(async () => {
+async function loadRepos() {
+  if (!project.hasProject) {
+    repos.value = []
+    loading.value = false
+    return
+  }
+  loading.value = true
   try {
     if (window.go?.main?.ReferenceApp) {
       repos.value = await window.go.main.ReferenceApp.ListRepos()
@@ -17,15 +25,29 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
+
+onMounted(loadRepos)
+watch(() => project.projectEpoch, loadRepos)
 </script>
 
 <template>
   <div class="dashboard">
     <div class="dashboard-header">
       <h1>Reference</h1>
-      <p class="subtitle">本地代码仓库引用管理器</p>
+      <p class="subtitle">
+        {{ project.hasProject ? `当前项目：${project.currentName}` : '本地代码仓库引用管理器' }}
+      </p>
     </div>
+
+    <a-empty
+      v-if="!project.hasProject"
+      description="请从左侧选择一个项目，或添加新项目"
+    >
+      <template #image><CloudDownloadOutlined style="font-size: 48px; color: var(--color-text-tertiary); opacity: 0.4;" /></template>
+    </a-empty>
+
+    <template v-else>
 
     <div class="quick-actions">
       <a-button type="primary" @click="router.push('/repos/add')">
@@ -66,6 +88,8 @@ onMounted(async () => {
         <a-button type="primary" @click="router.push('/repos/add')">添加第一个仓库</a-button>
       </a-empty>
     </a-spin>
+
+    </template>
   </div>
 </template>
 

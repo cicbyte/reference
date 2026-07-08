@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useLayoutStore } from '../../stores/layout'
 import { useThemeStore } from '../../stores/theme'
+import { useProjectStore } from '../../stores/project'
 import {
   DashboardOutlined,
   CloudDownloadOutlined,
@@ -27,6 +28,13 @@ const route = useRoute()
 const router = useRouter()
 const layout = useLayoutStore()
 const theme = useThemeStore()
+const project = useProjectStore()
+
+// project-scoped routes require a selected project; disable them otherwise.
+const PROJECT_SCOPED_KEYS = new Set(['/', '/repos', '/repos/add', '/scc', '/doctor'])
+function isDisabled(key) {
+  return PROJECT_SCOPED_KEYS.has(key) && !project.hasProject
+}
 
 const menuGroups = [
   {
@@ -103,6 +111,7 @@ function isExpanded(key) {
 }
 
 function navigate(key) {
+  if (isDisabled(key)) return
   router.push(key)
 }
 
@@ -143,7 +152,7 @@ const expandedWidth = 200
                 v-for="child in group.children"
                 :key="child.key"
                 class="nav-item flyout-item"
-                :class="{ active: route.path === child.key }"
+                :class="{ active: route.path === child.key, disabled: isDisabled(child.key) }"
                 @click="navigate(child.key)"
               >
                 <component :is="child.icon" class="nav-icon" />
@@ -169,7 +178,7 @@ const expandedWidth = 200
                 v-for="child in group.children"
                 :key="child.key"
                 class="nav-item child"
-                :class="{ active: route.path === child.key }"
+                :class="{ active: route.path === child.key, disabled: isDisabled(child.key) }"
                 @click="navigate(child.key)"
               >
                 <component :is="child.icon" class="nav-icon" />
@@ -281,6 +290,7 @@ const expandedWidth = 200
 }
 .nav-item:hover { background: var(--color-hover); color: var(--color-primary); }
 .nav-item.active { background: var(--color-primary-bg); color: var(--color-primary); font-weight: 500; }
+.nav-item.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
 .nav-item.child { padding: 7px 12px; }
 .nav-item.child::before {

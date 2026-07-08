@@ -105,6 +105,46 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class ProjectInfo {
+	    dir: string;
+	    name: string;
+	    exists: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ProjectInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.dir = source["dir"];
+	        this.name = source["name"];
+	        this.exists = source["exists"];
+	    }
+	}
+	export class ProjectItem {
+	    dir: string;
+	    name: string;
+	    exists: boolean;
+	    initialized: boolean;
+	    agents: string[];
+	    repoCount: number;
+	    brokenCount: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ProjectItem(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.dir = source["dir"];
+	        this.name = source["name"];
+	        this.exists = source["exists"];
+	        this.initialized = source["initialized"];
+	        this.agents = source["agents"];
+	        this.repoCount = source["repoCount"];
+	        this.brokenCount = source["brokenCount"];
+	    }
+	}
 	export class RepoItem {
 	    type: string;
 	    name: string;

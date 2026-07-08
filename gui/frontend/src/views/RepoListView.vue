@@ -1,9 +1,12 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { message } from 'ant-design-vue'
 import { PlusOutlined, SyncOutlined, DeleteOutlined, BarChartOutlined } from '@ant-design/icons-vue'
+import { useProjectStore } from '../stores/project'
 
 const router = useRouter()
+const project = useProjectStore()
 const repos = ref([])
 const loading = ref(true)
 const searchText = ref('')
@@ -23,7 +26,9 @@ const columns = [
   { title: '操作', key: 'actions', width: 200 },
 ]
 
-onMounted(async () => {
+async function loadRepos() {
+  if (!project.hasProject) { repos.value = []; loading.value = false; return }
+  loading.value = true
   try {
     if (window.go?.main?.ReferenceApp) {
       repos.value = await window.go.main.ReferenceApp.ListRepos()
@@ -33,14 +38,18 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
+
+onMounted(loadRepos)
+watch(() => project.projectEpoch, loadRepos)
 
 async function updateRepo(name) {
   try {
     await window.go.main.ReferenceApp.UpdateRepo(name)
     repos.value = await window.go.main.ReferenceApp.ListRepos()
+    message.success('更新成功')
   } catch (e) {
-    console.error('Failed to update repo:', e)
+    message.error('更新失败: ' + e)
   }
 }
 
@@ -48,8 +57,9 @@ async function removeRepo(name) {
   try {
     await window.go.main.ReferenceApp.RemoveRepo(name, false)
     repos.value = await window.go.main.ReferenceApp.ListRepos()
+    message.success('已移除')
   } catch (e) {
-    console.error('Failed to remove repo:', e)
+    message.error('移除失败: ' + e)
   }
 }
 </script>
