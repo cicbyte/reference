@@ -93,74 +93,35 @@
          概念 <◇> :代码尖括号 < > 通过连接线指向中央菱形节点
          (代码 ↔ 引用知识核心)。透明背景,几何统一。
          ====================================================== -->
-    <svg class="design-svg" width="160" height="160" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+    <svg class="design-svg" width="160" height="160" viewBox="36 44 184 168" xmlns="http://www.w3.org/2000/svg">
       <!-- 左尖括号 < -->
       <path d="M94 86 L62 128 L94 170"
-            fill="none" stroke="#0d9488" stroke-width="20"
+            fill="none" stroke="#0d9488" stroke-width="22"
             stroke-linecap="round" stroke-linejoin="round" />
       <!-- 右尖括号 > -->
       <path d="M162 86 L194 128 L162 170"
-            fill="none" stroke="#0d9488" stroke-width="20"
+            fill="none" stroke="#0d9488" stroke-width="22"
             stroke-linecap="round" stroke-linejoin="round" />
       <!-- 连接线:括号 → 节点 -->
-      <path d="M94 128 L106 128"
-            fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round" />
-      <path d="M162 128 L150 128"
-            fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round" />
+      <path d="M94 128 L108 128"
+            fill="none" stroke="#0d9488" stroke-width="18" stroke-linecap="round" />
+      <path d="M162 128 L148 128"
+            fill="none" stroke="#0d9488" stroke-width="18" stroke-linecap="round" />
       <!-- 中央菱形节点(焦点,亮一档) -->
-      <path d="M128 104 L152 128 L128 152 L104 128 Z" fill="#2dd4bf" />
+      <path d="M128 102 L154 128 L128 154 L102 128 Z" fill="#2dd4bf" />
     </svg>
     <!-- ⬆⬆⬇  设计源结束  ⬆⬆⬆ -->
 
     <div class="section">
-      <h2>透明背景(棋盘格)</h2>
-      <div class="checker">
-        <!-- 各尺寸预览,验证小尺寸可辨识 -->
-        <svg class="design-svg" width="96" height="96" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-          <path d="M94 86 L62 128 L94 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M162 86 L194 128 L162 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M94 128 L106 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"/>
-          <path d="M162 128 L150 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"/>
-          <path d="M128 104 L152 128 L128 152 L104 128 Z" fill="#2dd4bf"/>
-        </svg>
-        <svg class="design-svg" width="48" height="48" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-          <path d="M94 86 L62 128 L94 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M162 86 L194 128 L162 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M94 128 L106 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"/>
-          <path d="M162 128 L150 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"/>
-          <path d="M128 104 L152 128 L128 152 L104 128 Z" fill="#2dd4bf"/>
-        </svg>
-        <svg class="design-svg" width="24" height="24" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-          <path d="M94 86 L62 128 L94 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M162 86 L194 128 L162 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M94 128 L106 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"/>
-          <path d="M162 128 L150 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"/>
-          <path d="M128 104 L152 128 L128 152 L104 128 Z" fill="#2dd4bf"/>
-        </svg>
-      </div>
+      <h2>透明背景(棋盘格)· 多尺寸</h2>
+      <div class="checker" id="checker"><!-- 由 JS 注入各尺寸 --></div>
     </div>
 
     <div class="section">
       <h2>浅色 / 深色 UI 适配</h2>
       <div class="surfaces">
-        <div class="surface light">
-          <svg class="design-svg" width="56" height="56" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-            <path d="M94 86 L62 128 L94 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M162 86 L194 128 L162 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M94 128 L106 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"/>
-            <path d="M162 128 L150 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"/>
-            <path d="M128 104 L152 128 L128 152 L104 128 Z" fill="#2dd4bf"/>
-          </svg>
-        </div>
-        <div class="surface dark">
-          <svg class="design-svg" width="56" height="56" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
-            <path d="M94 86 L62 128 L94 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M162 86 L194 128 L162 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M94 128 L106 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"/>
-            <path d="M162 128 L150 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"/>
-            <path d="M128 104 L152 128 L128 152 L104 128 Z" fill="#2dd4bf"/>
-          </svg>
-        </div>
+        <div class="surface light" id="surf-light"></div>
+        <div class="surface dark" id="surf-dark"></div>
       </div>
     </div>
 
@@ -176,6 +137,29 @@
   <script>
     const SIZES = [256, 128, 64, 32];
     const src = document.querySelector('.design-svg').outerHTML;
+
+    // 透明棋盘格预览(多尺寸,验证小尺寸可辨识)
+    const checker = document.getElementById('checker');
+    [96, 48, 24].forEach((s) => {
+      const wrap = document.createElement('div');
+      wrap.innerHTML = src;
+      const svg = wrap.firstElementChild;
+      svg.setAttribute('width', s);
+      svg.setAttribute('height', s);
+      checker.appendChild(svg);
+    });
+
+    // 浅/深底适配预览
+    [['surf-light', 56], ['surf-dark', 56]].forEach(([id, s]) => {
+      const wrap = document.createElement('div');
+      wrap.innerHTML = src;
+      const svg = wrap.firstElementChild;
+      svg.setAttribute('width', s);
+      svg.setAttribute('height', s);
+      document.getElementById(id).appendChild(svg);
+    });
+
+    // 截图区:精确尺寸盒子供脚本截取
     const area = document.querySelector('.capture-area');
     SIZES.forEach((s) => {
       const wrap = document.createElement('div');

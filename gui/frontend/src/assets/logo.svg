@@ -1,11 +1,11 @@
-<svg width="160" height="160" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+<svg width="160" height="160" viewBox="36 44 184 168" xmlns="http://www.w3.org/2000/svg">
       <!-- 左尖括号 < -->
-      <path d="M94 86 L62 128 L94 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"></path>
+      <path d="M94 86 L62 128 L94 170" fill="none" stroke="#0d9488" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"></path>
       <!-- 右尖括号 > -->
-      <path d="M162 86 L194 128 L162 170" fill="none" stroke="#0d9488" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"></path>
+      <path d="M162 86 L194 128 L162 170" fill="none" stroke="#0d9488" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"></path>
       <!-- 连接线:括号 → 节点 -->
-      <path d="M94 128 L106 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"></path>
-      <path d="M162 128 L150 128" fill="none" stroke="#0d9488" stroke-width="16" stroke-linecap="round"></path>
+      <path d="M94 128 L108 128" fill="none" stroke="#0d9488" stroke-width="18" stroke-linecap="round"></path>
+      <path d="M162 128 L148 128" fill="none" stroke="#0d9488" stroke-width="18" stroke-linecap="round"></path>
       <!-- 中央菱形节点(焦点,亮一档) -->
-      <path d="M128 104 L152 128 L128 152 L104 128 Z" fill="#2dd4bf"></path>
+      <path d="M128 102 L154 128 L128 154 L102 128 Z" fill="#2dd4bf"></path>
     </svg>
