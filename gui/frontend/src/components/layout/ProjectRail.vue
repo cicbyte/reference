@@ -13,6 +13,12 @@ import {
 import { useProjectStore } from '../../stores/project'
 import { useLayoutStore } from '../../stores/layout'
 
+const props = defineProps({
+  // When false (global-scope pages) the rail slides out to width:0 instead of
+  // being removed from the DOM, so the width transition animates smoothly.
+  visible: { type: Boolean, default: true },
+})
+
 const project = useProjectStore()
 const layout = useLayoutStore()
 const collapsedHover = ref(null)
@@ -28,16 +34,12 @@ async function onAdd() {
     message.success(`已切换到 ${project.currentName}`)
   }
 }
-
-const collapsedWidth = 60
-const expandedWidth = 200
 </script>
 
 <template>
   <div
     class="project-rail"
-    :class="{ collapsed: layout.projectRailCollapsed }"
-    :style="{ width: layout.projectRailCollapsed ? collapsedWidth + 'px' : expandedWidth + 'px' }"
+    :class="{ collapsed: layout.projectRailCollapsed, hidden: !props.visible }"
   >
     <div class="rail-title">
       <button
@@ -142,12 +144,26 @@ const expandedWidth = 200
   display: flex;
   flex-direction: column;
   height: 100vh;
+  width: 200px;
+  min-width: 0;
   border-right: 1px solid var(--color-border);
   background: var(--color-surface);
   flex-shrink: 0;
   overflow: hidden;
-  /* width animation — driven by the inline :style binding */
-  transition: width var(--transition-normal);
+  /* width animates across all three states: expanded(200) → collapsed(60) → hidden(0) */
+  transition: width var(--transition-normal), border-color var(--transition-normal);
+}
+
+/* collapsed (toggle button) — narrow icon-only rail */
+.project-rail.collapsed {
+  width: 60px;
+}
+
+/* hidden (global-scope page) — slide fully out of the layout */
+.project-rail.hidden {
+  width: 0;
+  border-right-color: transparent;
+  pointer-events: none;
 }
 
 /* ---- title bar ---- */

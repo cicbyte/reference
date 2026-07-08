@@ -16,7 +16,7 @@ const showProjectRail = computed(() => !!route.meta?.projectScoped)
 
 <template>
   <div class="app-layout">
-    <ProjectRail v-if="showProjectRail" />
+    <ProjectRail :visible="showProjectRail" />
     <Sidebar />
     <div class="app-right">
       <Navbar />
