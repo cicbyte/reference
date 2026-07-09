@@ -66,6 +66,10 @@ export function ListAgents() {
   return window['go']['main']['ReferenceApp']['ListAgents']();
 }
 
+export function ListCachedRepos() {
+  return window['go']['main']['ReferenceApp']['ListCachedRepos']();
+}
+
 export function ListProjects() {
   return window['go']['main']['ReferenceApp']['ListProjects']();
 }
@@ -80,6 +84,10 @@ export function OpenInExplorer(arg1) {
 
 export function PickProjectFolder() {
   return window['go']['main']['ReferenceApp']['PickProjectFolder']();
+}
+
+export function PurgeCachedRepo(arg1) {
+  return window['go']['main']['ReferenceApp']['PurgeCachedRepo'](arg1);
 }
 
 export function RemoveProject(arg1, arg2) {

@@ -10,6 +10,7 @@ const routes = [
   { path: '/repos/browse/:name', name: 'repo-browse', component: () => import('../views/BrowseRepoView.vue'), meta: { title: '代码浏览', projectScoped: true } },
   { path: '/doctor', name: 'doctor', component: () => import('../views/DoctorView.vue'), meta: { title: '诊断修复', projectScoped: true } },
   { path: '/global', name: 'global', component: () => import('../views/GlobalListView.vue'), meta: { title: '全局项目', projectScoped: false } },
+  { path: '/cache', name: 'cache', component: () => import('../views/CacheReposView.vue'), meta: { title: '仓库缓存', projectScoped: false } },
   { path: '/global/stats', name: 'global-stats', component: () => import('../views/GlobalStatsView.vue'), meta: { title: '全局统计', projectScoped: false } },
   { path: '/global/gc', name: 'global-gc', component: () => import('../views/GlobalGCView.vue'), meta: { title: '垃圾回收', projectScoped: false } },
   { path: '/wiki', name: 'wiki', component: () => import('../views/WikiBrowseView.vue'), meta: { title: '知识库', projectScoped: false } },

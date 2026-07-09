@@ -34,6 +34,8 @@ export function InitProject(arg1:Array<string>):Promise<void>;
 
 export function ListAgents():Promise<Array<main.AgentInfo>>;
 
+export function ListCachedRepos():Promise<Array<main.CachedRepoItem>>;
+
 export function ListProjects():Promise<Array<main.ProjectItem>>;
 
 export function ListRepos():Promise<Array<main.RepoItem>>;
@@ -41,6 +43,8 @@ export function ListRepos():Promise<Array<main.RepoItem>>;
 export function OpenInExplorer(arg1:string):Promise<void>;
 
 export function PickProjectFolder():Promise<string>;
+
+export function PurgeCachedRepo(arg1:string):Promise<void>;
 
 export function RemoveProject(arg1:string,arg2:boolean):Promise<void>;
 

@@ -91,6 +91,30 @@ export namespace main {
 	        this.notFound = source["notFound"];
 	    }
 	}
+	export class CachedRepoItem {
+	    name: string;
+	    cachePath: string;
+	    size: number;
+	    refCount: number;
+	    projects: string[];
+	    branch: string;
+	    commit: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new CachedRepoItem(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.cachePath = source["cachePath"];
+	        this.size = source["size"];
+	        this.refCount = source["refCount"];
+	        this.projects = source["projects"];
+	        this.branch = source["branch"];
+	        this.commit = source["commit"];
+	    }
+	}
 	export class DoctorCheck {
 	    group: string;
 	    name: string;

@@ -233,3 +233,117 @@ func (a *ReferenceApp) BrowseRepoSearch(refName string, query string) ([]Browser
 // errWalkDone is a sentinel used by BrowseRepoSearch to stop walking once the
 // result cap is reached.
 var errWalkDone = fmt.Errorf("walk done")
+
+// =====================================================================
+// Global cache management (deduplicated view of all cached remote repos)
+// =====================================================================
+
+// CachedRepoItem describes one unique cached repo (deduplicated by CachePath).
+type CachedRepoItem struct {
+	Name      string   `json:"name"`      // filepath.Base(cachePath)
+	CachePath string   `json:"cachePath"`
+	Size      int64    `json:"size"`      // bytes
+	RefCount  int      `json:"refCount"`  // how many projects reference it
+	Projects  []string `json:"projects"`  // project dirs referencing it
+	Branch    string   `json:"branch"`
+	Commit    string   `json:"commit"`
+}
+
+// ListCachedRepos returns all unique remote-repo caches, deduplicated by
+// CachePath, enriched with disk size, reference count, and git metadata.
+func (a *ReferenceApp) ListCachedRepos() ([]CachedRepoItem, error) {
+	db, err := utils.GetGormDB()
+	if err != nil {
+		return nil, err
+	}
+	indexer := repo.NewRepoIndexer(db)
+	allRepos, err := indexer.ListAll()
+	if err != nil {
+		return nil, err
+	}
+
+	// group by CachePath (remote only, non-empty)
+	type cacheInfo struct {
+		projects map[string]bool
+	}
+	groups := map[string]*cacheInfo{}
+	order := []string{} // preserve first-seen order
+	for projectDir, repos := range allRepos {
+		for _, r := range repos {
+			if r.RefType != "remote" || r.CachePath == "" {
+				continue
+			}
+			if _, ok := groups[r.CachePath]; !ok {
+				groups[r.CachePath] = &cacheInfo{projects: map[string]bool{}}
+				order = append(order, r.CachePath)
+			}
+			groups[r.CachePath].projects[projectDir] = true
+		}
+	}
+
+	items := make([]CachedRepoItem, 0, len(order))
+	for _, cachePath := range order {
+		info := groups[cachePath]
+		projects := make([]string, 0, len(info.projects))
+		for dir := range info.projects {
+			projects = append(projects, dir)
+		}
+		sort.Strings(projects)
+
+		item := CachedRepoItem{
+			Name:      filepath.Base(cachePath),
+			CachePath: cachePath,
+			Size:      walkDirSize(cachePath),
+			RefCount:  len(projects),
+			Projects:  projects,
+		}
+		// best-effort metadata
+		if branch, commit, _, err := repo.GetRepoMeta(cachePath); err == nil {
+			item.Branch = branch
+			item.Commit = commit
+		}
+		items = append(items, item)
+	}
+
+	// sort by size desc (biggest first — most useful for cache cleanup)
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].Size > items[j].Size
+	})
+	return items, nil
+}
+
+// PurgeCachedRepo deletes a cache directory from disk. The path must live
+// inside the repos cache dir (safety guard against arbitrary deletion).
+// DB records are NOT touched — the repo can be re-cloned on next `add`.
+func (a *ReferenceApp) PurgeCachedRepo(cachePath string) error {
+	if cachePath == "" {
+		return fmt.Errorf("路径不能为空")
+	}
+	reposDir := utils.ConfigInstance.GetReposDir()
+	cleanPath := filepath.Clean(cachePath)
+	cleanBase := filepath.Clean(reposDir)
+	if !strings.HasPrefix(cleanPath, cleanBase) {
+		return fmt.Errorf("路径不在缓存目录内，拒绝删除")
+	}
+	if _, err := os.Stat(cleanPath); os.IsNotExist(err) {
+		return fmt.Errorf("缓存目录不存在")
+	}
+	return repo.PurgeCache(cleanPath)
+}
+
+// walkDirSize returns the total byte size of all files under path (recursive).
+func walkDirSize(path string) int64 {
+	var size int64
+	_ = filepath.WalkDir(path, func(_ string, d os.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		if !d.IsDir() {
+			if info, ierr := d.Info(); ierr == nil {
+				size += info.Size()
+			}
+		}
+		return nil
+	})
+	return size
+}

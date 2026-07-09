@@ -10,6 +10,7 @@ import {
   UnorderedListOutlined,
   ApartmentOutlined,
   DatabaseOutlined,
+  CloudServerOutlined,
   DeleteOutlined,
   PieChartOutlined,
   ReadOutlined,
@@ -56,6 +57,7 @@ const menuGroups = [
     key: 'global', label: '全局管理', icon: ApartmentOutlined,
     children: [
       { key: '/global', icon: DatabaseOutlined, label: '项目列表' },
+      { key: '/cache', icon: CloudServerOutlined, label: '仓库缓存' },
       { key: '/global/stats', icon: PieChartOutlined, label: '全局统计' },
       { key: '/global/gc', icon: DeleteOutlined, label: '垃圾回收' },
     ],
