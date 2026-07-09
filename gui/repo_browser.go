@@ -230,6 +230,154 @@ func (a *ReferenceApp) BrowseRepoSearch(refName string, query string) ([]Browser
 	return matches, nil
 }
 
+// =====================================================================
+// Shared path-based browsing helpers (used by both refName and cachePath
+// variants — the actual file operations are identical once you have a root).
+// =====================================================================
+
+func browsePathList(rootPath, subPath string) ([]BrowserFileNode, error) {
+	target := rootPath
+	if subPath != "" {
+		target = filepath.Join(rootPath, subPath)
+	}
+	if !strings.HasPrefix(filepath.Clean(target), filepath.Clean(rootPath)) {
+		return nil, fmt.Errorf("路径越界")
+	}
+	entries, err := os.ReadDir(target)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []BrowserFileNode{}, nil
+		}
+		return nil, fmt.Errorf("读取目录失败: %w", err)
+	}
+	nodes := make([]BrowserFileNode, 0, len(entries))
+	for _, e := range entries {
+		nm := e.Name()
+		if browserSkipNames[nm] {
+			continue
+		}
+		info, ierr := e.Info()
+		size := int64(0)
+		if ierr == nil {
+			size = info.Size()
+		}
+		rel := nm
+		if subPath != "" {
+			rel = subPath + "/" + nm
+		}
+		nodes = append(nodes, BrowserFileNode{
+			Name: nm, Path: rel, IsDir: e.IsDir(), Size: size,
+		})
+	}
+	sort.Slice(nodes, func(i, j int) bool {
+		if nodes[i].IsDir != nodes[j].IsDir {
+			return nodes[i].IsDir
+		}
+		return strings.ToLower(nodes[i].Name) < strings.ToLower(nodes[j].Name)
+	})
+	return nodes, nil
+}
+
+func browsePathRead(rootPath, relPath string) (BrowserFileResult, error) {
+	full := filepath.Join(rootPath, relPath)
+	if !strings.HasPrefix(filepath.Clean(full), filepath.Clean(rootPath)) {
+		return BrowserFileResult{}, fmt.Errorf("路径越界")
+	}
+	data, err := os.ReadFile(full)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return BrowserFileResult{NotFound: true}, nil
+		}
+		return BrowserFileResult{}, fmt.Errorf("读取文件失败: %w", err)
+	}
+	if info, serr := os.Stat(full); serr == nil && info.IsDir() {
+		return BrowserFileResult{NotFound: true}, nil
+	}
+	scanLen := len(data)
+	if scanLen > 8192 {
+		scanLen = 8192
+	}
+	if bytes.IndexByte(data[:scanLen], 0) >= 0 {
+		return BrowserFileResult{Binary: true}, nil
+	}
+	content := string(data)
+	if len(content) > maxBrowseFileSize {
+		content = content[:maxBrowseFileSize] + "\n\n…（文件超过 1MB，已截断显示）"
+	}
+	return BrowserFileResult{
+		Content: content,
+		Lines:   strings.Count(content, "\n") + 1,
+	}, nil
+}
+
+func browsePathSearch(rootPath, query string) ([]BrowserFileNode, error) {
+	q := strings.ToLower(strings.TrimSpace(query))
+	if q == "" {
+		return []BrowserFileNode{}, nil
+	}
+	const maxResults = 500
+	matches := make([]BrowserFileNode, 0, 64)
+	walkErr := filepath.WalkDir(rootPath, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		base := d.Name()
+		if d.IsDir() {
+			if browserSkipNames[base] {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !strings.Contains(strings.ToLower(base), q) {
+			return nil
+		}
+		rel, rerr := filepath.Rel(rootPath, path)
+		if rerr != nil {
+			return nil
+		}
+		rel = filepath.ToSlash(rel)
+		info, _ := d.Info()
+		size := int64(0)
+		if info != nil {
+			size = info.Size()
+		}
+		matches = append(matches, BrowserFileNode{
+			Name: base, Path: rel, IsDir: false, Size: size,
+		})
+		if len(matches) >= maxResults {
+			return errWalkDone
+		}
+		return nil
+	})
+	if walkErr != nil && walkErr != errWalkDone {
+		return nil, fmt.Errorf("搜索失败: %w", walkErr)
+	}
+	sort.Slice(matches, func(i, j int) bool {
+		return strings.ToLower(matches[i].Path) < strings.ToLower(matches[j].Path)
+	})
+	return matches, nil
+}
+
+// =====================================================================
+// Path-based browsing (no project context — for the global cache view)
+//
+// Same semantics as BrowseRepoList/Read/Search but keyed by an absolute
+// cachePath instead of refName+project. Lets the cache-repos page browse
+// a cached repo without switching projects.
+// =====================================================================
+
+func (a *ReferenceApp) BrowseCacheByPathList(cachePath string, subPath string) ([]BrowserFileNode, error) {
+	return browsePathList(cachePath, subPath)
+}
+
+func (a *ReferenceApp) BrowseCacheByPathRead(cachePath string, relPath string) (BrowserFileResult, error) {
+	return browsePathRead(cachePath, relPath)
+}
+
+func (a *ReferenceApp) BrowseCacheByPathSearch(cachePath string, query string) ([]BrowserFileNode, error) {
+	return browsePathSearch(cachePath, query)
+}
+
 // errWalkDone is a sentinel used by BrowseRepoSearch to stop walking once the
 // result cap is reached.
 var errWalkDone = fmt.Errorf("walk done")
@@ -293,7 +441,7 @@ func (a *ReferenceApp) ListCachedRepos() ([]CachedRepoItem, error) {
 		item := CachedRepoItem{
 			Name:      filepath.Base(cachePath),
 			CachePath: cachePath,
-			Size:      walkDirSize(cachePath),
+			Size:      0, // fetched async by GetCacheSize to keep this call fast
 			RefCount:  len(projects),
 			Projects:  projects,
 		}
@@ -305,11 +453,20 @@ func (a *ReferenceApp) ListCachedRepos() ([]CachedRepoItem, error) {
 		items = append(items, item)
 	}
 
-	// sort by size desc (biggest first — most useful for cache cleanup)
+	// sort by name (size is loaded async — frontend can re-sort if desired)
 	sort.Slice(items, func(i, j int) bool {
-		return items[i].Size > items[j].Size
+		return strings.ToLower(items[i].Name) < strings.ToLower(items[j].Name)
 	})
 	return items, nil
+}
+
+// GetCacheSize returns the total disk size (bytes) of a cache directory.
+// Called async by the frontend so the initial list loads instantly.
+func (a *ReferenceApp) GetCacheSize(cachePath string) (int64, error) {
+	if cachePath == "" {
+		return 0, nil
+	}
+	return walkDirSize(cachePath), nil
 }
 
 // PurgeCachedRepo deletes a cache directory from disk. The path must live

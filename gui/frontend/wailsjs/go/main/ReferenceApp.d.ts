@@ -4,6 +4,12 @@ import {main} from '../models';
 
 export function AddRepo(arg1:string,arg2:boolean,arg3:string,arg4:string):Promise<void>;
 
+export function BrowseCacheByPathList(arg1:string,arg2:string):Promise<Array<main.BrowserFileNode>>;
+
+export function BrowseCacheByPathRead(arg1:string,arg2:string):Promise<main.BrowserFileResult>;
+
+export function BrowseCacheByPathSearch(arg1:string,arg2:string):Promise<Array<main.BrowserFileNode>>;
+
 export function BrowseRepoList(arg1:string,arg2:string):Promise<Array<main.BrowserFileNode>>;
 
 export function BrowseRepoRead(arg1:string,arg2:string):Promise<main.BrowserFileResult>;
@@ -17,6 +23,8 @@ export function CopyPath(arg1:string):Promise<void>;
 export function DoctorProject(arg1:string):Promise<main.DoctorResult>;
 
 export function GetAppConfig():Promise<main.AppConfigDTO>;
+
+export function GetCacheSize(arg1:string):Promise<number>;
 
 export function GetCurrentProject():Promise<main.ProjectInfo>;
 

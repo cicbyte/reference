@@ -6,6 +6,18 @@ export function AddRepo(arg1, arg2, arg3, arg4) {
   return window['go']['main']['ReferenceApp']['AddRepo'](arg1, arg2, arg3, arg4);
 }
 
+export function BrowseCacheByPathList(arg1, arg2) {
+  return window['go']['main']['ReferenceApp']['BrowseCacheByPathList'](arg1, arg2);
+}
+
+export function BrowseCacheByPathRead(arg1, arg2) {
+  return window['go']['main']['ReferenceApp']['BrowseCacheByPathRead'](arg1, arg2);
+}
+
+export function BrowseCacheByPathSearch(arg1, arg2) {
+  return window['go']['main']['ReferenceApp']['BrowseCacheByPathSearch'](arg1, arg2);
+}
+
 export function BrowseRepoList(arg1, arg2) {
   return window['go']['main']['ReferenceApp']['BrowseRepoList'](arg1, arg2);
 }
@@ -32,6 +44,10 @@ export function DoctorProject(arg1) {
 
 export function GetAppConfig() {
   return window['go']['main']['ReferenceApp']['GetAppConfig']();
+}
+
+export function GetCacheSize(arg1) {
+  return window['go']['main']['ReferenceApp']['GetCacheSize'](arg1);
 }
 
 export function GetCurrentProject() {
