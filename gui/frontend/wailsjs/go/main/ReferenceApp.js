@@ -94,6 +94,10 @@ export function ListRepos() {
   return window['go']['main']['ReferenceApp']['ListRepos']();
 }
 
+export function ListWikiEntries(arg1) {
+  return window['go']['main']['ReferenceApp']['ListWikiEntries'](arg1);
+}
+
 export function OpenInExplorer(arg1) {
   return window['go']['main']['ReferenceApp']['OpenInExplorer'](arg1);
 }
@@ -104,6 +108,10 @@ export function PickProjectFolder() {
 
 export function PurgeCachedRepo(arg1) {
   return window['go']['main']['ReferenceApp']['PurgeCachedRepo'](arg1);
+}
+
+export function ReadWikiEntry(arg1, arg2) {
+  return window['go']['main']['ReferenceApp']['ReadWikiEntry'](arg1, arg2);
 }
 
 export function RemoveProject(arg1, arg2) {

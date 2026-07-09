@@ -13,8 +13,7 @@ const routes = [
   { path: '/cache', name: 'cache', component: () => import('../views/CacheReposView.vue'), meta: { title: '仓库缓存', projectScoped: false } },
   { path: '/global/stats', name: 'global-stats', component: () => import('../views/GlobalStatsView.vue'), meta: { title: '全局统计', projectScoped: false } },
   { path: '/global/gc', name: 'global-gc', component: () => import('../views/GlobalGCView.vue'), meta: { title: '垃圾回收', projectScoped: false } },
-  { path: '/wiki', name: 'wiki', component: () => import('../views/WikiBrowseView.vue'), meta: { title: '知识库', projectScoped: false } },
-  { path: '/wiki/sync', name: 'wiki-sync', component: () => import('../views/WikiSyncView.vue'), meta: { title: '知识同步', projectScoped: false } },
+  { path: '/wiki', name: 'wiki', component: () => import('../views/WikiView.vue'), meta: { title: '知识库', projectScoped: false } },
   { path: '/settings', name: 'settings', component: () => import('../views/SettingsView.vue'), meta: { title: '设置', projectScoped: false } },
 ]
 

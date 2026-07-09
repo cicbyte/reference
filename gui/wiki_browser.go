@@ -1,0 +1,215 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+
+	"github.com/cicbyte/reference/internal/utils"
+)
+
+// =====================================================================
+// Wiki browser — list and read knowledge files (reference.md + topic .md)
+// from the global wiki/ and localwiki/ directories.
+// =====================================================================
+
+// WikiEntry describes one knowledge file inside wiki/ or localwiki/.
+type WikiEntry struct {
+	RepoName    string `json:"repoName"`    // last path segment (the repo)
+	Platform    string `json:"platform"`    // github.com / gitlab.com / 本地
+	Namespace   string `json:"namespace"`   // owner/org (empty for local)
+	Source      string `json:"source"`      // "remote" | "local"
+	RelPath     string `json:"relPath"`     // path relative to wiki root (slash-joined)
+	FileName    string `json:"fileName"`    // reference.md / <topic>.md
+	Commit      string `json:"commit"`      // from frontmatter
+	Branch      string `json:"branch"`      // from frontmatter
+	Description string `json:"description"` // from frontmatter
+	ExploredAt  string `json:"exploredAt"`  // from frontmatter
+	ModifiedAt  string `json:"modifiedAt"`  // file mtime (RFC3339)
+}
+
+// resolveWikiRoot returns the on-disk directory for the given source.
+func resolveWikiRoot(source string) (string, error) {
+	switch source {
+	case "remote", "":
+		return utils.ConfigInstance.GetWikiDir(), nil
+	case "local":
+		return utils.ConfigInstance.GetLocalWikiDir(), nil
+	default:
+		return "", fmt.Errorf("未知 source: %s", source)
+	}
+}
+
+// ListWikiEntries walks the wiki (source="remote") or localwiki (source="local")
+// directory and returns every .md file with parsed frontmatter. source="all"
+// merges both.
+func (a *ReferenceApp) ListWikiEntries(source string) ([]WikiEntry, error) {
+	sources := []string{"remote"}
+	if source == "local" {
+		sources = []string{"local"}
+	} else if source == "all" {
+		sources = []string{"remote", "local"}
+	}
+
+	entries := make([]WikiEntry, 0)
+	for _, src := range sources {
+		root, err := resolveWikiRoot(src)
+		if err != nil {
+			continue
+		}
+		walkErr := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+			if err != nil {
+				return nil
+			}
+			// skip .git
+			if d.IsDir() {
+				if d.Name() == ".git" {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+			if !strings.HasSuffix(d.Name(), ".md") {
+				return nil
+			}
+			rel, rerr := filepath.Rel(root, path)
+			if rerr != nil {
+				return nil
+			}
+			rel = filepath.ToSlash(rel)
+			entry := parseWikiEntry(rel, src)
+			// file mtime
+			if info, ierr := d.Info(); ierr == nil {
+				entry.ModifiedAt = info.ModTime().Format("2006-01-02")
+			}
+			entries = append(entries, entry)
+			return nil
+		})
+		if walkErr != nil {
+			return nil, walkErr
+		}
+	}
+
+	// sort: source (remote first) → platform → namespace → repoName → fileName
+	sort.Slice(entries, func(i, j int) bool {
+		a, b := entries[i], entries[j]
+		if a.Source != b.Source {
+			return a.Source == "remote"
+		}
+		if a.Platform != b.Platform {
+			return a.Platform < b.Platform
+		}
+		if a.Namespace != b.Namespace {
+			return a.Namespace < b.Namespace
+		}
+		if a.RepoName != b.RepoName {
+			return a.RepoName < b.RepoName
+		}
+		return a.FileName < b.FileName
+	})
+	return entries, nil
+}
+
+// ReadWikiEntry returns the full markdown content of a wiki file.
+func (a *ReferenceApp) ReadWikiEntry(source string, relPath string) (string, error) {
+	root, err := resolveWikiRoot(source)
+	if err != nil {
+		return "", err
+	}
+	full := filepath.Join(root, relPath)
+	if !strings.HasPrefix(filepath.Clean(full), filepath.Clean(root)) {
+		return "", fmt.Errorf("路径越界")
+	}
+	data, err := os.ReadFile(full)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", fmt.Errorf("文件不存在")
+		}
+		return "", fmt.Errorf("读取失败: %w", err)
+	}
+	return string(data), nil
+}
+
+// parseWikiEntry builds a WikiEntry from a relative path + frontmatter.
+// Path patterns:
+//   remote: <platform>/<namespace>/<repo>/<file.md>
+//   local:  local/<repo>/<file.md>  OR  <repo>/<file.md>  (legacy)
+func parseWikiEntry(rel, source string) WikiEntry {
+	parts := strings.Split(rel, "/")
+	e := WikiEntry{
+		Source:   source,
+		RelPath:  rel,
+		FileName: parts[len(parts)-1],
+	}
+	if source == "remote" && len(parts) >= 3 {
+		e.Platform = parts[0]
+		e.Namespace = parts[1]
+		e.RepoName = parts[2]
+	} else if source == "local" {
+		// local/<repo>/<file> or <repo>/<file>
+		if len(parts) >= 3 && parts[0] == "local" {
+			e.RepoName = parts[1]
+		} else if len(parts) >= 2 {
+			e.RepoName = parts[0]
+		}
+		e.Platform = "本地"
+	}
+
+	// best-effort frontmatter parse (only for reference.md — topic files may lack it)
+	data, err := os.ReadFile(filepath.Join(resolveWikiRootSafe(source), rel))
+	if err != nil {
+		return e
+	}
+	fm := parseFrontmatter(string(data))
+	e.Commit = fm["commit"]
+	e.Branch = fm["branch"]
+	e.Description = fm["description"]
+	e.ExploredAt = fm["explored_at"]
+	if e.Description == "" {
+		e.Description = fm["repo"]
+	}
+	return e
+}
+
+// resolveWikiRootSafe is resolveWikiRoot without error return (for parseWikiEntry).
+func resolveWikiRootSafe(source string) string {
+	root, _ := resolveWikiRoot(source)
+	return root
+}
+
+// parseFrontmatter extracts top-level key: value pairs from the YAML
+// frontmatter block (between leading --- markers). Lightweight — no nested
+// structures, no external yaml dependency.
+func parseFrontmatter(content string) map[string]string {
+	result := map[string]string{}
+	// frontmatter must start at the very beginning
+	if !strings.HasPrefix(content, "---") {
+		return result
+	}
+	// find the closing ---
+	rest := content[3:]
+	end := strings.Index(rest, "\n---")
+	if end < 0 {
+		return result
+	}
+	block := rest[:end]
+	for _, line := range strings.Split(block, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		colon := strings.Index(line, ":")
+		if colon < 0 {
+			continue
+		}
+		key := strings.TrimSpace(line[:colon])
+		val := strings.TrimSpace(line[colon+1:])
+		// strip quotes
+		if len(val) >= 2 && (val[0] == '"' || val[0] == '\'') {
+			val = val[1 : len(val)-1]
+		}
+		result[key] = val
+	}
+	return result
+}

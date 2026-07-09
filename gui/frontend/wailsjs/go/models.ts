@@ -307,6 +307,38 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class WikiEntry {
+	    repoName: string;
+	    platform: string;
+	    namespace: string;
+	    source: string;
+	    relPath: string;
+	    fileName: string;
+	    commit: string;
+	    branch: string;
+	    description: string;
+	    exploredAt: string;
+	    modifiedAt: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new WikiEntry(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.repoName = source["repoName"];
+	        this.platform = source["platform"];
+	        this.namespace = source["namespace"];
+	        this.source = source["source"];
+	        this.relPath = source["relPath"];
+	        this.fileName = source["fileName"];
+	        this.commit = source["commit"];
+	        this.branch = source["branch"];
+	        this.description = source["description"];
+	        this.exploredAt = source["exploredAt"];
+	        this.modifiedAt = source["modifiedAt"];
+	    }
+	}
 
 }
 

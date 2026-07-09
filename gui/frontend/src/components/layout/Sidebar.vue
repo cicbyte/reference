@@ -14,7 +14,6 @@ import {
   DeleteOutlined,
   PieChartOutlined,
   ReadOutlined,
-  SyncOutlined,
   SettingOutlined,
   BulbOutlined,
   BulbFilled,
@@ -65,8 +64,7 @@ const menuGroups = [
   {
     key: 'wiki', label: '知识库', icon: ReadOutlined,
     children: [
-      { key: '/wiki', icon: ReadOutlined, label: '浏览知识库' },
-      { key: '/wiki/sync', icon: SyncOutlined, label: '同步' },
+      { key: '/wiki', icon: ReadOutlined, label: '知识库' },
     ],
   },
   {
