@@ -423,6 +423,8 @@ func (a *ReferenceApp) ListCachedRepos() ([]CachedRepoItem, error) {
 		host      string
 		namespace string
 		repoName  string
+		branch    string
+		commit    string
 	}
 	groups := map[string]*cacheInfo{}
 	order := []string{}
@@ -444,6 +446,8 @@ func (a *ReferenceApp) ListCachedRepos() ([]CachedRepoItem, error) {
 					host:      r.Host,
 					namespace: r.Namespace,
 					repoName:  r.RepoName,
+					branch:    r.Branch,
+					commit:    r.Commit,
 				}
 				order = append(order, path)
 			}
@@ -481,10 +485,8 @@ func (a *ReferenceApp) ListCachedRepos() ([]CachedRepoItem, error) {
 			Size:      0, // fetched async by GetCacheSize
 			RefCount:  len(projects),
 			Projects:  projects,
-		}
-		if branch, commit, _, err := repo.GetRepoMeta(path); err == nil {
-			item.Branch = branch
-			item.Commit = commit
+			Branch:    info.branch, // from DB — no go-git I/O
+			Commit:    info.commit,
 		}
 		items = append(items, item)
 	}
