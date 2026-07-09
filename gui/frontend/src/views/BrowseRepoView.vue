@@ -126,19 +126,26 @@ async function openFile(node) {
     const res = await app.BrowseRepoRead(refName.value, node.path)
     fileInfo.value = { binary: res.binary, notFound: res.notFound, lines: res.lines }
     fileContent.value = res.content
-    if (!res.binary && !res.notFound && !isMarkdown.value) {
-      await nextTick()
-      highlightCode()
-    }
   } catch (e) {
     message.error('读取文件失败: ' + e)
   } finally {
     fileLoading.value = false
+    // highlight AFTER loading=false so the <code> DOM is actually rendered.
+    // Two nextTick calls guard against Vue batching the v-if/v-else flip.
+    if (!fileInfo.value.binary && !fileInfo.value.notFound && !isMarkdown.value) {
+      await nextTick()
+      await nextTick()
+      highlightCode()
+    }
   }
 }
 
 function highlightCode() {
-  if (!codeRef.value) return
+  if (!codeRef.value) {
+    // DOM not ready yet — retry on next frame
+    requestAnimationFrame(highlightCode)
+    return
+  }
   const lang = hljsLang(filename.value)
   try {
     if (lang && hljs.getLanguage(lang)) {
