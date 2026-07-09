@@ -9,6 +9,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/cicbyte/reference/internal/common"
 	"github.com/cicbyte/reference/internal/utils"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -71,6 +72,18 @@ func (a *ReferenceApp) startup(ctx context.Context) {
 	a.appMu.Lock()
 	a.ctx = ctx
 	a.appMu.Unlock()
+
+	// App init — mirrors cmd/root.go init() so the GUI process loads the same
+	// config (custom repos_path / wiki_path), creates dirs, opens the DB, etc.
+	// Without this, GetWikiDir()/GetReposDir() return default paths and ignore
+	// the user's config.yaml overrides.
+	go func() {
+		_ = utils.InitAppDirs()
+		common.AppConfigModel = utils.ConfigInstance.LoadConfig()
+		utils.ConfigInstance.ApplyConfig(common.AppConfigModel)
+		_ = utils.InitDataDirs()
+		_, _ = utils.GetGormDB()
+	}()
 
 	go func() {
 		sigCh := make(chan os.Signal, 1)
