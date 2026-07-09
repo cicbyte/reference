@@ -12,6 +12,7 @@ import {
   CodeOutlined,
   EyeOutlined,
   ArrowLeftOutlined,
+  CaretRightFilled,
 } from '@ant-design/icons-vue'
 import hljs from 'highlight.js/lib/core'
 import 'highlight.js/styles/github-dark.css'
@@ -99,6 +100,66 @@ async function fetchSize(repo) {
 }
 
 onMounted(loadRepos)
+
+// ---- grouped tree: platform → namespace → repos ----
+const expandedPlatforms = ref(new Set())
+const expandedNamespaces = ref(new Set())
+
+const groupedRepos = computed(() => {
+  // { platform: { namespace: [repo, ...] } }
+  const tree = {}
+  for (const r of repos.value) {
+    const platform = r.type === 'local' ? '本地仓库' : (r.host || '未知平台')
+    const ns = r.type === 'local' ? '' : (r.namespace || '未知')
+    if (!tree[platform]) tree[platform] = {}
+    if (!tree[platform][ns]) tree[platform][ns] = []
+    tree[platform][ns].push(r)
+  }
+  // sort platforms (本地仓库 last), namespaces alpha, repos alpha
+  const platforms = Object.keys(tree).sort((a, b) => {
+    if (a === '本地仓库') return 1
+    if (b === '本地仓库') return -1
+    return a.localeCompare(b)
+  })
+  return platforms.map((p) => ({
+    platform: p,
+    namespaces: Object.keys(tree[p]).sort().map((ns) => ({
+      namespace: ns,
+      repos: tree[p][ns].sort((a, b) => a.name.localeCompare(b.name)),
+    })),
+  }))
+})
+
+function togglePlatform(p) {
+  const next = new Set(expandedPlatforms.value)
+  if (next.has(p)) next.delete(p)
+  else next.add(p)
+  expandedPlatforms.value = next
+}
+
+function toggleNamespace(key) {
+  const next = new Set(expandedNamespaces.value)
+  if (next.has(key)) next.delete(key)
+  else next.add(key)
+  expandedNamespaces.value = next
+}
+
+function isPlatformExpanded(p) { return expandedPlatforms.value.has(p) }
+function isNamespaceExpanded(key) { return expandedNamespaces.value.has(key) }
+
+// auto-expand all on first load
+watch(groupedRepos, (groups) => {
+  if (expandedPlatforms.value.size === 0 && groups.length) {
+    const ps = new Set()
+    const ns = new Set()
+    for (const g of groups) {
+      ps.add(g.platform)
+      for (const n of g.namespaces) ns.add(g.platform + '/' + n.namespace)
+    }
+    expandedPlatforms.value = ps
+    expandedNamespaces.value = ns
+  }
+}, { once: true })
 
 // ---- select repo → load its root tree ----
 watch(selectedCachePath, async (newPath) => {
@@ -243,39 +304,70 @@ const renderedMarkdown = computed(() => {
       </div>
       <div class="rail-list">
         <a-spin v-if="loading" class="rail-spin" />
-        <div
-          v-for="r in repos"
-          :key="r.cachePath"
-          class="rail-item"
-          :class="{ active: r.cachePath === selectedCachePath }"
-          :title="r.cachePath"
-          @click="selectRepo(r)"
-        >
-          <div class="rail-item-icon" :class="{ 'icon-local': r.type === 'local' }">
-            <CloudServerOutlined v-if="r.type === 'remote'" />
-            <FolderOpenOutlined v-else />
+
+        <!-- grouped: platform → namespace → repos -->
+        <template v-for="pg in groupedRepos" :key="pg.platform">
+          <div class="rail-group-head" @click="togglePlatform(pg.platform)">
+            <CaretRightFilled class="rail-caret" :class="{ open: isPlatformExpanded(pg.platform) }" />
+            <span class="rail-group-label">{{ pg.platform }}</span>
+            <span class="rail-group-count">{{ pg.namespaces.reduce((s, n) => s + n.repos.length, 0) }}</span>
           </div>
-          <div class="rail-item-body">
-            <div class="rail-item-name">
-              {{ r.name }}
-              <span v-if="r.type === 'local'" class="rail-type-tag">本地</span>
-            </div>
-            <div class="rail-item-meta">
-              <span class="rail-size">{{ fmtSize(r.size) }}</span>
-              <span class="rail-ref">{{ r.refCount }} 引用</span>
-            </div>
-          </div>
-          <a-popconfirm
-            v-if="r.type === 'remote'"
-            :title="`清理 ${r.name}？`"
-            ok-text="清理" ok-type="danger" cancel-text="取消"
-            @confirm="purge(r)"
-          >
-            <button class="rail-purge" title="清理缓存" @click.stop>
-              <DeleteOutlined />
-            </button>
-          </a-popconfirm>
-        </div>
+
+          <template v-if="isPlatformExpanded(pg.platform)">
+            <template v-for="ns in pg.namespaces" :key="pg.platform + '/' + ns.namespace">
+              <!-- namespace sub-group (skip header for 本地仓库 or single-child) -->
+              <div
+                v-if="pg.platform !== '本地仓库' && ns.namespace"
+                class="rail-ns-head"
+                @click="toggleNamespace(pg.platform + '/' + ns.namespace)"
+              >
+                <CaretRightFilled class="rail-caret sm" :class="{ open: isNamespaceExpanded(pg.platform + '/' + ns.namespace) }" />
+                <span class="rail-ns-label">{{ ns.namespace }}</span>
+                <span class="rail-ns-count">{{ ns.repos.length }}</span>
+              </div>
+
+              <template v-if="pg.platform === '本地仓库' || !ns.namespace || isNamespaceExpanded(pg.platform + '/' + ns.namespace)">
+                <div
+                  v-for="r in ns.repos"
+                  :key="r.cachePath"
+                  class="rail-item"
+                  :class="[
+                    { active: r.cachePath === selectedCachePath },
+                    pg.platform !== '本地仓库' && ns.namespace ? 'nested' : '',
+                  ]"
+                  :title="r.cachePath"
+                  @click="selectRepo(r)"
+                >
+                  <div class="rail-item-icon" :class="{ 'icon-local': r.type === 'local' }">
+                    <CloudServerOutlined v-if="r.type === 'remote'" />
+                    <FolderOpenOutlined v-else />
+                  </div>
+                  <div class="rail-item-body">
+                    <div class="rail-item-name">
+                      {{ r.name }}
+                      <span v-if="r.type === 'local'" class="rail-type-tag">本地</span>
+                    </div>
+                    <div class="rail-item-meta">
+                      <span class="rail-size">{{ fmtSize(r.size) }}</span>
+                      <span class="rail-ref">{{ r.refCount }} 引用</span>
+                    </div>
+                  </div>
+                  <a-popconfirm
+                    v-if="r.type === 'remote'"
+                    :title="`清理 ${r.name}？`"
+                    ok-text="清理" ok-type="danger" cancel-text="取消"
+                    @confirm="purge(r)"
+                  >
+                    <button class="rail-purge" title="清理缓存" @click.stop>
+                      <DeleteOutlined />
+                    </button>
+                  </a-popconfirm>
+                </div>
+              </template>
+            </template>
+          </template>
+        </template>
+
         <div v-if="!loading && !repos.length" class="rail-empty">
           <CloudServerOutlined class="rail-empty-icon" />
           <span>暂无缓存</span>
@@ -411,6 +503,63 @@ const renderedMarkdown = computed(() => {
 .rail-list::-webkit-scrollbar { width: 5px; }
 .rail-list::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
 .rail-spin { display: flex; justify-content: center; padding: var(--spacing-lg) 0; }
+
+/* ---- group headers ---- */
+.rail-group-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px 4px;
+  cursor: pointer;
+  user-select: none;
+}
+.rail-group-label {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-tertiary);
+}
+.rail-group-count {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  background: var(--color-surface-raised);
+  padding: 0 6px;
+  border-radius: 999px;
+}
+.rail-ns-head {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px 2px 20px;
+  cursor: pointer;
+  user-select: none;
+}
+.rail-ns-label {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rail-ns-count {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+}
+.rail-caret {
+  font-size: 9px;
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+  transition: transform var(--transition-fast);
+}
+.rail-caret.sm { font-size: 8px; }
+.rail-caret.open { transform: rotate(90deg); }
+
+.rail-item.nested { padding-left: 34px; }
 
 .rail-item {
   display: flex; align-items: center; gap: 10px;

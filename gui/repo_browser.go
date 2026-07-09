@@ -388,9 +388,12 @@ var errWalkDone = fmt.Errorf("walk done")
 
 // CachedRepoItem describes one unique cached repo (deduplicated by path).
 type CachedRepoItem struct {
-	Name      string   `json:"name"`      // filepath.Base(path)
+	Name      string   `json:"name"`      // display name (RepoName or filepath.Base)
 	CachePath string   `json:"cachePath"` // on-disk path (CachePath or LocalPath)
 	Type      string   `json:"type"`      // "remote" | "local"
+	Host      string   `json:"host"`      // e.g. github.com (remote only)
+	Namespace string   `json:"namespace"` // owner/org (remote only)
+	RepoName  string   `json:"repoName"`  // repo name without owner
 	Size      int64    `json:"size"`      // bytes (fetched async)
 	RefCount  int      `json:"refCount"`  // how many projects reference it
 	Projects  []string `json:"projects"`  // project dirs referencing it
@@ -414,8 +417,11 @@ func (a *ReferenceApp) ListCachedRepos() ([]CachedRepoItem, error) {
 
 	// group by on-disk path (remote: CachePath, local: LocalPath)
 	type cacheInfo struct {
-		projects map[string]bool
-		rtype    string
+		projects  map[string]bool
+		rtype     string
+		host      string
+		namespace string
+		repoName  string
 	}
 	groups := map[string]*cacheInfo{}
 	order := []string{}
@@ -431,7 +437,13 @@ func (a *ReferenceApp) ListCachedRepos() ([]CachedRepoItem, error) {
 				continue
 			}
 			if _, ok := groups[path]; !ok {
-				groups[path] = &cacheInfo{projects: map[string]bool{}, rtype: string(r.RefType)}
+				groups[path] = &cacheInfo{
+					projects:  map[string]bool{},
+					rtype:     string(r.RefType),
+					host:      r.Host,
+					namespace: r.Namespace,
+					repoName:  r.RepoName,
+				}
 				order = append(order, path)
 			}
 			groups[path].projects[projectDir] = true
@@ -447,10 +459,19 @@ func (a *ReferenceApp) ListCachedRepos() ([]CachedRepoItem, error) {
 		}
 		sort.Strings(projects)
 
+		// display name: prefer RepoName for remote, basename for local
+		dispName := info.repoName
+		if dispName == "" {
+			dispName = filepath.Base(path)
+		}
+
 		item := CachedRepoItem{
-			Name:      filepath.Base(path),
+			Name:      dispName,
 			CachePath: path,
 			Type:      info.rtype,
+			Host:      info.host,
+			Namespace: info.namespace,
+			RepoName:  info.repoName,
 			Size:      0, // fetched async by GetCacheSize
 			RefCount:  len(projects),
 			Projects:  projects,

@@ -95,6 +95,9 @@ export namespace main {
 	    name: string;
 	    cachePath: string;
 	    type: string;
+	    host: string;
+	    namespace: string;
+	    repoName: string;
 	    size: number;
 	    refCount: number;
 	    projects: string[];
@@ -110,6 +113,9 @@ export namespace main {
 	        this.name = source["name"];
 	        this.cachePath = source["cachePath"];
 	        this.type = source["type"];
+	        this.host = source["host"];
+	        this.namespace = source["namespace"];
+	        this.repoName = source["repoName"];
 	        this.size = source["size"];
 	        this.refCount = source["refCount"];
 	        this.projects = source["projects"];
