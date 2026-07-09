@@ -45,8 +45,9 @@ var browserSkipNames = map[string]bool{
 	".git": true, "node_modules": true, ".DS_Store": true,
 }
 
-// resolveRepoPath finds the on-disk cache path for a referenced repo by
-// refName, scoped to projectDir. Returns "" if not found.
+// resolveRepoPath finds the on-disk path for a referenced repo by refName,
+// scoped to projectDir. Remote repos store their path in CachePath; local
+// repos store it in LocalPath (CachePath is empty for them), so we fall back.
 func resolveRepoPath(projectDir, refName string) (string, error) {
 	db, err := utils.GetGormDB()
 	if err != nil {
@@ -59,7 +60,12 @@ func resolveRepoPath(projectDir, refName string) (string, error) {
 	}
 	for _, r := range repos {
 		if r.GetRefName() == refName {
-			return r.CachePath, nil
+			if r.CachePath != "" {
+				return r.CachePath, nil
+			}
+			if r.LocalPath != "" {
+				return r.LocalPath, nil
+			}
 		}
 	}
 	return "", fmt.Errorf("仓库 %s 未找到", refName)
