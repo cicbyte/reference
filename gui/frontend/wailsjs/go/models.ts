@@ -98,6 +98,7 @@ export namespace main {
 	    host: string;
 	    namespace: string;
 	    repoName: string;
+	    exists: boolean;
 	    size: number;
 	    refCount: number;
 	    projects: string[];
@@ -116,6 +117,7 @@ export namespace main {
 	        this.host = source["host"];
 	        this.namespace = source["namespace"];
 	        this.repoName = source["repoName"];
+	        this.exists = source["exists"];
 	        this.size = source["size"];
 	        this.refCount = source["refCount"];
 	        this.projects = source["projects"];

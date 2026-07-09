@@ -394,6 +394,7 @@ type CachedRepoItem struct {
 	Host      string   `json:"host"`      // e.g. github.com (remote only)
 	Namespace string   `json:"namespace"` // owner/org (remote only)
 	RepoName  string   `json:"repoName"`  // repo name without owner
+	Exists    bool     `json:"exists"`    // path still present on disk
 	Size      int64    `json:"size"`      // bytes (fetched async)
 	RefCount  int      `json:"refCount"`  // how many projects reference it
 	Projects  []string `json:"projects"`  // project dirs referencing it
@@ -465,6 +466,10 @@ func (a *ReferenceApp) ListCachedRepos() ([]CachedRepoItem, error) {
 			dispName = filepath.Base(path)
 		}
 
+		// check path still exists on disk (local repos may have been moved/deleted)
+		_, statErr := os.Stat(path)
+		pathExists := !os.IsNotExist(statErr)
+
 		item := CachedRepoItem{
 			Name:      dispName,
 			CachePath: path,
@@ -472,6 +477,7 @@ func (a *ReferenceApp) ListCachedRepos() ([]CachedRepoItem, error) {
 			Host:      info.host,
 			Namespace: info.namespace,
 			RepoName:  info.repoName,
+			Exists:    pathExists,
 			Size:      0, // fetched async by GetCacheSize
 			RefCount:  len(projects),
 			Projects:  projects,

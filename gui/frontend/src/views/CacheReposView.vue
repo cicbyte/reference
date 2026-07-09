@@ -13,6 +13,7 @@ import {
   EyeOutlined,
   ArrowLeftOutlined,
   CaretRightFilled,
+  WarningOutlined,
 } from '@ant-design/icons-vue'
 import hljs from 'highlight.js/lib/core'
 import 'highlight.js/styles/github-dark.css'
@@ -338,17 +339,19 @@ const renderedMarkdown = computed(() => {
                   :title="r.cachePath"
                   @click="selectRepo(r)"
                 >
-                  <div class="rail-item-icon" :class="{ 'icon-local': r.type === 'local' }">
-                    <CloudServerOutlined v-if="r.type === 'remote'" />
+                  <div class="rail-item-icon" :class="{ 'icon-local': r.type === 'local', 'icon-missing': !r.exists }">
+                    <WarningOutlined v-if="!r.exists" />
+                    <CloudServerOutlined v-else-if="r.type === 'remote'" />
                     <FolderOpenOutlined v-else />
                   </div>
                   <div class="rail-item-body">
                     <div class="rail-item-name">
                       {{ r.name }}
-                      <span v-if="r.type === 'local'" class="rail-type-tag">本地</span>
+                      <span v-if="!r.exists" class="rail-missing-tag">路径不存在</span>
+                      <span v-else-if="r.type === 'local'" class="rail-type-tag">本地</span>
                     </div>
                     <div class="rail-item-meta">
-                      <span class="rail-size">{{ fmtSize(r.size) }}</span>
+                      <span class="rail-size">{{ r.exists ? fmtSize(r.size) : '—' }}</span>
                       <span class="rail-ref">{{ r.refCount }} 引用</span>
                     </div>
                   </div>
@@ -379,6 +382,19 @@ const renderedMarkdown = computed(() => {
     <div v-if="!selectedCachePath" class="cache-placeholder">
       <CloudServerOutlined class="cp-icon" />
       <div>从左侧选择一个缓存仓库查看代码</div>
+    </div>
+
+    <!-- selected repo path doesn't exist on disk -->
+    <div v-else-if="selectedRepo && !selectedRepo.exists" class="cache-missing">
+      <WarningOutlined class="cm-icon" />
+      <div class="cm-title">仓库路径不存在</div>
+      <div class="cm-path">{{ selectedRepo.cachePath }}</div>
+      <div class="cm-hint" v-if="selectedRepo.type === 'local'">
+        本地仓库目录可能已被移动或删除。你可以从项目中重新添加，或移除该引用。
+      </div>
+      <div class="cm-hint" v-else>
+        缓存目录可能已被手动删除。从左侧清理该缓存后重新添加仓库即可恢复。
+      </div>
     </div>
 
     <div v-else class="cache-browser">
@@ -580,6 +596,9 @@ const renderedMarkdown = computed(() => {
 .rail-item-icon.icon-local { background: rgba(22, 163, 74, 0.12); color: var(--color-success); }
 .rail-item:hover .icon-local,
 .rail-item.active .icon-local { background: var(--color-primary); color: #fff; }
+.rail-item-icon.icon-missing { background: var(--color-warning-bg); color: var(--color-warning); }
+.rail-item:hover .icon-missing,
+.rail-item.active .icon-missing { background: var(--color-warning); color: #fff; }
 
 .rail-item-body { flex: 1; min-width: 0; }
 .rail-item-name {
@@ -589,6 +608,11 @@ const renderedMarkdown = computed(() => {
 .rail-type-tag {
   font-size: 9px; font-weight: 600; padding: 0 5px; margin-left: 4px;
   border-radius: 3px; background: var(--color-success-bg); color: var(--color-success);
+  vertical-align: middle;
+}
+.rail-missing-tag {
+  font-size: 9px; font-weight: 600; padding: 0 5px; margin-left: 4px;
+  border-radius: 3px; background: var(--color-warning-bg); color: var(--color-warning);
   vertical-align: middle;
 }
 .rail-item.active .rail-item-name { color: var(--color-primary); }
@@ -619,6 +643,21 @@ const renderedMarkdown = computed(() => {
   gap: 12px; color: var(--color-text-tertiary); font-size: 14px;
 }
 .cp-icon { font-size: 48px; opacity: 0.25; }
+
+/* ---- missing path state ---- */
+.cache-missing {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; padding: 0 32px; text-align: center;
+}
+.cm-icon { font-size: 48px; color: var(--color-warning); opacity: 0.7; }
+.cm-title { font-size: 18px; font-weight: 600; color: var(--color-text); }
+.cm-path {
+  font-size: 13px; color: var(--color-text-tertiary);
+  font-family: 'Cascadia Code', monospace;
+  max-width: 500px; word-break: break-all;
+}
+.cm-hint { font-size: 13px; color: var(--color-text-secondary); max-width: 420px; line-height: 1.6; }
 
 /* ---- browser (tree + content) ---- */
 .cache-browser {
