@@ -94,6 +94,7 @@ export namespace main {
 	export class CachedRepoItem {
 	    name: string;
 	    cachePath: string;
+	    type: string;
 	    size: number;
 	    refCount: number;
 	    projects: string[];
@@ -108,6 +109,7 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
 	        this.cachePath = source["cachePath"];
+	        this.type = source["type"];
 	        this.size = source["size"];
 	        this.refCount = source["refCount"];
 	        this.projects = source["projects"];

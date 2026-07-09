@@ -251,15 +251,22 @@ const renderedMarkdown = computed(() => {
           :title="r.cachePath"
           @click="selectRepo(r)"
         >
-          <div class="rail-item-icon"><CloudServerOutlined /></div>
+          <div class="rail-item-icon" :class="{ 'icon-local': r.type === 'local' }">
+            <CloudServerOutlined v-if="r.type === 'remote'" />
+            <FolderOpenOutlined v-else />
+          </div>
           <div class="rail-item-body">
-            <div class="rail-item-name">{{ r.name }}</div>
+            <div class="rail-item-name">
+              {{ r.name }}
+              <span v-if="r.type === 'local'" class="rail-type-tag">本地</span>
+            </div>
             <div class="rail-item-meta">
               <span class="rail-size">{{ fmtSize(r.size) }}</span>
               <span class="rail-ref">{{ r.refCount }} 引用</span>
             </div>
           </div>
           <a-popconfirm
+            v-if="r.type === 'remote'"
             :title="`清理 ${r.name}？`"
             ok-text="清理" ok-type="danger" cancel-text="取消"
             @confirm="purge(r)"
@@ -421,11 +428,19 @@ const renderedMarkdown = computed(() => {
 }
 .rail-item:hover .rail-item-icon,
 .rail-item.active .rail-item-icon { background: var(--color-primary); color: #fff; }
+.rail-item-icon.icon-local { background: rgba(22, 163, 74, 0.12); color: var(--color-success); }
+.rail-item:hover .icon-local,
+.rail-item.active .icon-local { background: var(--color-primary); color: #fff; }
 
 .rail-item-body { flex: 1; min-width: 0; }
 .rail-item-name {
   font-size: 13px; font-weight: 500; color: var(--color-text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rail-type-tag {
+  font-size: 9px; font-weight: 600; padding: 0 5px; margin-left: 4px;
+  border-radius: 3px; background: var(--color-success-bg); color: var(--color-success);
+  vertical-align: middle;
 }
 .rail-item.active .rail-item-name { color: var(--color-primary); }
 .rail-item-meta {

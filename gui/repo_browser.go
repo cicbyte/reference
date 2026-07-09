@@ -386,19 +386,21 @@ var errWalkDone = fmt.Errorf("walk done")
 // Global cache management (deduplicated view of all cached remote repos)
 // =====================================================================
 
-// CachedRepoItem describes one unique cached repo (deduplicated by CachePath).
+// CachedRepoItem describes one unique cached repo (deduplicated by path).
 type CachedRepoItem struct {
-	Name      string   `json:"name"`      // filepath.Base(cachePath)
-	CachePath string   `json:"cachePath"`
-	Size      int64    `json:"size"`      // bytes
+	Name      string   `json:"name"`      // filepath.Base(path)
+	CachePath string   `json:"cachePath"` // on-disk path (CachePath or LocalPath)
+	Type      string   `json:"type"`      // "remote" | "local"
+	Size      int64    `json:"size"`      // bytes (fetched async)
 	RefCount  int      `json:"refCount"`  // how many projects reference it
 	Projects  []string `json:"projects"`  // project dirs referencing it
 	Branch    string   `json:"branch"`
 	Commit    string   `json:"commit"`
 }
 
-// ListCachedRepos returns all unique remote-repo caches, deduplicated by
-// CachePath, enriched with disk size, reference count, and git metadata.
+// ListCachedRepos returns all unique repos (remote caches + local paths),
+// deduplicated by on-disk path, enriched with reference count and git metadata.
+// Size is loaded async by GetCacheSize to keep this call instant.
 func (a *ReferenceApp) ListCachedRepos() ([]CachedRepoItem, error) {
 	db, err := utils.GetGormDB()
 	if err != nil {
@@ -410,28 +412,35 @@ func (a *ReferenceApp) ListCachedRepos() ([]CachedRepoItem, error) {
 		return nil, err
 	}
 
-	// group by CachePath (remote only, non-empty)
+	// group by on-disk path (remote: CachePath, local: LocalPath)
 	type cacheInfo struct {
 		projects map[string]bool
+		rtype    string
 	}
 	groups := map[string]*cacheInfo{}
-	order := []string{} // preserve first-seen order
+	order := []string{}
 	for projectDir, repos := range allRepos {
 		for _, r := range repos {
-			if r.RefType != "remote" || r.CachePath == "" {
+			path := ""
+			if r.RefType == "remote" && r.CachePath != "" {
+				path = r.CachePath
+			} else if r.RefType == "local" && r.LocalPath != "" {
+				path = r.LocalPath
+			}
+			if path == "" {
 				continue
 			}
-			if _, ok := groups[r.CachePath]; !ok {
-				groups[r.CachePath] = &cacheInfo{projects: map[string]bool{}}
-				order = append(order, r.CachePath)
+			if _, ok := groups[path]; !ok {
+				groups[path] = &cacheInfo{projects: map[string]bool{}, rtype: string(r.RefType)}
+				order = append(order, path)
 			}
-			groups[r.CachePath].projects[projectDir] = true
+			groups[path].projects[projectDir] = true
 		}
 	}
 
 	items := make([]CachedRepoItem, 0, len(order))
-	for _, cachePath := range order {
-		info := groups[cachePath]
+	for _, path := range order {
+		info := groups[path]
 		projects := make([]string, 0, len(info.projects))
 		for dir := range info.projects {
 			projects = append(projects, dir)
@@ -439,14 +448,14 @@ func (a *ReferenceApp) ListCachedRepos() ([]CachedRepoItem, error) {
 		sort.Strings(projects)
 
 		item := CachedRepoItem{
-			Name:      filepath.Base(cachePath),
-			CachePath: cachePath,
-			Size:      0, // fetched async by GetCacheSize to keep this call fast
+			Name:      filepath.Base(path),
+			CachePath: path,
+			Type:      info.rtype,
+			Size:      0, // fetched async by GetCacheSize
 			RefCount:  len(projects),
 			Projects:  projects,
 		}
-		// best-effort metadata
-		if branch, commit, _, err := repo.GetRepoMeta(cachePath); err == nil {
+		if branch, commit, _, err := repo.GetRepoMeta(path); err == nil {
 			item.Branch = branch
 			item.Commit = commit
 		}
