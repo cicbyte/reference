@@ -7,6 +7,7 @@ import {
   ReadOutlined,
   FileTextOutlined,
   CaretRightFilled,
+  FileMarkdownOutlined,
 } from '@ant-design/icons-vue'
 import { marked } from 'marked'
 
@@ -16,19 +17,16 @@ const app = window.go?.main?.ReferenceApp
 const entries = ref([])
 const loading = ref(true)
 const syncing = ref(false)
-const selectedKey = ref('')  // source + '|' + relPath
+const selectedRepoKey = ref('')   // source + '|' + platform + '/' + namespace + '/' + repoName
+const selectedFileKey = ref('')   // source + '|' + relPath
 const content = ref('')
 const contentLoading = ref(false)
 
-const selectedEntry = computed(() =>
-  entries.value.find((e) => e.source + '|' + e.relPath === selectedKey.value),
-)
-
-// ---- grouped tree: source → platform → namespace → repos ----
+// ---- grouped repos: source → platform → namespace → repoName ----
 const expandedPlatforms = ref(new Set())
 const expandedNamespaces = ref(new Set())
 
-const groupedEntries = computed(() => {
+const groupedRepos = computed(() => {
   const tree = {}
   for (const e of entries.value) {
     const platform = e.source === 'local' ? '本地知识库' : (e.platform || '未知平台').toUpperCase()
@@ -47,10 +45,15 @@ const groupedEntries = computed(() => {
     platform: p,
     namespaces: Object.keys(tree[p]).sort().map((ns) => ({
       namespace: ns,
-      repos: Object.keys(tree[p][ns]).sort().map((rn) => ({
-        repoName: rn,
-        files: tree[p][ns][rn].sort((a, b) => a.fileName.localeCompare(b.fileName)),
-      })),
+      repos: Object.keys(tree[p][ns]).sort().map((rn) => {
+        const files = tree[p][ns][rn].sort((a, b) => {
+          // reference.md first, then alpha
+          if (a.fileName === 'reference.md') return -1
+          if (b.fileName === 'reference.md') return 1
+          return a.fileName.localeCompare(b.fileName)
+        })
+        return { repoName: rn, files, fileCount: files.length }
+      }),
     })),
   }))
 })
@@ -67,7 +70,7 @@ function toggleNamespace(key) {
 }
 
 // auto-expand on first load
-watch(groupedEntries, (groups) => {
+watch(groupedRepos, (groups) => {
   if (expandedPlatforms.value.size === 0 && groups.length) {
     const ps = new Set()
     const ns = new Set()
@@ -79,6 +82,55 @@ watch(groupedEntries, (groups) => {
     expandedNamespaces.value = ns
   }
 }, { once: true })
+
+// ---- selected repo → its files ----
+const selectedRepoFiles = computed(() => {
+  if (!selectedRepoKey.value) return []
+  // find the repo in groupedRepos
+  for (const pg of groupedRepos.value) {
+    for (const ns of pg.namespaces) {
+      for (const repo of ns.repos) {
+        const key = (pg.platform === '本地知识库' ? 'local' : 'remote') + '|' +
+          (pg.platform === '本地知识库' ? '本地知识库' : pg.platform.toLowerCase()) + '/' + ns.namespace + '/' + repo.repoName
+        // simpler: just match by repoName + source
+      }
+    }
+  }
+  // fallback: filter from flat entries by repo key parts
+  const parts = selectedRepoKey.value.split('|')
+  const source = parts[0]
+  const pathParts = parts.slice(1).join('|').split('/')
+  const repoName = pathParts[pathParts.length - 1]
+  return entries.value
+    .filter((e) => e.source === source && e.repoName === repoName)
+    .sort((a, b) => {
+      if (a.fileName === 'reference.md') return -1
+      if (b.fileName === 'reference.md') return 1
+      return a.fileName.localeCompare(b.fileName)
+    })
+})
+
+const selectedEntry = computed(() =>
+  entries.value.find((e) => e.source + '|' + e.relPath === selectedFileKey.value),
+)
+
+function repoKey(source, platform, namespace, repoName) {
+  return source + '|' + repoName
+}
+
+function selectRepo(source, repoName) {
+  selectedRepoKey.value = source + '|' + repoName
+  // auto-select reference.md if it exists, else first file
+  const files = entries.value.filter((e) => e.source === source && e.repoName === repoName)
+  const refMd = files.find((f) => f.fileName === 'reference.md')
+  const target = refMd || files[0]
+  if (target) selectFile(target)
+}
+
+function selectFile(entry) {
+  selectedFileKey.value = entry.source + '|' + entry.relPath
+  loadContent(entry)
+}
 
 // ---- load ----
 async function loadEntries() {
@@ -101,7 +153,6 @@ async function loadContent(entry) {
   try {
     if (app?.ReadWikiEntry) {
       const raw = await app.ReadWikiEntry(entry.source, entry.relPath)
-      // strip frontmatter before rendering
       content.value = stripFrontmatter(raw)
     }
   } catch (e) {
@@ -124,11 +175,6 @@ const renderedContent = computed(() => {
   try { return marked(content.value) } catch { return content.value }
 })
 
-function selectEntry(entry) {
-  selectedKey.value = entry.source + '|' + entry.relPath
-  loadContent(entry)
-}
-
 async function doSync() {
   syncing.value = true
   try {
@@ -149,7 +195,7 @@ onMounted(loadEntries)
 
 <template>
   <div class="wiki-view">
-    <!-- left: repo rail -->
+    <!-- col 1: repo rail (grouped by platform → namespace) -->
     <aside class="wiki-rail">
       <div class="rail-head">
         <span>知识库</span>
@@ -165,11 +211,11 @@ onMounted(loadEntries)
       <div class="rail-list">
         <a-spin v-if="loading" class="rail-spin" />
 
-        <template v-for="pg in groupedEntries" :key="pg.platform">
+        <template v-for="pg in groupedRepos" :key="pg.platform">
           <div class="rail-group-head" @click="togglePlatform(pg.platform)">
             <CaretRightFilled class="rail-caret" :class="{ open: expandedPlatforms.has(pg.platform) }" />
             <span class="rail-group-label">{{ pg.platform }}</span>
-            <span class="rail-group-count">{{ pg.namespaces.reduce((s, n) => s + n.repos.reduce((s2, r) => s2 + r.files.length, 0), 0) }}</span>
+            <span class="rail-group-count">{{ pg.namespaces.reduce((s, n) => s + n.repos.length, 0) }}</span>
           </div>
 
           <template v-if="expandedPlatforms.has(pg.platform)">
@@ -184,33 +230,25 @@ onMounted(loadEntries)
               </div>
 
               <template v-if="pg.platform === '本地知识库' || !ns.namespace || expandedNamespaces.has(pg.platform + '/' + ns.namespace)">
-                <template v-for="repo in ns.repos" :key="pg.platform + '/' + ns.namespace + '/' + repo.repoName">
-                  <div
-                    v-for="file in repo.files"
-                    :key="file.source + '|' + file.relPath"
-                    class="rail-item"
-                    :class="{
-                      active: selectedKey === file.source + '|' + file.relPath,
-                      nested: pg.platform !== '本地知识库' && ns.namespace,
-                    }"
-                    :title="file.relPath"
-                    @click="selectEntry(file)"
-                  >
-                    <div class="rail-item-icon">
-                      <ReadOutlined v-if="file.fileName === 'reference.md'" />
-                      <FileTextOutlined v-else />
-                    </div>
-                    <div class="rail-item-body">
-                      <div class="rail-item-name">
-                        {{ file.fileName === 'reference.md' ? repo.repoName : file.fileName.replace('.md', '') }}
-                      </div>
-                      <div class="rail-item-meta">
-                        <span v-if="file.exploredAt">{{ file.exploredAt }}</span>
-                        <span v-if="file.fileName !== 'reference.md'" class="rail-topic-tag">主题</span>
-                      </div>
+                <div
+                  v-for="repo in ns.repos"
+                  :key="pg.platform + '/' + ns.namespace + '/' + repo.repoName"
+                  class="rail-item"
+                  :class="{ active: selectedRepoKey === (ns.repos[0]?.source || 'remote') + '|' + repo.repoName }"
+                  :title="repo.repoName"
+                  @click="selectRepo(ns.repos[0]?.source || 'remote', repo.repoName)"
+                >
+                  <div class="rail-item-icon">
+                    <ReadOutlined v-if="repo.fileCount === 1" />
+                    <FileMarkdownOutlined v-else />
+                  </div>
+                  <div class="rail-item-body">
+                    <div class="rail-item-name">{{ repo.repoName }}</div>
+                    <div class="rail-item-meta">
+                      <span>{{ repo.fileCount }} 个文件</span>
                     </div>
                   </div>
-                </template>
+                </div>
               </template>
             </template>
           </template>
@@ -219,25 +257,56 @@ onMounted(loadEntries)
         <div v-if="!loading && !entries.length" class="rail-empty">
           <ReadOutlined class="rail-empty-icon" />
           <span>暂无知识文件</span>
-          <span class="rail-empty-tip">使用 AI 子代理探索仓库后生成</span>
         </div>
       </div>
     </aside>
 
-    <!-- right: markdown content -->
+    <!-- col 2: file list for selected repo -->
+    <aside v-if="selectedRepoKey" class="wiki-files">
+      <div class="wf-head">
+        <FileTextOutlined class="wf-icon" />
+        <span class="wf-title">{{ selectedRepoKey.split('|')[1] }}</span>
+      </div>
+      <div class="wf-list">
+        <div
+          v-for="file in selectedRepoFiles"
+          :key="file.source + '|' + file.relPath"
+          class="wf-item"
+          :class="{ active: selectedFileKey === file.source + '|' + file.relPath }"
+          :title="file.fileName"
+          @click="selectFile(file)"
+        >
+          <div class="wf-item-icon">
+            <ReadOutlined v-if="file.fileName === 'reference.md'" />
+            <FileTextOutlined v-else />
+          </div>
+          <div class="wf-item-body">
+            <div class="wf-item-name">
+              {{ file.fileName === 'reference.md' ? '架构总览' : file.fileName.replace('.md', '') }}
+            </div>
+            <div class="wf-item-meta">
+              <span v-if="file.fileName !== 'reference.md'" class="wf-topic-tag">主题</span>
+              <span v-if="file.exploredAt">{{ file.exploredAt }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-if="!selectedRepoFiles.length" class="wf-empty">无文件</div>
+      </div>
+    </aside>
+
+    <!-- col 3: markdown content -->
     <div v-if="!selectedEntry" class="wiki-placeholder">
       <ReadOutlined class="wp-icon" />
-      <div>从左侧选择一个知识文件查看内容</div>
+      <div>从左侧选择仓库和知识文件查看内容</div>
     </div>
 
     <div v-else class="wiki-content">
-      <!-- info bar -->
       <div class="wc-bar">
         <div class="wc-title">
           <ReadOutlined class="wc-icon" />
           <span>{{ selectedEntry.repoName }}</span>
           <span class="wc-file" v-if="selectedEntry.fileName !== 'reference.md'">
-            / {{ selectedEntry.fileName }}
+            / {{ selectedEntry.fileName.replace('.md', '') }}
           </span>
         </div>
         <div class="wc-meta">
@@ -247,8 +316,6 @@ onMounted(loadEntries)
           <span v-if="selectedEntry.exploredAt" class="wc-date">{{ selectedEntry.exploredAt }}</span>
         </div>
       </div>
-
-      <!-- rendered markdown -->
       <div class="wc-body">
         <a-spin v-if="contentLoading" class="wc-loading" />
         <div v-else class="wc-md" v-html="renderedContent"></div>
@@ -265,24 +332,17 @@ onMounted(loadEntries)
   overflow: hidden;
 }
 
-/* ---- left rail ---- */
+/* ---- col 1: repo rail ---- */
 .wiki-rail {
-  width: 240px;
-  min-width: 240px;
-  display: flex;
-  flex-direction: column;
+  width: 220px; min-width: 220px;
+  display: flex; flex-direction: column;
   border-right: 1px solid var(--color-border);
-  background: var(--color-surface);
-  overflow: hidden;
+  background: var(--color-surface); overflow: hidden;
 }
 .rail-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 12px;
-  height: var(--navbar-height);
-  border-bottom: 1px solid var(--color-border);
-  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 12px; height: var(--navbar-height);
+  border-bottom: 1px solid var(--color-border); flex-shrink: 0;
 }
 .rail-head > span {
   font-size: 12px; font-weight: 600; text-transform: uppercase;
@@ -303,7 +363,6 @@ onMounted(loadEntries)
 .rail-list::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
 .rail-spin { display: flex; justify-content: center; padding: var(--spacing-lg) 0; }
 
-/* group headers */
 .rail-group-head {
   display: flex; align-items: center; gap: 6px;
   padding: 6px 8px 4px; cursor: pointer; user-select: none;
@@ -331,13 +390,11 @@ onMounted(loadEntries)
 .rail-caret.sm { font-size: 8px; }
 .rail-caret.open { transform: rotate(90deg); }
 
-/* repo items */
 .rail-item {
   display: flex; align-items: center; gap: 10px;
   padding: 7px 10px; border-radius: var(--radius-md);
   cursor: pointer; transition: all var(--transition-fast); margin-bottom: 1px;
 }
-.rail-item.nested { padding-left: 34px; }
 .rail-item:hover { background: var(--color-hover); }
 .rail-item.active { background: var(--color-primary-bg); }
 .rail-item-icon {
@@ -354,30 +411,70 @@ onMounted(loadEntries)
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .rail-item.active .rail-item-name { color: var(--color-primary); }
-.rail-item-meta {
-  display: flex; gap: 6px; margin-top: 1px; font-size: 11px;
-  color: var(--color-text-tertiary);
-}
-.rail-topic-tag {
-  font-size: 9px; font-weight: 600; padding: 0 4px;
-  border-radius: 3px; background: var(--color-primary-bg); color: var(--color-primary);
-}
+.rail-item-meta { display: flex; gap: 6px; margin-top: 1px; font-size: 11px; color: var(--color-text-tertiary); }
 
 .rail-empty {
   display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 40px 0;
 }
 .rail-empty-icon { font-size: 28px; color: var(--color-text-tertiary); opacity: 0.35; }
-.rail-empty span:nth-child(2) { font-size: 13px; color: var(--color-text-secondary); }
-.rail-empty-tip { font-size: 11px; color: var(--color-text-tertiary) !important; }
+.rail-empty span { font-size: 13px; color: var(--color-text-secondary); }
 
-/* ---- placeholder ---- */
+/* ---- col 2: file list ---- */
+.wiki-files {
+  width: 200px; min-width: 200px;
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface); overflow: hidden;
+}
+.wf-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 12px; height: var(--navbar-height);
+  border-bottom: 1px solid var(--color-border); flex-shrink: 0;
+}
+.wf-icon { font-size: 14px; color: var(--color-text-tertiary); }
+.wf-title {
+  font-size: 13px; font-weight: 600; color: var(--color-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.wf-list { flex: 1; overflow-y: auto; padding: var(--spacing-sm); }
+.wf-list::-webkit-scrollbar { width: 5px; }
+.wf-list::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+
+.wf-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px; border-radius: var(--radius-md);
+  cursor: pointer; transition: all var(--transition-fast); margin-bottom: 1px;
+}
+.wf-item:hover { background: var(--color-hover); }
+.wf-item.active { background: var(--color-primary-bg); }
+.wf-item-icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: var(--radius-sm);
+  background: var(--color-background); color: var(--color-text-tertiary);
+  font-size: 12px; flex-shrink: 0; transition: all var(--transition-fast);
+}
+.wf-item:hover .wf-item-icon,
+.wf-item.active .wf-item-icon { background: var(--color-primary); color: #fff; }
+.wf-item-body { flex: 1; min-width: 0; }
+.wf-item-name {
+  font-size: 13px; font-weight: 500; color: var(--color-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.wf-item.active .wf-item-name { color: var(--color-primary); }
+.wf-item-meta { display: flex; gap: 6px; margin-top: 1px; font-size: 11px; color: var(--color-text-tertiary); }
+.wf-topic-tag {
+  font-size: 9px; font-weight: 600; padding: 0 4px;
+  border-radius: 3px; background: var(--color-primary-bg); color: var(--color-primary);
+}
+.wf-empty { padding: 24px; text-align: center; font-size: 12px; color: var(--color-text-tertiary); }
+
+/* ---- col 3: content ---- */
 .wiki-placeholder {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 12px; color: var(--color-text-tertiary); font-size: 14px;
 }
 .wp-icon { font-size: 48px; opacity: 0.2; }
 
-/* ---- content ---- */
 .wiki-content {
   flex: 1; min-width: 0; display: flex; flex-direction: column;
   background: var(--color-background);
@@ -388,16 +485,10 @@ onMounted(loadEntries)
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface); flex-shrink: 0; gap: 12px;
 }
-.wc-title {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 15px; font-weight: 600; color: var(--color-text);
-}
+.wc-title { display: flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; color: var(--color-text); }
 .wc-icon { color: var(--color-text-tertiary); }
 .wc-file { font-size: 13px; font-weight: 400; color: var(--color-text-secondary); }
-.wc-meta {
-  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
-  font-size: 12px; color: var(--color-text-tertiary);
-}
+.wc-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; font-size: 12px; color: var(--color-text-tertiary); }
 .wc-platform { color: var(--color-text-secondary); }
 .wc-commit { font-family: 'Cascadia Code', monospace; }
 .wc-date { font-family: 'Cascadia Code', monospace; }
