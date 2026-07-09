@@ -4,6 +4,12 @@ import {main} from '../models';
 
 export function AddRepo(arg1:string,arg2:boolean,arg3:string,arg4:string):Promise<void>;
 
+export function BrowseRepoList(arg1:string,arg2:string):Promise<Array<main.BrowserFileNode>>;
+
+export function BrowseRepoRead(arg1:string,arg2:string):Promise<main.BrowserFileResult>;
+
+export function BrowseRepoSearch(arg1:string,arg2:string):Promise<Array<main.BrowserFileNode>>;
+
 export function ClearProxy():Promise<void>;
 
 export function CopyPath(arg1:string):Promise<void>;

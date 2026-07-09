@@ -204,7 +204,7 @@ function agentDisplayName(id) {
         </div>
 
         <div v-if="repos.length > 0" class="repo-grid">
-          <div v-for="repo in repos" :key="repo.name" class="repo-card" :class="'type-' + repo.type">
+          <div v-for="repo in repos" :key="repo.name" class="repo-card" :class="'type-' + repo.type" @click="router.push('/repos/browse/' + repo.name)">
             <div class="repo-type-bar"></div>
             <div class="repo-card-inner">
               <div class="repo-card-header">

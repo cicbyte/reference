@@ -9,6 +9,7 @@ import {
   BarChartOutlined,
   MedicineBoxOutlined,
   SearchOutlined,
+  FolderOpenOutlined,
 } from '@ant-design/icons-vue'
 import { useProjectStore } from '../stores/project'
 import AddRepoModal from '../components/repo/AddRepoModal.vue'
@@ -120,6 +121,11 @@ async function removeRepo(name) {
           </a-tag>
         </template>
         <template v-if="column.key === 'actions'">
+          <a-tooltip title="浏览代码">
+            <a-button size="small" type="text" @click="router.push('/repos/browse/' + record.name)">
+              <template #icon><FolderOpenOutlined /></template>
+            </a-button>
+          </a-tooltip>
           <a-tooltip title="更新仓库">
             <a-button size="small" type="text" @click="updateRepo(record.name)">
               <template #icon><SyncOutlined /></template>

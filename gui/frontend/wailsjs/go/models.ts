@@ -55,6 +55,42 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class BrowserFileNode {
+	    name: string;
+	    path: string;
+	    isDir: boolean;
+	    size: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new BrowserFileNode(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.path = source["path"];
+	        this.isDir = source["isDir"];
+	        this.size = source["size"];
+	    }
+	}
+	export class BrowserFileResult {
+	    content: string;
+	    lines: number;
+	    binary: boolean;
+	    notFound: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new BrowserFileResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.content = source["content"];
+	        this.lines = source["lines"];
+	        this.binary = source["binary"];
+	        this.notFound = source["notFound"];
+	    }
+	}
 	export class DoctorCheck {
 	    group: string;
 	    name: string;

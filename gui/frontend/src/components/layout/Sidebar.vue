@@ -28,9 +28,15 @@ const theme = useThemeStore()
 const project = useProjectStore()
 
 // project-scoped routes require a selected project; disable them otherwise.
+// Includes prefix match for dynamic routes like /repos/browse/:name.
 const PROJECT_SCOPED_KEYS = new Set(['/', '/repos', '/doctor'])
+const PROJECT_SCOPED_PREFIXES = ['/repos/browse/']
 function isDisabled(key) {
-  return PROJECT_SCOPED_KEYS.has(key) && !project.hasProject
+  if (!project.hasProject) {
+    if (PROJECT_SCOPED_KEYS.has(key)) return true
+    if (PROJECT_SCOPED_PREFIXES.some((p) => key.startsWith(p))) return true
+  }
+  return false
 }
 
 const menuGroups = [

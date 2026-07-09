@@ -6,6 +6,18 @@ export function AddRepo(arg1, arg2, arg3, arg4) {
   return window['go']['main']['ReferenceApp']['AddRepo'](arg1, arg2, arg3, arg4);
 }
 
+export function BrowseRepoList(arg1, arg2) {
+  return window['go']['main']['ReferenceApp']['BrowseRepoList'](arg1, arg2);
+}
+
+export function BrowseRepoRead(arg1, arg2) {
+  return window['go']['main']['ReferenceApp']['BrowseRepoRead'](arg1, arg2);
+}
+
+export function BrowseRepoSearch(arg1, arg2) {
+  return window['go']['main']['ReferenceApp']['BrowseRepoSearch'](arg1, arg2);
+}
+
 export function ClearProxy() {
   return window['go']['main']['ReferenceApp']['ClearProxy']();
 }

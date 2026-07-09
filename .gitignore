@@ -130,3 +130,4 @@ typings/
 .playwright-cli/
 
 *.syso
+*.md5
