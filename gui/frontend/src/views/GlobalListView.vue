@@ -180,17 +180,20 @@ function agentDisplayName(id) {
             >
               <div
                 class="project-card"
-                :class="{ 'card-warn': !p.exists || p.brokenCount > 0 }"
+                :class="{ 'card-warn': !p.exists || p.brokenCount > 0, 'card-missing': !p.exists }"
               >
                 <div class="card-bar" :class="!p.exists ? 'bar-red' : (p.brokenCount > 0 ? 'bar-orange' : 'bar-green')"></div>
-                <div class="card-body" @click="switchTo(p)">
+                <div class="card-body" @click="p.exists && switchTo(p)">
                   <div class="card-head">
                     <div class="card-icon" :class="!p.exists ? 'icon-missing' : ''">
                       <WarningOutlined v-if="!p.exists" />
                       <FolderOutlined v-else />
                     </div>
                     <div class="card-title-area">
-                      <div class="card-title">{{ p.name }}</div>
+                      <div class="card-title">
+                        {{ p.name }}
+                        <span v-if="!p.exists" class="missing-tag">目录不存在</span>
+                      </div>
                       <div class="card-dir" :title="p.dir">{{ p.dir }}</div>
                     </div>
                   </div>
@@ -217,14 +220,14 @@ function agentDisplayName(id) {
               </div>
               <template #overlay>
                 <a-menu>
-                  <a-menu-item @click="switchTo(p)">
+                  <a-menu-item v-if="p.exists" @click="switchTo(p)">
                     <SwapOutlined /> 切换到此项目
                   </a-menu-item>
-                  <a-menu-divider />
-                  <a-menu-item @click="onDoctor(p)">
+                  <a-menu-divider v-if="p.exists" />
+                  <a-menu-item v-if="p.exists" @click="onDoctor(p)">
                     <MedicineBoxOutlined /> 修复断裂链接
                   </a-menu-item>
-                  <a-menu-item @click="app?.OpenInExplorer(p.dir)">
+                  <a-menu-item v-if="p.exists" @click="app?.OpenInExplorer(p.dir)">
                     <FolderOpenOutlined /> 在文件管理器中打开
                   </a-menu-item>
                   <a-menu-item @click="onCopyPath(p)">
@@ -316,6 +319,13 @@ function agentDisplayName(id) {
   transform: translateY(-1px);
 }
 .card-warn { border-color: var(--color-warning); }
+.card-missing { opacity: 0.75; }
+.card-missing .card-title-area .card-title { color: var(--color-text-secondary); }
+.missing-tag {
+  font-size: 10px; font-weight: 600; padding: 1px 6px; margin-left: 6px;
+  border-radius: 3px; background: var(--color-error-bg); color: var(--color-error);
+  vertical-align: middle;
+}
 
 .card-bar { width: 3px; flex-shrink: 0; }
 .bar-green { background: var(--color-success); }
