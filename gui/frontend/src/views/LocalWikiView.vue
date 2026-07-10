@@ -7,6 +7,7 @@ import {
   FileTextOutlined,
   FileMarkdownOutlined,
   DeleteOutlined,
+  FolderOpenOutlined,
 } from '@ant-design/icons-vue'
 import { marked } from 'marked'
 import { useLayoutStore } from '../stores/layout'
@@ -118,6 +119,18 @@ function statusLabel(s) {
   return { ok: '', empty: '空文件', 'no-fm': '无元数据', stub: '内容过少' }[s] || ''
 }
 
+async function openInExplorer(entry) {
+  if (!entry?.fullPath) return
+  const parts = entry.fullPath.replace(/\//g, '\\').split('\\')
+  parts.pop()
+  const dir = parts.join('\\')
+  try {
+    if (app?.OpenInExplorer) await app.OpenInExplorer(dir)
+  } catch (e) {
+    message.error('打开失败: ' + e)
+  }
+}
+
 async function loadContent(entry) {
   if (!entry) return
   contentLoading.value = true
@@ -193,44 +206,62 @@ onMounted(loadEntries)
         <span class="wf-title">{{ selectedRepoKey }}</span>
       </div>
       <div class="wf-list">
-        <div
+        <a-dropdown
           v-for="file in selectedRepoFiles"
           :key="file.source + '|' + file.relPath"
-          class="wf-item"
-          :class="{
-            active: selectedFileKey === file.source + '|' + file.relPath,
-            'wf-problem': file.status && file.status !== 'ok',
-          }"
-          :title="file.fileName"
-          @click="selectFile(file)"
+          :trigger="['contextmenu']"
         >
-          <div class="wf-item-icon">
-            <ReadOutlined v-if="file.fileName === 'reference.md'" />
-            <FileTextOutlined v-else />
-          </div>
-          <div class="wf-item-body">
-            <div class="wf-item-name">
-              {{ file.fileName === 'reference.md' ? '架构总览' : file.fileName.replace('.md', '') }}
-            </div>
-            <div class="wf-item-meta">
-              <span v-if="file.fileName !== 'reference.md'" class="wf-topic-tag">主题</span>
-              <span v-if="file.status && file.status !== 'ok'" class="wf-status-tag" :class="'st-' + file.status">
-                {{ statusLabel(file.status) }}
-              </span>
-              <span v-if="file.exploredAt">{{ file.exploredAt }}</span>
-            </div>
-          </div>
-          <a-popconfirm
-            v-if="file.status && file.status !== 'ok'"
-            :title="`删除 ${file.fileName}？`"
-            ok-text="删除" ok-type="danger" cancel-text="取消"
-            @confirm="deleteEntry(file)"
+          <div
+            class="wf-item"
+            :class="{
+              active: selectedFileKey === file.source + '|' + file.relPath,
+              'wf-problem': file.status && file.status !== 'ok',
+            }"
+            :title="file.fileName"
+            @click="selectFile(file)"
           >
-            <button class="wf-delete" title="删除此文件" @click.stop>
-              <DeleteOutlined />
-            </button>
-          </a-popconfirm>
-        </div>
+            <div class="wf-item-icon">
+              <ReadOutlined v-if="file.fileName === 'reference.md'" />
+              <FileTextOutlined v-else />
+            </div>
+            <div class="wf-item-body">
+              <div class="wf-item-name">
+                {{ file.fileName === 'reference.md' ? '架构总览' : file.fileName.replace('.md', '') }}
+              </div>
+              <div class="wf-item-meta">
+                <span v-if="file.fileName !== 'reference.md'" class="wf-topic-tag">主题</span>
+                <span v-if="file.status && file.status !== 'ok'" class="wf-status-tag" :class="'st-' + file.status">
+                  {{ statusLabel(file.status) }}
+                </span>
+                <span v-if="file.exploredAt">{{ file.exploredAt }}</span>
+              </div>
+            </div>
+            <a-popconfirm
+              v-if="file.status && file.status !== 'ok'"
+              :title="`删除 ${file.fileName}？`"
+              ok-text="删除" ok-type="danger" cancel-text="取消"
+              @confirm="deleteEntry(file)"
+            >
+              <button class="wf-delete" title="删除此文件" @click.stop>
+                <DeleteOutlined />
+              </button>
+            </a-popconfirm>
+          </div>
+          <template #overlay>
+            <a-menu>
+              <a-menu-item @click="openInExplorer(file)">
+                <FolderOpenOutlined /> 在文件管理器中打开
+              </a-menu-item>
+              <a-menu-item @click="selectFile(file)">
+                <ReadOutlined /> 查看内容
+              </a-menu-item>
+              <a-menu-divider />
+              <a-menu-item danger @click="deleteEntry(file)">
+                <DeleteOutlined /> 删除
+              </a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
       </div>
     </aside>
 
