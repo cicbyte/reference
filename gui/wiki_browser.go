@@ -131,10 +131,22 @@ func (a *ReferenceApp) ReadWikiEntry(source string, relPath string) (string, err
 	return string(data), nil
 }
 
+// knownRemotePlatforms lists directory names that represent a remote platform
+// inside the wiki tree. Everything else at the top level (local/, forks/, etc.)
+// is treated as a local repo.
+var knownRemotePlatforms = map[string]bool{
+	"github": true, "github.com": true,
+	"gitlab.com": true, "bitbucket.org": true, "sourcehut": true,
+	"gitee.com": true, "codeberg.org": true,
+}
+
 // parseWikiEntry builds a WikiEntry from a relative path + frontmatter.
-// Path patterns:
-//   remote: <platform>/<namespace>/<repo>/<file.md>
-//   local:  local/<repo>/<file.md>  OR  <repo>/<file.md>  (legacy)
+// Handles both remote and local path patterns, auto-detecting "local" even
+// inside the wiki/ directory (old versions stored local repos under wiki/local/).
+//
+//	remote:  <platform>/<namespace>/<repo>/<file.md>   (4+ parts)
+//	local:   local/<repo>/<file.md>                    (3 parts, "local" prefix)
+//	         <repo>/<file.md>                           (2 parts, legacy)
 func parseWikiEntry(rel, source string) WikiEntry {
 	parts := strings.Split(rel, "/")
 	e := WikiEntry{
@@ -142,21 +154,40 @@ func parseWikiEntry(rel, source string) WikiEntry {
 		RelPath:  rel,
 		FileName: parts[len(parts)-1],
 	}
-	if source == "remote" && len(parts) >= 3 {
-		e.Platform = parts[0]
-		e.Namespace = parts[1]
-		e.RepoName = parts[2]
-	} else if source == "local" {
+
+	// detect local repos: explicit source, or path starts with "local/",
+	// or top-level dir is not a known remote platform.
+	isLocal := source == "local"
+	if !isLocal && len(parts) >= 2 {
+		topDir := strings.ToLower(parts[0])
+		if topDir == "local" || !knownRemotePlatforms[topDir] {
+			isLocal = true
+		}
+	}
+
+	if isLocal {
+		e.Source = "local"
+		e.Platform = "本地"
 		// local/<repo>/<file> or <repo>/<file>
-		if len(parts) >= 3 && parts[0] == "local" {
+		if len(parts) >= 3 && strings.ToLower(parts[0]) == "local" {
 			e.RepoName = parts[1]
 		} else if len(parts) >= 2 {
 			e.RepoName = parts[0]
 		}
-		e.Platform = "本地"
+	} else {
+		// remote: <platform>/<namespace>/<repo>/<file>
+		// also handle 3-part shallow paths: <platform>/<repo>/<file>
+		if len(parts) >= 4 {
+			e.Platform = parts[0]
+			e.Namespace = parts[1]
+			e.RepoName = parts[2]
+		} else if len(parts) == 3 {
+			e.Platform = parts[0]
+			e.RepoName = parts[1]
+		}
 	}
 
-	// best-effort frontmatter parse (only for reference.md — topic files may lack it)
+	// best-effort frontmatter parse
 	data, err := os.ReadFile(filepath.Join(resolveWikiRootSafe(source), rel))
 	if err != nil {
 		return e
