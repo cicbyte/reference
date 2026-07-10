@@ -9,6 +9,9 @@ import {
   ReloadOutlined,
   DeleteOutlined,
   CaretRightFilled,
+  SwapOutlined,
+  MedicineBoxOutlined,
+  CopyOutlined,
 } from '@ant-design/icons-vue'
 import { useProjectStore } from '../stores/project'
 
@@ -75,6 +78,28 @@ function switchTo(p) {
     message.success(`已切换到 ${p.name}`)
     router.push('/')
   })
+}
+
+async function onDoctor(p) {
+  if (!app) return
+  message.loading({ content: `正在修复 ${p.name}...`, key: 'doctor', duration: 0 })
+  try {
+    const res = await app.DoctorProject(p.dir)
+    const fixed = (res.checks || []).filter((c) => c.status === 'fixed').length
+    message.success({ content: `修复完成,${fixed} 项已修复`, key: 'doctor' })
+    await loadProjects()
+  } catch (e) {
+    message.error({ content: '修复失败: ' + e, key: 'doctor' })
+  }
+}
+
+async function onCopyPath(p) {
+  try {
+    await app.CopyPath(p.dir)
+    message.success('路径已复制')
+  } catch (e) {
+    message.error('复制失败: ' + e)
+  }
 }
 
 function onRemove(p, clean) {
@@ -148,68 +173,73 @@ function agentDisplayName(id) {
           </div>
 
           <div v-if="expandedGroups.has(group.key)" class="project-grid">
-            <div
+            <a-dropdown
               v-for="p in group.projects"
               :key="p.dir"
-              class="project-card"
-              :class="{ 'card-warn': !p.exists || p.brokenCount > 0 }"
+              :trigger="['contextmenu']"
             >
-              <div class="card-bar" :class="!p.exists ? 'bar-red' : (p.brokenCount > 0 ? 'bar-orange' : 'bar-green')"></div>
-              <div class="card-body" @click="switchTo(p)">
-                <div class="card-head">
-                  <div class="card-icon" :class="!p.exists ? 'icon-missing' : ''">
-                    <WarningOutlined v-if="!p.exists" />
-                    <FolderOutlined v-else />
+              <div
+                class="project-card"
+                :class="{ 'card-warn': !p.exists || p.brokenCount > 0 }"
+              >
+                <div class="card-bar" :class="!p.exists ? 'bar-red' : (p.brokenCount > 0 ? 'bar-orange' : 'bar-green')"></div>
+                <div class="card-body" @click="switchTo(p)">
+                  <div class="card-head">
+                    <div class="card-icon" :class="!p.exists ? 'icon-missing' : ''">
+                      <WarningOutlined v-if="!p.exists" />
+                      <FolderOutlined v-else />
+                    </div>
+                    <div class="card-title-area">
+                      <div class="card-title">{{ p.name }}</div>
+                      <div class="card-dir" :title="p.dir">{{ p.dir }}</div>
+                    </div>
                   </div>
-                  <div class="card-title-area">
-                    <div class="card-title">{{ p.name }}</div>
-                    <div class="card-dir" :title="p.dir">{{ p.dir }}</div>
-                  </div>
-                </div>
 
-                <div class="card-stats">
-                  <div class="stat">
-                    <span class="stat-num">{{ p.repoCount }}</span>
-                    <span class="stat-label">引用</span>
+                  <div class="card-stats">
+                    <div class="stat">
+                      <span class="stat-num">{{ p.repoCount }}</span>
+                      <span class="stat-label">引用</span>
+                    </div>
+                    <div class="stat" v-if="p.brokenCount > 0">
+                      <span class="stat-num warn">{{ p.brokenCount }}</span>
+                      <span class="stat-label">断链</span>
+                    </div>
+                    <div class="stat" v-if="p.agents && p.agents.length">
+                      <span class="stat-num">{{ p.agents.length }}</span>
+                      <span class="stat-label">助手</span>
+                    </div>
                   </div>
-                  <div class="stat" v-if="p.brokenCount > 0">
-                    <span class="stat-num warn">{{ p.brokenCount }}</span>
-                    <span class="stat-label">断链</span>
-                  </div>
-                  <div class="stat" v-if="p.agents && p.agents.length">
-                    <span class="stat-num">{{ p.agents.length }}</span>
-                    <span class="stat-label">助手</span>
-                  </div>
-                </div>
 
-                <div class="card-agents" v-if="p.agents && p.agents.length">
-                  <span v-for="a in p.agents" :key="a" class="agent-chip">{{ agentDisplayName(a) }}</span>
+                  <div class="card-agents" v-if="p.agents && p.agents.length">
+                    <span v-for="a in p.agents" :key="a" class="agent-chip">{{ agentDisplayName(a) }}</span>
+                  </div>
                 </div>
               </div>
-
-              <div class="card-actions">
-                <a-tooltip title="在文件管理器中打开">
-                  <button class="card-btn" @click="app?.OpenInExplorer(p.dir)">
-                    <FolderOpenOutlined />
-                  </button>
-                </a-tooltip>
-                <a-dropdown :trigger="['click']">
-                  <button class="card-btn" title="更多操作">
-                    <DeleteOutlined />
-                  </button>
-                  <template #overlay>
-                    <a-menu>
-                      <a-menu-item danger @click="onRemove(p, false)">
-                        <DeleteOutlined /> 移除项目
-                      </a-menu-item>
-                      <a-menu-item danger @click="onRemove(p, true)">
-                        <DeleteOutlined /> 移除并清除 .reference
-                      </a-menu-item>
-                    </a-menu>
-                  </template>
-                </a-dropdown>
-              </div>
-            </div>
+              <template #overlay>
+                <a-menu>
+                  <a-menu-item @click="switchTo(p)">
+                    <SwapOutlined /> 切换到此项目
+                  </a-menu-item>
+                  <a-menu-divider />
+                  <a-menu-item @click="onDoctor(p)">
+                    <MedicineBoxOutlined /> 修复断裂链接
+                  </a-menu-item>
+                  <a-menu-item @click="app?.OpenInExplorer(p.dir)">
+                    <FolderOpenOutlined /> 在文件管理器中打开
+                  </a-menu-item>
+                  <a-menu-item @click="onCopyPath(p)">
+                    <CopyOutlined /> 复制路径
+                  </a-menu-item>
+                  <a-menu-divider />
+                  <a-menu-item danger @click="onRemove(p, false)">
+                    <DeleteOutlined /> 移除项目
+                  </a-menu-item>
+                  <a-menu-item danger @click="onRemove(p, true)">
+                    <DeleteOutlined /> 移除并清除 .reference
+                  </a-menu-item>
+                </a-menu>
+              </template>
+            </a-dropdown>
           </div>
         </template>
       </div>
