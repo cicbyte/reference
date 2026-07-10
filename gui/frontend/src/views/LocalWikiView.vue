@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { message } from 'ant-design-vue'
 import {
   ReloadOutlined,
@@ -9,8 +9,10 @@ import {
   DeleteOutlined,
 } from '@ant-design/icons-vue'
 import { marked } from 'marked'
+import { useLayoutStore } from '../stores/layout'
 
 const app = window.go?.main?.ReferenceApp
+const layout = useLayoutStore()
 
 // ---- data ----
 const entries = ref([])
@@ -63,7 +65,12 @@ function selectRepo(repoName) {
 function selectFile(entry) {
   selectedFileKey.value = entry.source + '|' + entry.relPath
   loadContent(entry)
+  layout.setFooterItem('wiki', 'Wiki', entry.relPath, ReadOutlined)
 }
+
+onUnmounted(() => {
+  layout.clearFooterItem('wiki')
+})
 
 async function loadEntries() {
   loading.value = true

@@ -1,7 +1,9 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useLayoutStore } from '../../stores/layout'
+import { useProjectStore } from '../../stores/project'
+import { BranchesOutlined } from '@ant-design/icons-vue'
 import ProjectRail from './ProjectRail.vue'
 import Sidebar from './Sidebar.vue'
 import Navbar from './Navbar.vue'
@@ -9,9 +11,30 @@ import MainContent from './MainContent.vue'
 
 const route = useRoute()
 const layout = useLayoutStore()
+const project = useProjectStore()
 
 // Three-column on project-scoped pages, two-column on global pages.
 const showProjectRail = computed(() => !!route.meta?.projectScoped)
+
+// Footer: show current project (git repo) info on project-scoped pages.
+watch(
+  [() => project.currentName, () => project.currentDir, showProjectRail],
+  ([name, dir, scoped]) => {
+    if (scoped && name) {
+      layout.setFooterItem('project', '项目', name, BranchesOutlined)
+    } else {
+      layout.clearFooterItem('project')
+    }
+  },
+  { immediate: true },
+)
+
+// Clear wiki footer when leaving wiki pages.
+watch(() => route.path, (path) => {
+  if (!path.startsWith('/wiki') && !path.startsWith('/local-wiki')) {
+    layout.clearFooterItem('wiki')
+  }
+})
 </script>
 
 <template>

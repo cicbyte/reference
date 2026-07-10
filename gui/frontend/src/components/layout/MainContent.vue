@@ -1,5 +1,8 @@
 <script setup>
 import { BranchesOutlined } from '@ant-design/icons-vue'
+import { useLayoutStore } from '../../stores/layout'
+
+const layout = useLayoutStore()
 </script>
 
 <template>
@@ -14,6 +17,15 @@ import { BranchesOutlined } from '@ant-design/icons-vue'
 
     <div class="global-footer">
       <div class="status-bar">
+        <template v-for="item in layout.footerItems" :key="item.key">
+          <span v-if="item.value" class="status-item">
+            <BranchesOutlined v-if="item.icon === 'branch'" />
+            <component :is="item.icon" v-else-if="item.icon" />
+            <span class="status-label" v-if="item.label">{{ item.label }}:</span>
+            <span class="status-value" :title="item.value">{{ item.value }}</span>
+          </span>
+          <span v-if="item.value" class="status-sep"></span>
+        </template>
         <span class="status-spacer"></span>
         <span class="status-item">
           <BranchesOutlined />
@@ -54,7 +66,7 @@ import { BranchesOutlined } from '@ant-design/icons-vue'
 .status-bar {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
   width: 100%;
   font-size: 12px;
   color: var(--color-text-secondary);
@@ -64,12 +76,31 @@ import { BranchesOutlined } from '@ant-design/icons-vue'
 .status-item {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  min-width: 0;
+}
+
+.status-label {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
 }
 
 .status-value {
   color: var(--color-text);
   font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300px;
+}
+
+.status-sep {
+  color: var(--color-text-tertiary);
+  opacity: 0.4;
+}
+
+.status-sep::after {
+  content: '·';
 }
 
 .status-spacer {
