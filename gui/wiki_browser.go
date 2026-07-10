@@ -27,7 +27,7 @@ type WikiEntry struct {
 	Commit      string `json:"commit"`      // from frontmatter
 	Branch      string `json:"branch"`      // from frontmatter
 	Description string `json:"description"` // from frontmatter
-	Status      string `json:"status"`      // "ok" | "empty" | "no-fm" | "stub" (fetched async)
+	Status      string `json:"status"`      // "ok" | "empty" | "no-fm" (fetched async)
 	ExploredAt  string `json:"exploredAt"`  // from frontmatter
 	ModifiedAt  string `json:"modifiedAt"`  // file mtime (RFC3339)
 }
@@ -135,8 +135,7 @@ func (a *ReferenceApp) ReadWikiEntry(source string, relPath string) (string, err
 }
 
 // CheckWikiStatus returns the health status of a wiki file:
-//   "ok"     — has frontmatter + meaningful body
-//   "stub"   — has frontmatter but body is too short (< 200 chars, likely a skeleton)
+//   "ok"     — has frontmatter + body content
 //   "no-fm"  — missing frontmatter entirely
 //   "empty"  — file is empty or whitespace-only
 // Called async by the frontend so the initial list loads fast.
@@ -160,15 +159,11 @@ func (a *ReferenceApp) CheckWikiStatus(source string, relPath string) (string, e
 	if !strings.HasPrefix(content, "---") {
 		return "no-fm", nil
 	}
-	// strip frontmatter, check body length
+	// has frontmatter — check it closes properly
 	rest := content[3:]
 	end := strings.Index(rest, "\n---")
 	if end < 0 {
 		return "no-fm", nil
-	}
-	body := strings.TrimSpace(rest[end+4:])
-	if len(body) < 200 {
-		return "stub", nil
 	}
 	return "ok", nil
 }

@@ -305,7 +305,7 @@ async function deleteEntry(entry) {
 }
 
 function statusLabel(s) {
-  return { ok: '', empty: '空文件', 'no-fm': '无元数据', stub: '内容过少' }[s] || ''
+  return { ok: '', empty: '空文件', 'no-fm': '无元数据' }[s] || ''
 }
 
 async function openInExplorer(entry) {
@@ -731,7 +731,6 @@ onMounted(loadEntries)
 }
 .wf-status-tag.st-empty { background: var(--color-error-bg); color: var(--color-error); }
 .wf-status-tag.st-no-fm { background: var(--color-warning-bg); color: var(--color-warning); }
-.wf-status-tag.st-stub { background: var(--color-warning-bg); color: var(--color-warning); }
 .wf-delete {
   display: flex; align-items: center; justify-content: center;
   width: 22px; height: 22px; border: none; background: transparent;
