@@ -16,9 +16,13 @@ export function BrowseRepoRead(arg1:string,arg2:string):Promise<main.BrowserFile
 
 export function BrowseRepoSearch(arg1:string,arg2:string):Promise<Array<main.BrowserFileNode>>;
 
+export function CheckWikiStatus(arg1:string,arg2:string):Promise<string>;
+
 export function ClearProxy():Promise<void>;
 
 export function CopyPath(arg1:string):Promise<void>;
+
+export function DeleteWikiEntry(arg1:string,arg2:string):Promise<void>;
 
 export function DoctorProject(arg1:string):Promise<main.DoctorResult>;
 

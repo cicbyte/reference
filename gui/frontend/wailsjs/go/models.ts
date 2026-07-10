@@ -317,6 +317,7 @@ export namespace main {
 	    commit: string;
 	    branch: string;
 	    description: string;
+	    status: string;
 	    exploredAt: string;
 	    modifiedAt: string;
 	
@@ -335,6 +336,7 @@ export namespace main {
 	        this.commit = source["commit"];
 	        this.branch = source["branch"];
 	        this.description = source["description"];
+	        this.status = source["status"];
 	        this.exploredAt = source["exploredAt"];
 	        this.modifiedAt = source["modifiedAt"];
 	    }

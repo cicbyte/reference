@@ -6,6 +6,7 @@ import {
   ReadOutlined,
   FileTextOutlined,
   FileMarkdownOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons-vue'
 import { marked } from 'marked'
 
@@ -69,12 +70,45 @@ async function loadEntries() {
   try {
     if (app?.ListWikiEntries) {
       entries.value = await app.ListWikiEntries('local')
+      entries.value.forEach((e) => fetchStatus(e))
     }
   } catch (e) {
     message.error('加载失败: ' + e)
   } finally {
     loading.value = false
   }
+}
+
+async function fetchStatus(entry) {
+  try {
+    if (app?.CheckWikiStatus) {
+      const status = await app.CheckWikiStatus(entry.source, entry.relPath)
+      const idx = entries.value.findIndex((e) => e.source === entry.source && e.relPath === entry.relPath)
+      if (idx >= 0) {
+        entries.value[idx] = { ...entries.value[idx], status }
+      }
+    }
+  } catch { /* leave status empty */ }
+}
+
+async function deleteEntry(entry) {
+  try {
+    if (app?.DeleteWikiEntry) {
+      await app.DeleteWikiEntry(entry.source, entry.relPath)
+      message.success('已删除')
+      if (selectedFileKey.value === entry.source + '|' + entry.relPath) {
+        selectedFileKey.value = ''
+        content.value = ''
+      }
+      await loadEntries()
+    }
+  } catch (e) {
+    message.error('删除失败: ' + e)
+  }
+}
+
+function statusLabel(s) {
+  return { ok: '', empty: '空文件', 'no-fm': '无元数据', stub: '内容过少' }[s] || ''
 }
 
 async function loadContent(entry) {
@@ -156,7 +190,10 @@ onMounted(loadEntries)
           v-for="file in selectedRepoFiles"
           :key="file.source + '|' + file.relPath"
           class="wf-item"
-          :class="{ active: selectedFileKey === file.source + '|' + file.relPath }"
+          :class="{
+            active: selectedFileKey === file.source + '|' + file.relPath,
+            'wf-problem': file.status && file.status !== 'ok',
+          }"
           :title="file.fileName"
           @click="selectFile(file)"
         >
@@ -170,9 +207,22 @@ onMounted(loadEntries)
             </div>
             <div class="wf-item-meta">
               <span v-if="file.fileName !== 'reference.md'" class="wf-topic-tag">主题</span>
+              <span v-if="file.status && file.status !== 'ok'" class="wf-status-tag" :class="'st-' + file.status">
+                {{ statusLabel(file.status) }}
+              </span>
               <span v-if="file.exploredAt">{{ file.exploredAt }}</span>
             </div>
           </div>
+          <a-popconfirm
+            v-if="file.status && file.status !== 'ok'"
+            :title="`删除 ${file.fileName}？`"
+            ok-text="删除" ok-type="danger" cancel-text="取消"
+            @confirm="deleteEntry(file)"
+          >
+            <button class="wf-delete" title="删除此文件" @click.stop>
+              <DeleteOutlined />
+            </button>
+          </a-popconfirm>
         </div>
       </div>
     </aside>
@@ -308,6 +358,19 @@ onMounted(loadEntries)
   font-size: 9px; font-weight: 600; padding: 0 4px;
   border-radius: 3px; background: var(--color-primary-bg); color: var(--color-primary);
 }
+.wf-problem { border-left: 2px solid var(--color-warning); }
+.wf-status-tag { font-size: 9px; font-weight: 600; padding: 0 4px; border-radius: 3px; }
+.wf-status-tag.st-empty { background: var(--color-error-bg); color: var(--color-error); }
+.wf-status-tag.st-no-fm { background: var(--color-warning-bg); color: var(--color-warning); }
+.wf-status-tag.st-stub { background: var(--color-warning-bg); color: var(--color-warning); }
+.wf-delete {
+  display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border: none; background: transparent;
+  color: var(--color-text-tertiary); cursor: pointer; border-radius: var(--radius-xs);
+  opacity: 0; transition: all var(--transition-fast); flex-shrink: 0;
+}
+.wf-item:hover .wf-delete { opacity: 0.5; }
+.wf-delete:hover { opacity: 1 !important; background: var(--color-error-bg); color: var(--color-error); }
 
 /* col 3: content */
 .wiki-placeholder {

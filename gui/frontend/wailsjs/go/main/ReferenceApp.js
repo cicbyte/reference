@@ -30,12 +30,20 @@ export function BrowseRepoSearch(arg1, arg2) {
   return window['go']['main']['ReferenceApp']['BrowseRepoSearch'](arg1, arg2);
 }
 
+export function CheckWikiStatus(arg1, arg2) {
+  return window['go']['main']['ReferenceApp']['CheckWikiStatus'](arg1, arg2);
+}
+
 export function ClearProxy() {
   return window['go']['main']['ReferenceApp']['ClearProxy']();
 }
 
 export function CopyPath(arg1) {
   return window['go']['main']['ReferenceApp']['CopyPath'](arg1);
+}
+
+export function DeleteWikiEntry(arg1, arg2) {
+  return window['go']['main']['ReferenceApp']['DeleteWikiEntry'](arg1, arg2);
 }
 
 export function DoctorProject(arg1) {
