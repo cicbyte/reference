@@ -8,6 +8,8 @@ import {
   FileMarkdownOutlined,
   DeleteOutlined,
   FolderOpenOutlined,
+  EyeOutlined,
+  CodeOutlined,
 } from '@ant-design/icons-vue'
 import { marked } from 'marked'
 import { useLayoutStore } from '../stores/layout'
@@ -21,7 +23,9 @@ const loading = ref(true)
 const selectedRepoKey = ref('')
 const selectedFileKey = ref('')
 const content = ref('')
+const rawContent = ref('')
 const contentLoading = ref(false)
+const viewMode = ref('render')
 
 // ---- flat repo list (local repos have no platform/namespace grouping) ----
 const repos = computed(() => {
@@ -65,6 +69,7 @@ function selectRepo(repoName) {
 
 function selectFile(entry) {
   selectedFileKey.value = entry.source + '|' + entry.relPath
+  viewMode.value = 'render'
   loadContent(entry)
   layout.setFooterItem('wiki', 'Wiki', entry.fullPath || entry.relPath, ReadOutlined)
 }
@@ -135,9 +140,11 @@ async function loadContent(entry) {
   if (!entry) return
   contentLoading.value = true
   content.value = ''
+  rawContent.value = ''
   try {
     if (app?.ReadWikiEntry) {
       const raw = await app.ReadWikiEntry(entry.source, entry.relPath)
+      rawContent.value = raw
       content.value = stripFrontmatter(raw)
     }
   } catch (e) {
@@ -281,10 +288,15 @@ onMounted(loadEntries)
           <span v-if="selectedEntry.commit" class="wc-commit">{{ selectedEntry.commit }}</span>
           <span v-if="selectedEntry.exploredAt" class="wc-date">{{ selectedEntry.exploredAt }}</span>
         </div>
+        <a-radio-group v-model:value="viewMode" size="small" button-style="solid">
+          <a-radio-button value="render"><EyeOutlined /> 渲染</a-radio-button>
+          <a-radio-button value="source"><CodeOutlined /> 源码</a-radio-button>
+        </a-radio-group>
       </div>
       <div class="wc-body">
         <a-spin v-if="contentLoading" class="wc-loading" />
-        <div v-else class="wc-md" v-html="renderedContent"></div>
+        <div v-else-if="viewMode === 'render'" class="wc-md" v-html="renderedContent"></div>
+        <pre v-else class="wc-source">{{ rawContent }}</pre>
       </div>
     </div>
   </div>
@@ -450,4 +462,11 @@ onMounted(loadEntries)
 .wc-md :deep(th), .wc-md :deep(td) { border: 1px solid var(--color-border); padding: 6px 12px; text-align: left; }
 .wc-md :deep(th) { background: var(--color-surface); font-weight: 600; }
 .wc-md :deep(blockquote) { border-left: 3px solid var(--color-primary); padding-left: 16px; margin: 12px 0; color: var(--color-text-secondary); }
+
+.wc-source {
+  margin: 0; padding: 16px 24px;
+  font-family: 'Cascadia Code', 'Fira Code', monospace;
+  font-size: 13px; line-height: 1.6;
+  color: var(--color-text); white-space: pre-wrap; word-break: break-word;
+}
 </style>
