@@ -603,7 +603,7 @@ onMounted(loadEntries)
 
 .wc-md {
   padding: 24px 32px; font-size: 14px; line-height: 1.7;
-  color: var(--color-text); max-width: 860px;
+  color: var(--color-text);
 }
 .wc-md :deep(h1) { font-size: 24px; font-weight: 700; margin: 24px 0 12px; }
 .wc-md :deep(h2) { font-size: 20px; font-weight: 600; margin: 20px 0 10px; border-bottom: 1px solid var(--color-border); padding-bottom: 6px; }
