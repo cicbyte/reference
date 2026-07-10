@@ -252,9 +252,6 @@ onMounted(loadEntries)
               <a-menu-item @click="openInExplorer(file)">
                 <FolderOpenOutlined /> 在文件管理器中打开
               </a-menu-item>
-              <a-menu-item @click="selectFile(file)">
-                <ReadOutlined /> 查看内容
-              </a-menu-item>
               <a-menu-divider />
               <a-menu-item danger @click="deleteEntry(file)">
                 <DeleteOutlined /> 删除
