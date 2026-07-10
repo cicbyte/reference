@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import {
   ReloadOutlined,
@@ -12,10 +12,30 @@ import {
   CodeOutlined,
 } from '@ant-design/icons-vue'
 import { marked } from 'marked'
+import mermaid from 'mermaid'
 import { useLayoutStore } from '../stores/layout'
 
 const app = window.go?.main?.ReferenceApp
 const layout = useLayoutStore()
+
+mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' })
+
+async function renderMermaid() {
+  await nextTick()
+  const els = document.querySelectorAll('.wc-md .language-mermaid')
+  for (const el of els) {
+    const code = el.textContent
+    if (!code?.trim()) continue
+    try {
+      const id = 'mmd-' + Math.random().toString(36).slice(2, 9)
+      const { svg } = await mermaid.render(id, code)
+      const wrapper = el.closest('pre')
+      if (wrapper) {
+        wrapper.outerHTML = `<div class="mermaid-rendered">${svg}</div>`
+      }
+    } catch { /* leave as code block on parse error */ }
+  }
+}
 
 // ---- data ----
 const entries = ref([])
@@ -151,6 +171,7 @@ async function loadContent(entry) {
     message.error('读取失败: ' + e)
   } finally {
     contentLoading.value = false
+    if (viewMode.value === 'render') renderMermaid()
   }
 }
 
@@ -165,6 +186,10 @@ function stripFrontmatter(md) {
 const renderedContent = computed(() => {
   if (!content.value) return ''
   try { return marked(content.value) } catch { return content.value }
+})
+
+watch(viewMode, (mode) => {
+  if (mode === 'render') renderMermaid()
 })
 
 onMounted(loadEntries)
@@ -469,4 +494,11 @@ onMounted(loadEntries)
   font-size: 13px; line-height: 1.6;
   color: var(--color-text); white-space: pre-wrap; word-break: break-word;
 }
+.mermaid-rendered {
+  display: flex; justify-content: center;
+  margin: 16px 0; padding: 16px;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); overflow-x: auto;
+}
+.mermaid-rendered svg { max-width: 100%; height: auto; }
 </style>
