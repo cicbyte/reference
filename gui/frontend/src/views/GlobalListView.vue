@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { message, Modal } from 'ant-design-vue'
 import {
@@ -8,6 +8,7 @@ import {
   WarningOutlined,
   ReloadOutlined,
   DeleteOutlined,
+  CaretRightFilled,
 } from '@ant-design/icons-vue'
 import { useProjectStore } from '../stores/project'
 
@@ -17,6 +18,35 @@ const loading = ref(true)
 const projects = ref([])
 
 const app = window.go?.main?.ReferenceApp
+
+// ---- grouping by parent directory ----
+const expandedGroups = ref(new Set())
+const groupedProjects = computed(() => {
+  const groups = {}
+  for (const p of projects.value) {
+    // parent dir = group key (normalize separators)
+    const parts = p.dir.replace(/\//g, '\\').split('\\')
+    parts.pop()
+    const key = parts.join('\\') || '/'
+    if (!groups[key]) groups[key] = []
+    groups[key].push(p)
+  }
+  const keys = Object.keys(groups).sort()
+  return keys.map((key) => ({ key, projects: groups[key] }))
+})
+
+function toggleGroup(key) {
+  const next = new Set(expandedGroups.value)
+  next.has(key) ? next.delete(key) : next.add(key)
+  expandedGroups.value = next
+}
+
+// auto-expand all on first load
+watch(groupedProjects, (groups) => {
+  if (expandedGroups.value.size === 0 && groups.length) {
+    expandedGroups.value = new Set(groups.map((g) => g.key))
+  }
+}, { once: true })
 
 const totalRepos = computed(() =>
   projects.value.reduce((s, p) => s + (p.repoCount || 0), 0),
@@ -108,71 +138,80 @@ function agentDisplayName(id) {
     </div>
 
     <a-spin :spinning="loading">
-      <!-- project cards -->
-      <div v-if="projects.length > 0" class="project-grid">
-        <div
-          v-for="p in projects"
-          :key="p.dir"
-          class="project-card"
-          :class="{ 'card-warn': !p.exists || p.brokenCount > 0 }"
-        >
-          <div class="card-bar" :class="!p.exists ? 'bar-red' : (p.brokenCount > 0 ? 'bar-orange' : 'bar-green')"></div>
-          <div class="card-body" @click="switchTo(p)">
-            <div class="card-head">
-              <div class="card-icon" :class="!p.exists ? 'icon-missing' : ''">
-                <WarningOutlined v-if="!p.exists" />
-                <FolderOutlined v-else />
-              </div>
-              <div class="card-title-area">
-                <div class="card-title">{{ p.name }}</div>
-                <div class="card-dir" :title="p.dir">{{ p.dir }}</div>
-              </div>
-            </div>
-
-            <div class="card-stats">
-              <div class="stat">
-                <span class="stat-num">{{ p.repoCount }}</span>
-                <span class="stat-label">引用</span>
-              </div>
-              <div class="stat" v-if="p.brokenCount > 0">
-                <span class="stat-num warn">{{ p.brokenCount }}</span>
-                <span class="stat-label">断链</span>
-              </div>
-              <div class="stat" v-if="p.agents && p.agents.length">
-                <span class="stat-num">{{ p.agents.length }}</span>
-                <span class="stat-label">助手</span>
-              </div>
-            </div>
-
-            <div class="card-agents" v-if="p.agents && p.agents.length">
-              <span v-for="a in p.agents" :key="a" class="agent-chip">{{ agentDisplayName(a) }}</span>
-            </div>
+      <!-- grouped project cards -->
+      <div v-if="projects.length > 0">
+        <template v-for="group in groupedProjects" :key="group.key">
+          <div class="group-head" @click="toggleGroup(group.key)">
+            <CaretRightFilled class="group-caret" :class="{ open: expandedGroups.has(group.key) }" />
+            <span class="group-label">{{ group.key }}</span>
+            <span class="group-count">{{ group.projects.length }}</span>
           </div>
 
-          <!-- card actions -->
-          <div class="card-actions">
-            <a-tooltip title="在文件管理器中打开">
-              <button class="card-btn" @click="app?.OpenInExplorer(p.dir)">
-                <FolderOpenOutlined />
-              </button>
-            </a-tooltip>
-            <a-dropdown :trigger="['click']">
-              <button class="card-btn" title="更多操作">
-                <DeleteOutlined />
-              </button>
-              <template #overlay>
-                <a-menu>
-                  <a-menu-item danger @click="onRemove(p, false)">
-                    <DeleteOutlined /> 移除项目
-                  </a-menu-item>
-                  <a-menu-item danger @click="onRemove(p, true)">
-                    <DeleteOutlined /> 移除并清除 .reference
-                  </a-menu-item>
-                </a-menu>
-              </template>
-            </a-dropdown>
+          <div v-if="expandedGroups.has(group.key)" class="project-grid">
+            <div
+              v-for="p in group.projects"
+              :key="p.dir"
+              class="project-card"
+              :class="{ 'card-warn': !p.exists || p.brokenCount > 0 }"
+            >
+              <div class="card-bar" :class="!p.exists ? 'bar-red' : (p.brokenCount > 0 ? 'bar-orange' : 'bar-green')"></div>
+              <div class="card-body" @click="switchTo(p)">
+                <div class="card-head">
+                  <div class="card-icon" :class="!p.exists ? 'icon-missing' : ''">
+                    <WarningOutlined v-if="!p.exists" />
+                    <FolderOutlined v-else />
+                  </div>
+                  <div class="card-title-area">
+                    <div class="card-title">{{ p.name }}</div>
+                    <div class="card-dir" :title="p.dir">{{ p.dir }}</div>
+                  </div>
+                </div>
+
+                <div class="card-stats">
+                  <div class="stat">
+                    <span class="stat-num">{{ p.repoCount }}</span>
+                    <span class="stat-label">引用</span>
+                  </div>
+                  <div class="stat" v-if="p.brokenCount > 0">
+                    <span class="stat-num warn">{{ p.brokenCount }}</span>
+                    <span class="stat-label">断链</span>
+                  </div>
+                  <div class="stat" v-if="p.agents && p.agents.length">
+                    <span class="stat-num">{{ p.agents.length }}</span>
+                    <span class="stat-label">助手</span>
+                  </div>
+                </div>
+
+                <div class="card-agents" v-if="p.agents && p.agents.length">
+                  <span v-for="a in p.agents" :key="a" class="agent-chip">{{ agentDisplayName(a) }}</span>
+                </div>
+              </div>
+
+              <div class="card-actions">
+                <a-tooltip title="在文件管理器中打开">
+                  <button class="card-btn" @click="app?.OpenInExplorer(p.dir)">
+                    <FolderOpenOutlined />
+                  </button>
+                </a-tooltip>
+                <a-dropdown :trigger="['click']">
+                  <button class="card-btn" title="更多操作">
+                    <DeleteOutlined />
+                  </button>
+                  <template #overlay>
+                    <a-menu>
+                      <a-menu-item danger @click="onRemove(p, false)">
+                        <DeleteOutlined /> 移除项目
+                      </a-menu-item>
+                      <a-menu-item danger @click="onRemove(p, true)">
+                        <DeleteOutlined /> 移除并清除 .reference
+                      </a-menu-item>
+                    </a-menu>
+                  </template>
+                </a-dropdown>
+              </div>
+            </div>
           </div>
-        </div>
+        </template>
       </div>
 
       <a-empty v-if="!loading && projects.length === 0" description="暂无项目">
@@ -205,6 +244,27 @@ function agentDisplayName(id) {
 .sum-val.warn { color: var(--color-warning); }
 .sum-lbl { font-size: 12px; color: var(--color-text-tertiary); }
 .sum-sep { width: 1px; height: 28px; background: var(--color-border); }
+
+/* group headers */
+.group-head {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 4px 6px; cursor: pointer; user-select: none;
+}
+.group-label {
+  flex: 1; font-size: 12px; font-weight: 600;
+  color: var(--color-text-secondary);
+  font-family: 'Cascadia Code', monospace;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.group-count {
+  font-size: 10px; font-weight: 600; color: var(--color-text-tertiary);
+  background: var(--color-surface-raised); padding: 0 6px; border-radius: 999px;
+}
+.group-caret {
+  font-size: 9px; color: var(--color-text-tertiary); flex-shrink: 0;
+  transition: transform var(--transition-fast);
+}
+.group-caret.open { transform: rotate(90deg); }
 
 /* project cards */
 .project-grid {
