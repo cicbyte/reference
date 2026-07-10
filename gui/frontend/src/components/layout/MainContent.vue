@@ -88,10 +88,12 @@ const layout = useLayoutStore()
 .status-value {
   color: var(--color-text);
   font-weight: 500;
+  font-family: 'Cascadia Code', monospace;
+  font-size: 11px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 300px;
+  max-width: 500px;
 }
 
 .status-sep {

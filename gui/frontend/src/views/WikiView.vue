@@ -133,7 +133,7 @@ function selectRepo(source, repoName) {
 function selectFile(entry) {
   selectedFileKey.value = entry.source + '|' + entry.relPath
   loadContent(entry)
-  layout.setFooterItem('wiki', 'Wiki', entry.relPath, ReadOutlined)
+  layout.setFooterItem('wiki', 'Wiki', entry.fullPath || entry.relPath, ReadOutlined)
 }
 
 onUnmounted(() => {

@@ -313,6 +313,7 @@ export namespace main {
 	    namespace: string;
 	    source: string;
 	    relPath: string;
+	    fullPath: string;
 	    fileName: string;
 	    commit: string;
 	    branch: string;
@@ -332,6 +333,7 @@ export namespace main {
 	        this.namespace = source["namespace"];
 	        this.source = source["source"];
 	        this.relPath = source["relPath"];
+	        this.fullPath = source["fullPath"];
 	        this.fileName = source["fileName"];
 	        this.commit = source["commit"];
 	        this.branch = source["branch"];

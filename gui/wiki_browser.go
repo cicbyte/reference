@@ -22,6 +22,7 @@ type WikiEntry struct {
 	Namespace   string `json:"namespace"`   // owner/org (empty for local)
 	Source      string `json:"source"`      // "remote" | "local"
 	RelPath     string `json:"relPath"`     // path relative to wiki root (slash-joined)
+	FullPath    string `json:"fullPath"`    // absolute disk path
 	FileName    string `json:"fileName"`    // reference.md / <topic>.md
 	Commit      string `json:"commit"`      // from frontmatter
 	Branch      string `json:"branch"`      // from frontmatter
@@ -80,6 +81,7 @@ func (a *ReferenceApp) ListWikiEntries(source string) ([]WikiEntry, error) {
 			}
 			rel = filepath.ToSlash(rel)
 			entry := parseWikiEntry(rel, src)
+			entry.FullPath = path // absolute disk path from WalkDir
 			// file mtime
 			if info, ierr := d.Info(); ierr == nil {
 				entry.ModifiedAt = info.ModTime().Format("2006-01-02")
