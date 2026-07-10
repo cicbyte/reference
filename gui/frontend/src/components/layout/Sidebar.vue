@@ -64,7 +64,8 @@ const menuGroups = [
   {
     key: 'wiki', label: '知识库', icon: ReadOutlined,
     children: [
-      { key: '/wiki', icon: ReadOutlined, label: '知识库' },
+      { key: '/wiki', icon: ReadOutlined, label: '远程知识库' },
+      { key: '/local-wiki', icon: ReadOutlined, label: '本地知识库' },
     ],
   },
   {
