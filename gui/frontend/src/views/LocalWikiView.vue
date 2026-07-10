@@ -10,6 +10,10 @@ import {
   FolderOpenOutlined,
   EyeOutlined,
   CodeOutlined,
+  DownloadOutlined,
+  FileImageOutlined,
+  ZoomInOutlined,
+  ZoomOutOutlined,
 } from '@ant-design/icons-vue'
 import { marked } from 'marked'
 import mermaid from 'mermaid'
@@ -31,10 +35,97 @@ async function renderMermaid() {
       const { svg } = await mermaid.render(id, code)
       const wrapper = el.closest('pre')
       if (wrapper) {
-        wrapper.outerHTML = `<div class="mermaid-rendered">${svg}</div>`
+        const container = document.createElement('div')
+        container.className = 'mermaid-rendered'
+        container.innerHTML = svg
+        container.style.cursor = 'zoom-in'
+        container.addEventListener('click', () => openMermaidModal(svg))
+        wrapper.replaceWith(container)
       }
     } catch { /* leave as code block on parse error */ }
   }
+}
+
+// ---- mermaid modal ----
+const mermaidModalOpen = ref(false)
+const mermaidModalSvg = ref('')
+const mermaidZoom = ref(1)
+const mermaidPanX = ref(0)
+const mermaidPanY = ref(0)
+
+function openMermaidModal(svg) {
+  mermaidModalSvg.value = svg
+  mermaidZoom.value = 1
+  mermaidPanX.value = 0
+  mermaidPanY.value = 0
+  mermaidModalOpen.value = true
+}
+
+function zoomIn() { mermaidZoom.value = Math.min(mermaidZoom.value * 1.25, 5) }
+function zoomOut() { mermaidZoom.value = Math.max(mermaidZoom.value / 1.25, 0.2) }
+function zoomReset() {
+  mermaidZoom.value = 1
+  mermaidPanX.value = 0
+  mermaidPanY.value = 0
+}
+
+function onWheel(e) {
+  e.preventDefault()
+  if (e.deltaY < 0) zoomIn()
+  else zoomOut()
+}
+
+let dragging = false
+let dragStart = { x: 0, y: 0 }
+function onDragStart(e) {
+  dragging = true
+  dragStart = { x: e.clientX - mermaidPanX.value, y: e.clientY - mermaidPanY.value }
+}
+function onDragMove(e) {
+  if (!dragging) return
+  mermaidPanX.value = e.clientX - dragStart.x
+  mermaidPanY.value = e.clientY - dragStart.y
+}
+function onDragEnd() { dragging = false }
+
+function downloadSvg() {
+  if (!mermaidModalSvg.value) return
+  const blob = new Blob([mermaidModalSvg.value], { type: 'image/svg+xml' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'mermaid-diagram.svg'
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function downloadPng() {
+  if (!mermaidModalSvg.value) return
+  const svgBlob = new Blob([mermaidModalSvg.value], { type: 'image/svg+xml' })
+  const url = URL.createObjectURL(svgBlob)
+  const img = new Image()
+  img.onload = () => {
+    const canvas = document.createElement('canvas')
+    const scale = 2
+    canvas.width = img.naturalWidth * scale
+    canvas.height = img.naturalHeight * scale
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.scale(scale, scale)
+    ctx.drawImage(img, 0, 0)
+    URL.revokeObjectURL(url)
+    canvas.toBlob((blob) => {
+      if (!blob) return
+      const pngUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = pngUrl
+      a.download = 'mermaid-diagram.png'
+      a.click()
+      URL.revokeObjectURL(pngUrl)
+    })
+  }
+  img.src = url
 }
 
 // ---- data ----
@@ -324,6 +415,45 @@ onMounted(loadEntries)
         <pre v-else class="wc-source">{{ rawContent }}</pre>
       </div>
     </div>
+
+    <!-- mermaid enlarge modal -->
+    <a-modal
+      v-model:open="mermaidModalOpen"
+      :footer="null"
+      :title="null"
+      width="90%"
+      destroy-on-close
+    >
+      <div
+        class="mermaid-modal-viewport"
+        @wheel.prevent="onWheel"
+        @mousedown="onDragStart"
+        @mousemove="onDragMove"
+        @mouseup="onDragEnd"
+        @mouseleave="onDragEnd"
+      >
+        <div
+          class="mermaid-modal-body"
+          :style="{ transform: `translate(${mermaidPanX}px, ${mermaidPanY}px) scale(${mermaidZoom})` }"
+          v-html="mermaidModalSvg"
+        ></div>
+      </div>
+      <div class="mermaid-modal-actions">
+        <a-button size="small" @click="zoomOut"><ZoomOutOutlined /></a-button>
+        <span class="zoom-level">{{ Math.round(mermaidZoom * 100) }}%</span>
+        <a-button size="small" @click="zoomIn"><ZoomInOutlined /></a-button>
+        <a-button size="small" @click="zoomReset">重置</a-button>
+        <span class="zoom-spacer"></span>
+        <a-button @click="downloadSvg">
+          <template #icon><DownloadOutlined /></template>
+          SVG
+        </a-button>
+        <a-button @click="downloadPng">
+          <template #icon><FileImageOutlined /></template>
+          PNG
+        </a-button>
+      </div>
+    </a-modal>
   </div>
 </template>
 
@@ -501,4 +631,23 @@ onMounted(loadEntries)
   border-radius: var(--radius-md); overflow-x: auto;
 }
 .mermaid-rendered svg { max-width: 100%; height: auto; }
+
+.mermaid-modal-viewport {
+  max-height: 70vh; overflow: hidden; cursor: grab;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--color-background); border-radius: var(--radius-md);
+}
+.mermaid-modal-viewport:active { cursor: grabbing; }
+.mermaid-modal-body {
+  text-align: center; padding: 16px;
+  transition: transform 0.1s ease;
+  transform-origin: center center;
+}
+.mermaid-modal-body svg { max-width: 100%; height: auto; }
+.mermaid-modal-actions {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 0 0; border-top: 1px solid var(--color-border-light);
+}
+.zoom-level { font-size: 12px; color: var(--color-text-secondary); min-width: 42px; text-align: center; }
+.zoom-spacer { flex: 1; }
 </style>
