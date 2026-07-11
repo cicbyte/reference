@@ -10,10 +10,12 @@ import {
   MedicineBoxOutlined,
   SearchOutlined,
   FolderOpenOutlined,
+  CloudDownloadOutlined,
 } from '@ant-design/icons-vue'
 import { useProjectStore } from '../stores/project'
 import AddRepoModal from '../components/repo/AddRepoModal.vue'
 import SccModal from '../components/repo/SccModal.vue'
+import DiagnoseModal from '../components/repo/DiagnoseModal.vue'
 
 const router = useRouter()
 const project = useProjectStore()
@@ -23,6 +25,7 @@ const searchText = ref('')
 const addOpen = ref(false)
 const sccOpen = ref(false)
 const sccRepo = ref('')
+const diagnoseOpen = ref(false)
 
 function openScc(name) {
   sccRepo.value = name
@@ -80,6 +83,17 @@ async function removeRepo(name) {
     message.error('移除失败: ' + e)
   }
 }
+
+async function recloneRepo(name) {
+  message.loading({ content: `正在重新克隆 ${name}...`, key: 'reclone', duration: 0 })
+  try {
+    await window.go.main.ReferenceApp.RecloneRepo(name)
+    message.success({ content: `${name} 重新克隆成功`, key: 'reclone' })
+    repos.value = await window.go.main.ReferenceApp.ListRepos()
+  } catch (e) {
+    message.error({ content: '重新克隆失败: ' + e, key: 'reclone', duration: 5 })
+  }
+}
 </script>
 
 <template>
@@ -95,7 +109,7 @@ async function removeRepo(name) {
         >
           <template #prefix><SearchOutlined /></template>
         </a-input-search>
-        <a-button @click="router.push('/doctor')">
+        <a-button @click="diagnoseOpen = true">
           <template #icon><MedicineBoxOutlined /></template>
           诊断修复
         </a-button>
@@ -115,14 +129,25 @@ async function removeRepo(name) {
       size="middle"
     >
       <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'name'">
+          <span>{{ record.name }}</span>
+          <a-tag v-if="record.cacheExists === false" color="error" style="margin-left: 6px;">
+            缓存缺失
+          </a-tag>
+        </template>
         <template v-if="column.key === 'type'">
           <a-tag :color="record.type === 'remote' ? 'blue' : 'green'">
             {{ record.type === 'remote' ? '远程' : '本地' }}
           </a-tag>
         </template>
         <template v-if="column.key === 'actions'">
+          <a-tooltip v-if="record.cacheExists === false && record.type === 'remote'" title="重新克隆">
+            <a-button size="small" type="text" @click="recloneRepo(record.name)">
+              <template #icon><CloudDownloadOutlined /></template>
+            </a-button>
+          </a-tooltip>
           <a-tooltip title="浏览代码">
-            <a-button size="small" type="text" @click="router.push('/repos/browse/' + record.name)">
+            <a-button size="small" type="text" :disabled="record.cacheExists === false" @click="router.push('/repos/browse/' + record.name)">
               <template #icon><FolderOpenOutlined /></template>
             </a-button>
           </a-tooltip>
@@ -132,7 +157,7 @@ async function removeRepo(name) {
             </a-button>
           </a-tooltip>
           <a-tooltip title="代码统计">
-            <a-button size="small" type="text" @click="openScc(record.name)">
+            <a-button size="small" type="text" :disabled="record.cacheExists === false" @click="openScc(record.name)">
               <template #icon><BarChartOutlined /></template>
             </a-button>
           </a-tooltip>
@@ -149,6 +174,7 @@ async function removeRepo(name) {
 
     <AddRepoModal v-model:open="addOpen" @added="loadRepos" />
     <SccModal v-model:open="sccOpen" :repo-name="sccRepo" />
+    <DiagnoseModal v-model:open="diagnoseOpen" :project-dir="project.currentDir" @update:open="diagnoseOpen = $event; loadRepos()" />
   </div>
 </template>
 

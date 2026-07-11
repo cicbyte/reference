@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"runtime"
 	"runtime/debug"
@@ -220,12 +221,14 @@ func (a *ReferenceApp) CopyPath(text string) error {
 // --- Repo methods ---
 
 type RepoItem struct {
-	Type      string `json:"type"`
-	Name      string `json:"name"`
-	Source    string `json:"source"`
-	CachePath string `json:"cache_path"`
-	CommitAt  string `json:"commit_at"`
-	Branch    string `json:"branch"`
+	Type        string `json:"type"`
+	Name        string `json:"name"`
+	Source      string `json:"source"`
+	CachePath   string `json:"cache_path"`
+	CommitAt    string `json:"commit_at"`
+	Branch      string `json:"branch"`
+	RemoteURL   string `json:"remoteUrl"`
+	CacheExists bool   `json:"cacheExists"`
 }
 
 func (a *ReferenceApp) ListRepos() ([]RepoItem, error) {
@@ -239,25 +242,40 @@ func (a *ReferenceApp) ListRepos() ([]RepoItem, error) {
 		return nil, err
 	}
 
-	config := &repo.ListConfig{ProjectDir: projectDir}
-	processor := repo.NewListProcessor(config, db)
-	result, err := processor.Execute(context.Background())
+	// query DB directly to get full Repo fields (RemoteURL, CachePath, etc.)
+	indexer := repo.NewRepoIndexer(db)
+	dbRepos, err := indexer.List(projectDir)
 	if err != nil {
 		return nil, err
 	}
 
-	items := make([]RepoItem, len(result.Repos))
-	for i, r := range result.Repos {
+	items := make([]RepoItem, len(dbRepos))
+	for i, r := range dbRepos {
+		path := r.CachePath
+		if path == "" {
+			path = r.LocalPath
+		}
+		_, statErr := os.Stat(path)
 		items[i] = RepoItem{
-			Type:      r.Type,
-			Name:      r.Name,
-			Source:    r.Source,
-			CachePath: r.CachePath,
-			CommitAt:  r.CommitAt,
-			Branch:    r.Branch,
+			Type:        string(r.RefType),
+			Name:        r.LinkName,
+			Source:      r.RemoteURL,
+			CachePath:   r.CachePath,
+			CommitAt:    formatCommitAt(r.CommitAt),
+			Branch:      r.Branch,
+			RemoteURL:   r.RemoteURL,
+			CacheExists: !os.IsNotExist(statErr),
 		}
 	}
 	return items, nil
+}
+
+// formatCommitAt formats a *time.Time as a date string (empty if nil).
+func formatCommitAt(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+	return t.Format("2006-01-02")
 }
 
 func (a *ReferenceApp) AddRepo(target string, isLocal bool, name string, branch string) error {
@@ -345,6 +363,8 @@ type SCCFileStat struct {
 	Complexity int    `json:"complexity"`
 }
 
+// RecloneRepo re-clones a remote repo whose cache was deleted. Finds the repo
+// by refName in the current project, then re-clones from RemoteURL to CachePath.
 func (a *ReferenceApp) RunSCC(repoName string) (*SCCResult, error) {
 	projectDir, err := a.getCurrentProject()
 	if err != nil {

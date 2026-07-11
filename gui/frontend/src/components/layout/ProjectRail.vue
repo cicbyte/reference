@@ -17,6 +17,7 @@ import {
 } from '@ant-design/icons-vue'
 import { useProjectStore } from '../../stores/project'
 import { useLayoutStore } from '../../stores/layout'
+import DiagnoseModal from '../repo/DiagnoseModal.vue'
 
 const props = defineProps({
   // When false (global-scope pages) the rail slides out to width:0 instead of
@@ -46,17 +47,13 @@ async function onSwitch(p) {
   await project.switchTo(p.dir)
 }
 
-async function onDoctor(p) {
-  if (!app) return
-  message.loading({ content: `正在修复 ${p.name}...`, key: 'doctor', duration: 0 })
-  try {
-    const res = await app.DoctorProject(p.dir)
-    const fixed = (res.checks || []).filter((c) => c.status === 'fixed').length
-    message.success({ content: `修复完成,${fixed} 项已修复`, key: 'doctor' })
-    await project.loadProjects()
-  } catch (e) {
-    message.error({ content: '修复失败: ' + e, key: 'doctor' })
-  }
+// diagnose modal state
+const diagnoseOpen = ref(false)
+const diagnoseDir = ref('')
+
+function onDoctor(p) {
+  diagnoseDir.value = p.dir
+  diagnoseOpen.value = true
 }
 
 async function onOpenInExplorer(p) {
@@ -230,6 +227,8 @@ function onRemove(p, clean) {
 
     <!-- footer spacer: aligns with MainContent's global-footer (48px) -->
     <div class="rail-footer-spacer"></div>
+
+    <DiagnoseModal v-model:open="diagnoseOpen" :project-dir="diagnoseDir" @update:open="diagnoseOpen = $event; project.loadProjects()" />
   </div>
 </template>
 

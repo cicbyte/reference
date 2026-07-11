@@ -24,7 +24,11 @@ export function CopyPath(arg1:string):Promise<void>;
 
 export function DeleteWikiEntry(arg1:string,arg2:string):Promise<void>;
 
+export function DiagnoseProject(arg1:string):Promise<Array<main.RepoDiagnosis>>;
+
 export function DoctorProject(arg1:string):Promise<main.DoctorResult>;
+
+export function FixRepoLink(arg1:string,arg2:string):Promise<void>;
 
 export function GetAppConfig():Promise<main.AppConfigDTO>;
 
@@ -61,6 +65,10 @@ export function PickProjectFolder():Promise<string>;
 export function PurgeCachedRepo(arg1:string):Promise<void>;
 
 export function ReadWikiEntry(arg1:string,arg2:string):Promise<string>;
+
+export function RecloneRepo(arg1:string):Promise<void>;
+
+export function RelocateLocalRepo(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function RemoveProject(arg1:string,arg2:boolean):Promise<void>;
 

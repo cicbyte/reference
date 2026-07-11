@@ -215,6 +215,40 @@ export namespace main {
 	        this.brokenCount = source["brokenCount"];
 	    }
 	}
+	export class RepoDiagnosis {
+	    refName: string;
+	    linkName: string;
+	    type: string;
+	    remoteUrl: string;
+	    cachePath: string;
+	    localPath: string;
+	    branch: string;
+	    targetExists: boolean;
+	    linkExists: boolean;
+	    wikiExists: boolean;
+	    status: string;
+	    suggestion: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new RepoDiagnosis(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.refName = source["refName"];
+	        this.linkName = source["linkName"];
+	        this.type = source["type"];
+	        this.remoteUrl = source["remoteUrl"];
+	        this.cachePath = source["cachePath"];
+	        this.localPath = source["localPath"];
+	        this.branch = source["branch"];
+	        this.targetExists = source["targetExists"];
+	        this.linkExists = source["linkExists"];
+	        this.wikiExists = source["wikiExists"];
+	        this.status = source["status"];
+	        this.suggestion = source["suggestion"];
+	    }
+	}
 	export class RepoItem {
 	    type: string;
 	    name: string;
@@ -222,6 +256,8 @@ export namespace main {
 	    cache_path: string;
 	    commit_at: string;
 	    branch: string;
+	    remoteUrl: string;
+	    cacheExists: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new RepoItem(source);
@@ -235,6 +271,8 @@ export namespace main {
 	        this.cache_path = source["cache_path"];
 	        this.commit_at = source["commit_at"];
 	        this.branch = source["branch"];
+	        this.remoteUrl = source["remoteUrl"];
+	        this.cacheExists = source["cacheExists"];
 	    }
 	}
 	export class SCCFileStat {

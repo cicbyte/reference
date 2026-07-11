@@ -46,8 +46,16 @@ export function DeleteWikiEntry(arg1, arg2) {
   return window['go']['main']['ReferenceApp']['DeleteWikiEntry'](arg1, arg2);
 }
 
+export function DiagnoseProject(arg1) {
+  return window['go']['main']['ReferenceApp']['DiagnoseProject'](arg1);
+}
+
 export function DoctorProject(arg1) {
   return window['go']['main']['ReferenceApp']['DoctorProject'](arg1);
+}
+
+export function FixRepoLink(arg1, arg2) {
+  return window['go']['main']['ReferenceApp']['FixRepoLink'](arg1, arg2);
 }
 
 export function GetAppConfig() {
@@ -120,6 +128,14 @@ export function PurgeCachedRepo(arg1) {
 
 export function ReadWikiEntry(arg1, arg2) {
   return window['go']['main']['ReferenceApp']['ReadWikiEntry'](arg1, arg2);
+}
+
+export function RecloneRepo(arg1) {
+  return window['go']['main']['ReferenceApp']['RecloneRepo'](arg1);
+}
+
+export function RelocateLocalRepo(arg1, arg2, arg3) {
+  return window['go']['main']['ReferenceApp']['RelocateLocalRepo'](arg1, arg2, arg3);
 }
 
 export function RemoveProject(arg1, arg2) {

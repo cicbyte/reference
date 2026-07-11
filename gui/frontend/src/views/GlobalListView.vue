@@ -14,11 +14,14 @@ import {
   CopyOutlined,
 } from '@ant-design/icons-vue'
 import { useProjectStore } from '../stores/project'
+import DiagnoseModal from '../components/repo/DiagnoseModal.vue'
 
 const router = useRouter()
 const project = useProjectStore()
 const loading = ref(true)
 const projects = ref([])
+const diagnoseOpen = ref(false)
+const diagnoseDir = ref('')
 
 const app = window.go?.main?.ReferenceApp
 
@@ -107,21 +110,9 @@ function switchTo(p) {
   })
 }
 
-async function onDoctor(p) {
-  if (!app) return
-  message.loading({ content: `正在修复 ${p.name}...`, key: 'doctor', duration: 0 })
-  try {
-    // race against a 35s timeout so the UI never hangs indefinitely
-    const timeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('修复超时')), 35000),
-    )
-    const res = await Promise.race([app.DoctorProject(p.dir), timeout])
-    const fixed = (res.checks || []).filter((c) => c.status === 'fixed').length
-    message.success({ content: `修复完成,${fixed} 项已修复`, key: 'doctor' })
-    await loadProjects()
-  } catch (e) {
-    message.error({ content: '修复失败: ' + e, key: 'doctor', duration: 5 })
-  }
+function onDoctor(p) {
+  diagnoseDir.value = p.dir
+  diagnoseOpen.value = true
 }
 
 async function onCopyPath(p) {
@@ -288,6 +279,8 @@ function agentDisplayName(id) {
         <template #image><FolderOutlined style="font-size: 48px; color: var(--color-text-tertiary); opacity: 0.3;" /></template>
       </a-empty>
     </a-spin>
+
+    <DiagnoseModal v-model:open="diagnoseOpen" :project-dir="diagnoseDir" @update:open="diagnoseOpen = $event; loadProjects()" />
   </div>
 </template>
 
