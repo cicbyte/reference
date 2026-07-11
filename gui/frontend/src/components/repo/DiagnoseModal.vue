@@ -25,12 +25,30 @@ const fixingKey = ref('')  // refName of item currently being fixed
 
 const okCount = computed(() => diagnoses.value.filter((d) => d.status === 'ok').length)
 const issueCount = computed(() => diagnoses.value.length - okCount.value)
+const autoFixableCount = computed(() =>
+  diagnoses.value.filter((d) => d.status === 'broken-link' || d.status === 'missing-wiki').length
+)
 
 async function load() {
   if (!props.projectDir || !app?.DiagnoseProject) return
   loading.value = true
   try {
-    diagnoses.value = await app.DiagnoseProject(props.projectDir)
+    const result = await app.DiagnoseProject(props.projectDir)
+    // normalize to plain objects so reactivity + filter works reliably
+    diagnoses.value = result.map((d) => ({
+      refName: d.refName,
+      linkName: d.linkName,
+      type: d.type,
+      remoteUrl: d.remoteUrl,
+      cachePath: d.cachePath,
+      localPath: d.localPath,
+      branch: d.branch,
+      targetExists: d.targetExists,
+      linkExists: d.linkExists,
+      wikiExists: d.wikiExists,
+      status: d.status,
+      suggestion: d.suggestion,
+    }))
   } catch (e) {
     message.error('诊断失败: ' + e)
   } finally {
@@ -259,13 +277,13 @@ async function removeRepo(d) {
         刷新
       </a-button>
       <a-button
-        v-if="issueCount > 0"
+        v-if="autoFixableCount > 0"
         type="primary"
         @click="fixAll"
         :disabled="loading"
       >
         <template #icon><ToolOutlined /></template>
-        全部自动修复 ({{ diagnoses.filter(d => d.status === 'broken-link' || d.status === 'missing-wiki').length }})
+        自动修复链接 ({{ autoFixableCount }})
       </a-button>
       <div class="footer-spacer"></div>
       <a-button @click="close">关闭</a-button>
