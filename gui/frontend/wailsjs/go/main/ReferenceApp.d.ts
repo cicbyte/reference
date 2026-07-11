@@ -74,6 +74,8 @@ export function RemoveProject(arg1:string,arg2:boolean):Promise<void>;
 
 export function RemoveRepo(arg1:string,arg2:boolean):Promise<void>;
 
+export function RemoveRepoFromProject(arg1:string,arg2:string):Promise<void>;
+
 export function RunDoctor():Promise<main.DoctorResult>;
 
 export function RunSCC(arg1:string):Promise<main.SCCResult>;

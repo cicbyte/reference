@@ -146,6 +146,10 @@ export function RemoveRepo(arg1, arg2) {
   return window['go']['main']['ReferenceApp']['RemoveRepo'](arg1, arg2);
 }
 
+export function RemoveRepoFromProject(arg1, arg2) {
+  return window['go']['main']['ReferenceApp']['RemoveRepoFromProject'](arg1, arg2);
+}
+
 export function RunDoctor() {
   return window['go']['main']['ReferenceApp']['RunDoctor']();
 }

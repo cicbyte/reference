@@ -9,6 +9,7 @@ import {
   FolderOpenOutlined,
   ToolOutlined,
   ReloadOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons-vue'
 
 const props = defineProps({
@@ -119,6 +120,19 @@ async function fixAll() {
   message.success(`已修复 ${ok}/${fixable.length} 项`)
   await load()
 }
+
+async function removeRepo(d) {
+  fixingKey.value = d.refName
+  try {
+    await app.RemoveRepoFromProject(props.projectDir, d.refName)
+    message.success(`${d.refName} 已移除`)
+    await load()
+  } catch (e) {
+    message.error('移除失败: ' + e)
+  } finally {
+    fixingKey.value = ''
+  }
+}
 </script>
 
 <template>
@@ -226,6 +240,17 @@ async function fixAll() {
             </a-button>
             <!-- ok → nothing -->
             <span v-else class="ok-text">正常</span>
+
+            <!-- remove (always available) -->
+            <a-popconfirm
+              :title="`移除 ${d.refName}？`"
+              ok-text="移除" ok-type="danger" cancel-text="取消"
+              @confirm="removeRepo(d)"
+            >
+              <a-button size="small" type="text" danger :loading="fixingKey === d.refName" title="移除引用">
+                <template #icon><DeleteOutlined /></template>
+              </a-button>
+            </a-popconfirm>
           </div>
         </div>
       </div>

@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 
+	"github.com/cicbyte/reference/internal/common"
 	"github.com/cicbyte/reference/internal/logic/repo"
 	"github.com/cicbyte/reference/internal/models"
 	"github.com/cicbyte/reference/internal/utils"
@@ -282,4 +284,24 @@ func resolveWikiDirForRepo(r *models.Repo) string {
 		return filepath.Join(utils.ConfigInstance.GetLocalWikiDir(), r.WikiSubPath)
 	}
 	return filepath.Join(utils.ConfigInstance.GetWikiDir(), r.WikiSubPath)
+}
+
+// RemoveRepoFromProject removes a repo reference from a specific project
+// (not necessarily the current one). Used by the diagnose modal which can
+// operate on any project.
+func (a *ReferenceApp) RemoveRepoFromProject(projectDir string, refName string) error {
+	if projectDir == "" || refName == "" {
+		return fmt.Errorf("参数不能为空")
+	}
+	db, err := utils.GetGormDB()
+	if err != nil {
+		return err
+	}
+	config := &repo.RemoveConfig{
+		ProjectDir: projectDir,
+		Identifier: refName,
+		Yes:        true,
+	}
+	processor := repo.NewRemoveProcessor(config, common.AppConfigModel, db)
+	return processor.Execute(context.Background())
 }
