@@ -153,9 +153,6 @@ async function removeRepo(d) {
             {{ okCount }} 正常 · {{ issueCount }} 需修复
           </span>
         </div>
-        <button class="diag-refresh" title="重新诊断" @click="load">
-          <ReloadOutlined />
-        </button>
       </div>
     </template>
 
@@ -257,8 +254,13 @@ async function removeRepo(d) {
     </a-spin>
 
     <div class="diag-footer">
+      <a-button @click="load" :loading="loading" size="small">
+        <template #icon><ReloadOutlined /></template>
+        刷新
+      </a-button>
       <a-button
         v-if="issueCount > 0"
+        type="primary"
         @click="fixAll"
         :disabled="loading"
       >
@@ -281,13 +283,6 @@ async function removeRepo(d) {
 .diag-head-text { display: flex; flex-direction: column; gap: 1px; flex: 1; }
 .diag-head-title { font-size: 16px; font-weight: 600; color: var(--color-text); line-height: 1.2; }
 .diag-head-sub { font-size: 12px; color: var(--color-text-tertiary); }
-.diag-refresh {
-  display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border: none; background: transparent;
-  color: var(--color-text-tertiary); cursor: pointer;
-  border-radius: var(--radius-xs); transition: all var(--transition-fast);
-}
-.diag-refresh:hover { background: var(--color-hover); color: var(--color-primary); }
 
 .diag-empty {
   padding: 40px; text-align: center; font-size: 14px; color: var(--color-text-tertiary);
