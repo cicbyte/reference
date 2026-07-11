@@ -111,12 +111,16 @@ async function onDoctor(p) {
   if (!app) return
   message.loading({ content: `正在修复 ${p.name}...`, key: 'doctor', duration: 0 })
   try {
-    const res = await app.DoctorProject(p.dir)
+    // race against a 35s timeout so the UI never hangs indefinitely
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('修复超时')), 35000),
+    )
+    const res = await Promise.race([app.DoctorProject(p.dir), timeout])
     const fixed = (res.checks || []).filter((c) => c.status === 'fixed').length
     message.success({ content: `修复完成,${fixed} 项已修复`, key: 'doctor' })
     await loadProjects()
   } catch (e) {
-    message.error({ content: '修复失败: ' + e, key: 'doctor' })
+    message.error({ content: '修复失败: ' + e, key: 'doctor', duration: 5 })
   }
 }
 

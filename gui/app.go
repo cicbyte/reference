@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"github.com/cicbyte/reference/internal/common"
+	"github.com/cicbyte/reference/internal/log"
 	"github.com/cicbyte/reference/internal/utils"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -82,6 +83,7 @@ func (a *ReferenceApp) startup(ctx context.Context) {
 		common.AppConfigModel = utils.ConfigInstance.LoadConfig()
 		utils.ConfigInstance.ApplyConfig(common.AppConfigModel)
 		_ = utils.InitDataDirs()
+		_ = log.Init(utils.ConfigInstance.GetLogPath())
 		_, _ = utils.GetGormDB()
 	}()
 

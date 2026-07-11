@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os/exec"
 	"runtime"
+	"runtime/debug"
+	"time"
 
 	"github.com/cicbyte/reference/cmd/version"
 	"github.com/cicbyte/reference/internal/common"
@@ -147,22 +149,35 @@ func (a *ReferenceApp) RemoveProject(projectDir string, clean bool) error {
 // DoctorProject runs diagnosis + auto-repair on a specific project (broken
 // junctions are rebuilt, reference.map.jsonl regenerated). Returns the same
 // DoctorResult shape as RunDoctor so the UI can reuse rendering.
-func (a *ReferenceApp) DoctorProject(projectDir string) (*DoctorResult, error) {
+func (a *ReferenceApp) DoctorProject(projectDir string) (result *DoctorResult, err error) {
 	if projectDir == "" {
 		return nil, fmt.Errorf("项目路径不能为空")
 	}
+	// recover from panics in doctor checks — log the stack trace so we can
+	// diagnose the root cause, and return a clean error to the frontend.
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("DoctorProject panic: %v\n%s\n", r, debug.Stack())
+			err = fmt.Errorf("诊断内部错误: %v", r)
+			result = nil
+		}
+	}()
 	db, err := utils.GetGormDB()
 	if err != nil {
 		return nil, err
 	}
+	// timeout so a stuck check (e.g. mklink on a dead network path) doesn't
+	// hang the UI forever.
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	config := &repo.DoctorConfig{ProjectDir: projectDir}
 	processor := repo.NewDoctorProcessor(config, db)
-	result, err := processor.Execute(context.Background())
+	res, err := processor.Execute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	checks := make([]DoctorCheck, len(result.Checks))
-	for i, c := range result.Checks {
+	checks := make([]DoctorCheck, len(res.Checks))
+	for i, c := range res.Checks {
 		checks[i] = DoctorCheck{
 			Group:   c.Group,
 			Name:    c.Name,
@@ -170,7 +185,7 @@ func (a *ReferenceApp) DoctorProject(projectDir string) (*DoctorResult, error) {
 			Details: c.Details,
 		}
 	}
-	return &DoctorResult{Checks: checks, Summary: result.Summary}, nil
+	return &DoctorResult{Checks: checks, Summary: res.Summary}, nil
 }
 
 // OpenInExplorer reveals the project directory in the platform file manager
