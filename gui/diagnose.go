@@ -110,7 +110,12 @@ func (a *ReferenceApp) DiagnoseProject(projectDir string) ([]RepoDiagnosis, erro
 
 // FixRepoLink rebuilds the repos + wiki junctions for a single repo.
 // Only works when the target directory still exists.
-func (a *ReferenceApp) FixRepoLink(projectDir string, refName string) error {
+func (a *ReferenceApp) FixRepoLink(projectDir string, refName string) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("修复内部错误: %v", r)
+		}
+	}()
 	if projectDir == "" || refName == "" {
 		return fmt.Errorf("参数不能为空")
 	}
@@ -164,7 +169,14 @@ func (a *ReferenceApp) FixRepoLink(projectDir string, refName string) error {
 }
 
 // RecloneRepo re-clones a remote repo and then rebuilds its junctions.
-func (a *ReferenceApp) RecloneRepo(projectDir string, repoName string) error {
+func (a *ReferenceApp) RecloneRepo(projectDir string, repoName string) (err error) {
+	// recover so the frontend always gets a response (success or error),
+	// never a silently-dropped IPC call that leaves the UI hanging.
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("克隆内部错误: %v", r)
+		}
+	}()
 	if projectDir == "" {
 		// fall back to current project for backward compat
 		var err error

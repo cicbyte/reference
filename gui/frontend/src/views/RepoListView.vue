@@ -87,7 +87,10 @@ async function removeRepo(name) {
 async function recloneRepo(name) {
   message.loading({ content: `正在重新克隆 ${name}...`, key: 'reclone', duration: 0 })
   try {
-    await window.go.main.ReferenceApp.RecloneRepo(project.currentDir, name)
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('克隆超时(3分钟)')), 180000),
+    )
+    await Promise.race([window.go.main.ReferenceApp.RecloneRepo(project.currentDir, name), timeout])
     message.success({ content: `${name} 重新克隆成功`, key: 'reclone' })
     repos.value = await window.go.main.ReferenceApp.ListRepos()
   } catch (e) {

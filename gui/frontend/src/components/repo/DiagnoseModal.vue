@@ -73,7 +73,10 @@ async function reclone(d) {
   fixingKey.value = d.refName
   message.loading({ content: `正在重新克隆 ${d.refName}...`, key: 'reclone', duration: 0 })
   try {
-    await app.RecloneRepo(props.projectDir, d.refName)
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('克隆超时(3分钟)')), 180000),
+    )
+    await Promise.race([app.RecloneRepo(props.projectDir, d.refName), timeout])
     message.success({ content: `${d.refName} 重新克隆成功`, key: 'reclone' })
     await load()
   } catch (e) {
