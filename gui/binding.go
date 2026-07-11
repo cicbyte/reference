@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"runtime/debug"
 	"time"
@@ -499,11 +500,42 @@ func (a *ReferenceApp) GlobalStats() (map[string]interface{}, error) {
 	}
 
 	return map[string]interface{}{
-		"total_projects": result.Projects.Total,
-		"total_repos":    result.Repos.TotalCached,
-		"cache_size":     result.CacheSize,
-		"db_size":        result.DBSize,
+		"total_projects":  result.Projects.Total,
+		"existing_projects": result.Projects.Existing,
+		"deleted_projects":  result.Projects.Deleted,
+		"total_repos":     result.Repos.TotalCached,
+		"cache_size":      result.CacheSize,
+		"wiki_size":       result.WikiSize,
+		"db_size":         result.DBSize,
+		"repos_dir":       utils.ConfigInstance.GetReposDir(),
+		"wiki_dir":        utils.ConfigInstance.GetWikiDir(),
 	}, nil
+}
+
+// GetDirSizeAsync returns the total size (bytes) of a directory. Called
+// async by the frontend so the stats page loads instantly — dirSize on
+// large repos/wiki trees can take several seconds.
+func (a *ReferenceApp) GetDirSizeAsync(path string) (int64, error) {
+	if path == "" {
+		return 0, nil
+	}
+	return dirSizeAsync(path)
+}
+
+func dirSizeAsync(path string) (int64, error) {
+	var size int64
+	err := filepath.WalkDir(path, func(_ string, d os.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		if !d.IsDir() {
+			if info, ierr := d.Info(); ierr == nil {
+				size += info.Size()
+			}
+		}
+		return nil
+	})
+	return size, err
 }
 
 func (a *ReferenceApp) GlobalGC(dryRun bool) (map[string]interface{}, error) {

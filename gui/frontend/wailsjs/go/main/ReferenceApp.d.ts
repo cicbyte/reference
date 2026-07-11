@@ -36,6 +36,8 @@ export function GetCacheSize(arg1:string):Promise<number>;
 
 export function GetCurrentProject():Promise<main.ProjectInfo>;
 
+export function GetDirSizeAsync(arg1:string):Promise<number>;
+
 export function GetProxyInfo():Promise<Record<string, any>>;
 
 export function GetVersionInfo():Promise<Record<string, any>>;

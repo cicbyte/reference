@@ -59,20 +59,14 @@ func (p *GlobalStatsProcessor) Execute(ctx context.Context) (*GlobalStatsResult,
 	}
 	result.Repos.TotalCached = len(cachePaths)
 
-	reposDir := utils.ConfigInstance.GetReposDirFromConfig(p.appConfig)
-	if size, err := dirSize(reposDir); err == nil {
-		result.CacheSize = size
-	}
-
-	wikiDir := utils.ConfigInstance.GetWikiDir()
-	if size, err := dirSize(wikiDir); err == nil {
-		result.WikiSize = size
-	}
-
+	// DB size is fast (single stat)
 	dbPath := utils.ConfigInstance.GetDbPath()
 	if info, err := os.Stat(dbPath); err == nil {
 		result.DBSize = info.Size()
 	}
+
+	// Cache/wiki sizes are slow (recursive walk) — left as 0 here.
+	// The GUI fetches them async via GetDirSizeAsync to avoid blocking.
 
 	return result, nil
 }

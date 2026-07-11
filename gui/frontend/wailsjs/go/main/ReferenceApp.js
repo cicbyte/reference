@@ -70,6 +70,10 @@ export function GetCurrentProject() {
   return window['go']['main']['ReferenceApp']['GetCurrentProject']();
 }
 
+export function GetDirSizeAsync(arg1) {
+  return window['go']['main']['ReferenceApp']['GetDirSizeAsync'](arg1);
+}
+
 export function GetProxyInfo() {
   return window['go']['main']['ReferenceApp']['GetProxyInfo']();
 }
