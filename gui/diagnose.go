@@ -164,10 +164,14 @@ func (a *ReferenceApp) FixRepoLink(projectDir string, refName string) error {
 }
 
 // RecloneRepo re-clones a remote repo and then rebuilds its junctions.
-func (a *ReferenceApp) RecloneRepo(repoName string) error {
-	projectDir, err := a.getCurrentProject()
-	if err != nil {
-		return err
+func (a *ReferenceApp) RecloneRepo(projectDir string, repoName string) error {
+	if projectDir == "" {
+		// fall back to current project for backward compat
+		var err error
+		projectDir, err = a.getCurrentProject()
+		if err != nil {
+			return err
+		}
 	}
 	db, err := utils.GetGormDB()
 	if err != nil {

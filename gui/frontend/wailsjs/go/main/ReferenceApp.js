@@ -130,8 +130,8 @@ export function ReadWikiEntry(arg1, arg2) {
   return window['go']['main']['ReferenceApp']['ReadWikiEntry'](arg1, arg2);
 }
 
-export function RecloneRepo(arg1) {
-  return window['go']['main']['ReferenceApp']['RecloneRepo'](arg1);
+export function RecloneRepo(arg1, arg2) {
+  return window['go']['main']['ReferenceApp']['RecloneRepo'](arg1, arg2);
 }
 
 export function RelocateLocalRepo(arg1, arg2, arg3) {

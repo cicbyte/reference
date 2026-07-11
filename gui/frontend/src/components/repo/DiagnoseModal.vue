@@ -73,7 +73,7 @@ async function reclone(d) {
   fixingKey.value = d.refName
   message.loading({ content: `正在重新克隆 ${d.refName}...`, key: 'reclone', duration: 0 })
   try {
-    await app.RecloneRepo(d.refName)
+    await app.RecloneRepo(props.projectDir, d.refName)
     message.success({ content: `${d.refName} 重新克隆成功`, key: 'reclone' })
     await load()
   } catch (e) {
@@ -167,6 +167,10 @@ async function fixAll() {
                 </a-tag>
               </div>
               <div class="diag-item-detail">
+                <span class="detail-line" v-if="d.type === 'remote' && d.remoteUrl">
+                  <span class="detail-label">remote</span>
+                  <span class="mono">{{ d.remoteUrl }}</span>
+                </span>
                 <span class="detail-line">
                   <span class="detail-label">target</span>
                   <span class="mono">{{ d.type === 'remote' ? d.cachePath : d.localPath }}</span>

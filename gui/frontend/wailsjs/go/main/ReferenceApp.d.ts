@@ -66,7 +66,7 @@ export function PurgeCachedRepo(arg1:string):Promise<void>;
 
 export function ReadWikiEntry(arg1:string,arg2:string):Promise<string>;
 
-export function RecloneRepo(arg1:string):Promise<void>;
+export function RecloneRepo(arg1:string,arg2:string):Promise<void>;
 
 export function RelocateLocalRepo(arg1:string,arg2:string,arg3:string):Promise<void>;
 

@@ -87,7 +87,7 @@ async function removeRepo(name) {
 async function recloneRepo(name) {
   message.loading({ content: `正在重新克隆 ${name}...`, key: 'reclone', duration: 0 })
   try {
-    await window.go.main.ReferenceApp.RecloneRepo(name)
+    await window.go.main.ReferenceApp.RecloneRepo(project.currentDir, name)
     message.success({ content: `${name} 重新克隆成功`, key: 'reclone' })
     repos.value = await window.go.main.ReferenceApp.ListRepos()
   } catch (e) {
