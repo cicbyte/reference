@@ -54,6 +54,8 @@ watch(groupedProjects, (groups) => {
 const totalRepos = computed(() =>
   projects.value.reduce((s, p) => s + (p.repoCount || 0), 0),
 )
+const missingProjects = computed(() => projects.value.filter((p) => !p.exists))
+
 const brokenProjects = computed(() =>
   projects.value.filter((p) => !p.exists || p.brokenCount > 0).length,
 )
@@ -72,6 +74,31 @@ async function loadProjects() {
 }
 
 onMounted(loadProjects)
+
+function cleanupMissing() {
+  const missing = missingProjects.value
+  if (!missing.length) return
+  const names = missing.map((p) => p.name).join('、')
+  Modal.confirm({
+    title: `清理 ${missing.length} 个失效项目`,
+    content: `以下项目目录已不存在:${names}。将从数据库中移除这些项目的引用记录。`,
+    okText: '清理',
+    okType: 'danger',
+    cancelText: '取消',
+    async onOk() {
+      let ok = 0
+      for (const p of missing) {
+        try {
+          await app.RemoveProject(p.dir, false)
+          ok++
+        } catch { /* skip */ }
+      }
+      message.success(`已清理 ${ok} 个失效项目`)
+      await loadProjects()
+      await project.loadProjects()
+    },
+  })
+}
 
 function switchTo(p) {
   project.switchTo(p.dir).then(() => {
@@ -136,10 +163,16 @@ function agentDisplayName(id) {
   <div class="global-list">
     <div class="page-header">
       <h2>项目列表</h2>
-      <a-button @click="loadProjects" :loading="loading">
-        <template #icon><ReloadOutlined /></template>
-        刷新
-      </a-button>
+      <div class="header-actions">
+        <a-button v-if="missingProjects.length > 0" danger @click="cleanupMissing">
+          <template #icon><DeleteOutlined /></template>
+          清理失效项目 ({{ missingProjects.length }})
+        </a-button>
+        <a-button @click="loadProjects" :loading="loading">
+          <template #icon><ReloadOutlined /></template>
+          刷新
+        </a-button>
+      </div>
     </div>
 
     <!-- summary -->
@@ -262,6 +295,7 @@ function agentDisplayName(id) {
   margin-bottom: var(--spacing-lg);
 }
 .page-header h2 { font-size: 20px; font-weight: 600; color: var(--color-text); margin: 0; }
+.header-actions { display: flex; gap: var(--spacing-sm); }
 
 /* summary */
 .summary-strip {
