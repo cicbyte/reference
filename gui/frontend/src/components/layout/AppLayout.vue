@@ -16,11 +16,11 @@ const project = useProjectStore()
 // Project rail visibility is fully user-controlled via the Navbar toggle.
 const showProjectRail = computed(() => layout.projectRailVisible)
 
-// Footer: show current project (git repo) info on project-scoped pages.
+// Footer: always show the current project when one is selected.
 watch(
-  [() => project.currentName, () => project.currentDir, showProjectRail],
-  ([name, dir, scoped]) => {
-    if (scoped && name) {
+  [() => project.currentName, () => project.currentDir],
+  ([name]) => {
+    if (name) {
       layout.setFooterItem('project', '项目', name, BranchesOutlined)
     } else {
       layout.clearFooterItem('project')

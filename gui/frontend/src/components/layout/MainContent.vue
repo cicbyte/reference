@@ -19,18 +19,13 @@ const layout = useLayoutStore()
       <div class="status-bar">
         <template v-for="item in layout.footerItems" :key="item.key">
           <span v-if="item.value" class="status-item">
-            <BranchesOutlined v-if="item.icon === 'branch'" />
-            <component :is="item.icon" v-else-if="item.icon" />
+            <component :is="item.icon" v-if="item.icon" />
             <span class="status-label" v-if="item.label">{{ item.label }}:</span>
             <span class="status-value" :title="item.value">{{ item.value }}</span>
           </span>
           <span v-if="item.value" class="status-sep"></span>
         </template>
         <span class="status-spacer"></span>
-        <span class="status-item">
-          <BranchesOutlined />
-          <span class="status-value">reference</span>
-        </span>
       </div>
     </div>
   </div>
