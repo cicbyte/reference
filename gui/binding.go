@@ -259,7 +259,7 @@ func (a *ReferenceApp) ListRepos() ([]RepoItem, error) {
 		_, statErr := os.Stat(path)
 		items[i] = RepoItem{
 			Type:        string(r.RefType),
-			Name:        r.LinkName,
+			Name:        r.GetRefName(),
 			Source:      r.RemoteURL,
 			CachePath:   r.CachePath,
 			CommitAt:    formatCommitAt(r.CommitAt),

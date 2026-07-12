@@ -60,7 +60,8 @@ func resolveRepoPath(projectDir, refName string) (string, error) {
 		return "", err
 	}
 	for _, r := range repos {
-		if r.GetRefName() == refName {
+		// match by RefName (primary) or LinkName (what ListRepos returns as "name")
+		if r.GetRefName() == refName || r.LinkName == refName {
 			if r.CachePath != "" {
 				return r.CachePath, nil
 			}
