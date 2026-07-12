@@ -13,15 +13,8 @@ const route = useRoute()
 const layout = useLayoutStore()
 const project = useProjectStore()
 
-// Project rail visibility:
-// - 'hide' override → never show
-// - 'show' override → always show (even on global pages)
-// - 'default' → follow route meta (project-scoped pages show it)
-const showProjectRail = computed(() => {
-  if (layout.projectRailOverride === 'hide') return false
-  if (layout.projectRailOverride === 'show') return true
-  return !!route.meta?.projectScoped
-})
+// Project rail visibility is fully user-controlled via the Navbar toggle.
+const showProjectRail = computed(() => layout.projectRailVisible)
 
 // Footer: show current project (git repo) info on project-scoped pages.
 watch(

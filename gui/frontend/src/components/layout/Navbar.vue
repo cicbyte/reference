@@ -12,9 +12,8 @@ const breadcrumbItems = computed(() => {
   return [{ label: route.meta?.title || 'reference' }]
 })
 
-// rail toggle is available on all pages
+// rail toggle is available on all pages, fully user-controlled
 const canToggleRail = computed(() => true)
-const railVisible = computed(() => layout.projectRailOverride !== 'hide')
 
 function minimize() { app?.WindowMinimize() }
 function maximize() { app?.WindowMaximize() }
@@ -27,8 +26,8 @@ function close() { app?.WindowClose() }
       <button
         v-show="canToggleRail && !layout.isMobile"
         class="sidebar-toggle"
-        :class="{ 'toggle-active': railVisible }"
-        :title="railVisible ? '隐藏项目栏' : '显示项目栏'"
+        :class="{ 'toggle-active': layout.projectRailVisible }"
+        :title="layout.projectRailVisible ? '隐藏项目栏' : '显示项目栏'"
         @click="layout.toggleProjectRailVisible()"
       >
         <AppstoreOutlined />
