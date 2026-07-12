@@ -11,12 +11,15 @@ import {
   WarningOutlined,
   LinkOutlined,
 } from '@ant-design/icons-vue'
+import AiSparkIcon from '../components/common/AiSparkIcon.vue'
 import { useProjectStore } from '../stores/project'
+import DiagnoseModal from '../components/repo/DiagnoseModal.vue'
 
 const router = useRouter()
 const project = useProjectStore()
 const repos = ref([])
 const loading = ref(true)
+const diagnoseOpen = ref(false)
 
 // ---- derived stats from repos + active project ----
 const remoteCount = computed(() => repos.value.filter((r) => r.type === 'remote').length)
@@ -109,7 +112,7 @@ function agentDisplayName(id) {
             <div class="stat-label">远程 / 本地</div>
           </div>
         </div>
-        <div class="stat-card" :class="{ 'stat-warn': brokenCount > 0 }" @click="router.push('/doctor')">
+        <div class="stat-card" :class="{ 'stat-warn': brokenCount > 0 }" @click="diagnoseOpen = true">
           <div class="stat-icon" :class="brokenCount > 0 ? 'stat-orange' : 'stat-green'">
             <WarningOutlined v-if="brokenCount > 0" />
             <LinkOutlined v-else />
@@ -138,9 +141,9 @@ function agentDisplayName(id) {
           <template #icon><CloudDownloadOutlined /></template>
           仓库列表
         </a-button>
-        <a-button @click="router.push('/doctor')">
+        <a-button @click="diagnoseOpen = true">
           <template #icon><MedicineBoxOutlined /></template>
-          运行诊断
+          诊断修复
         </a-button>
       </div>
 
@@ -228,6 +231,8 @@ function agentDisplayName(id) {
         </a-empty>
       </a-spin>
     </template>
+
+    <DiagnoseModal v-model:open="diagnoseOpen" :project-dir="project.currentDir" />
   </div>
 </template>
 
