@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { MinusOutlined, BorderOutlined, CloseOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons-vue'
+import { MinusOutlined, BorderOutlined, CloseOutlined, MenuFoldOutlined, MenuUnfoldOutlined, AppstoreOutlined } from '@ant-design/icons-vue'
 import { useLayoutStore } from '../../stores/layout'
 
 const route = useRoute()
@@ -12,6 +12,10 @@ const breadcrumbItems = computed(() => {
   return [{ label: route.meta?.title || 'reference' }]
 })
 
+// rail toggle is available on all pages
+const canToggleRail = computed(() => true)
+const railVisible = computed(() => layout.projectRailOverride !== 'hide')
+
 function minimize() { app?.WindowMinimize() }
 function maximize() { app?.WindowMaximize() }
 function close() { app?.WindowClose() }
@@ -20,6 +24,16 @@ function close() { app?.WindowClose() }
 <template>
   <div class="navbar">
     <div class="navbar-left">
+      <button
+        v-show="canToggleRail && !layout.isMobile"
+        class="sidebar-toggle"
+        :class="{ 'toggle-active': railVisible }"
+        :title="railVisible ? '隐藏项目栏' : '显示项目栏'"
+        @click="layout.toggleProjectRailVisible()"
+      >
+        <AppstoreOutlined />
+      </button>
+
       <button
         v-show="!layout.isMobile"
         class="sidebar-toggle"
@@ -93,6 +107,7 @@ function close() { app?.WindowClose() }
   --wails-draggable: no-drag;
 }
 .sidebar-toggle:hover { background: var(--color-hover); color: var(--color-primary); }
+.sidebar-toggle.toggle-active { color: var(--color-primary); }
 
 .breadcrumb { font-size: 13px; min-width: 0; --wails-draggable: no-drag; }
 

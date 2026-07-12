@@ -11,6 +11,8 @@ interface FooterItem {
 export const useLayoutStore = defineStore('layout', () => {
   const sidebarCollapsed = ref(false)
   const projectRailCollapsed = ref(false)
+  // 'default' = follow route meta; 'show' = force show; 'hide' = force hide
+  const projectRailOverride = ref('default')
   const windowWidth = ref(window.innerWidth)
 
   // Footer status items — views write to this, MainContent renders it.
@@ -43,6 +45,14 @@ export const useLayoutStore = defineStore('layout', () => {
     projectRailCollapsed.value = !projectRailCollapsed.value
   }
 
+  function toggleProjectRailVisible() {
+    projectRailOverride.value = projectRailOverride.value === 'hide' ? 'default' : 'hide'
+  }
+
+  function setProjectRailVisible(visible: boolean) {
+    projectRailOverride.value = visible ? 'show' : 'hide'
+  }
+
   function handleResize() {
     windowWidth.value = window.innerWidth
     if (isMobile.value) {
@@ -54,12 +64,15 @@ export const useLayoutStore = defineStore('layout', () => {
   return {
     sidebarCollapsed,
     projectRailCollapsed,
+    projectRailOverride,
     windowWidth,
     footerItems,
     isMobile,
     isTablet,
     toggleSidebar,
     toggleProjectRail,
+    toggleProjectRailVisible,
+    setProjectRailVisible,
     handleResize,
     setFooterItem,
     clearFooterItem,

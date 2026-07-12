@@ -13,8 +13,15 @@ const route = useRoute()
 const layout = useLayoutStore()
 const project = useProjectStore()
 
-// Three-column on project-scoped pages, two-column on global pages.
-const showProjectRail = computed(() => !!route.meta?.projectScoped)
+// Project rail visibility:
+// - 'hide' override → never show
+// - 'show' override → always show (even on global pages)
+// - 'default' → follow route meta (project-scoped pages show it)
+const showProjectRail = computed(() => {
+  if (layout.projectRailOverride === 'hide') return false
+  if (layout.projectRailOverride === 'show') return true
+  return !!route.meta?.projectScoped
+})
 
 // Footer: show current project (git repo) info on project-scoped pages.
 watch(
