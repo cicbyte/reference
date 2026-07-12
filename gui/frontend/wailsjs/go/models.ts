@@ -91,6 +91,22 @@ export namespace main {
 	        this.notFound = source["notFound"];
 	    }
 	}
+	export class CacheTopItem {
+	    name: string;
+	    path: string;
+	    size: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new CacheTopItem(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.path = source["path"];
+	        this.size = source["size"];
+	    }
+	}
 	export class CachedRepoItem {
 	    name: string;
 	    cachePath: string;

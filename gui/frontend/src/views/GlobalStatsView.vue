@@ -85,19 +85,18 @@ const wikiStats = computed(() => {
   }
 })
 
-// ---- ⑥ top 5 cache by size ----
+// ---- ⑥ top 5 cache by size (computed server-side in parallel) ----
 const topCache = ref([])
-async function loadCacheSizes() {
-  const withSizes = repos.value.filter((r) => r.exists).slice(0, 20)
-  for (const r of withSizes) {
-    try {
-      const size = await app?.GetCacheSize?.(r.cachePath)
-      r._size = size || 0
-    } catch { r._size = 0 }
-  }
-  const sorted = withSizes.filter((r) => r._size > 0).sort((a, b) => b._size - a._size).slice(0, 5)
-  const max = Math.max(...sorted.map((r) => r._size), 1)
-  topCache.value = sorted.map((r) => ({ name: r.name, size: r._size, pct: (r._size / max) * 100 }))
+const topCacheLoading = ref(true)
+async function loadCacheTop() {
+  try {
+    const items = await app?.GetCacheTopN?.(5)
+    if (items && items.length) {
+      const max = Math.max(...items.map((r) => r.size), 1)
+      topCache.value = items.map((r) => ({ name: r.name, size: r.size, pct: (r.size / max) * 100 }))
+    }
+  } catch { /* ignore */ }
+  finally { topCacheLoading.value = false }
 }
 
 // ---- load all in parallel ----
@@ -114,8 +113,10 @@ onMounted(async () => {
   )
   // repos
   tasks.push(
-    app?.ListCachedRepos?.().then((r) => { repos.value = r }).then(() => loadCacheSizes()).catch(() => {}).finally(() => { reposLoading.value = false })
+    app?.ListCachedRepos?.().then((r) => { repos.value = r }).catch(() => {}).finally(() => { reposLoading.value = false })
   )
+  // cache top N (parallel server-side)
+  tasks.push(loadCacheTop())
   // wiki
   tasks.push(
     app?.ListWikiEntries?.('all').then((w) => { wikiEntries.value = w }).catch(() => {}).finally(() => { wikiLoading.value = false })
@@ -251,7 +252,7 @@ onMounted(async () => {
     <!-- ⑥ cache top 5 -->
     <div class="panel full">
       <div class="panel-head"><HddOutlined /> 缓存占用 Top 5</div>
-      <a-spin v-if="reposLoading" size="small" />
+      <a-spin v-if="topCacheLoading" size="small" />
       <div v-else-if="topCache.length" class="bar-list">
         <div v-for="item in topCache" :key="item.name" class="bar-row">
           <span class="bar-label">{{ item.name }}</span>

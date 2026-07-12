@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/cicbyte/reference/internal/logic/repo"
 	"github.com/cicbyte/reference/internal/utils"
@@ -505,6 +506,64 @@ func (a *ReferenceApp) GetCacheSize(cachePath string) (int64, error) {
 		return 0, nil
 	}
 	return walkDirSize(cachePath), nil
+}
+
+// CacheTopItem is one entry in the cache-size Top-N ranking.
+type CacheTopItem struct {
+	Name string `json:"name"`
+	Path string `json:"path"`
+	Size int64  `json:"size"`
+}
+
+// GetCacheTopN computes the N largest cache directories using goroutines
+// for parallel disk traversal. Returns sorted by size descending.
+func (a *ReferenceApp) GetCacheTopN(n int) ([]CacheTopItem, error) {
+	if n <= 0 {
+		n = 5
+	}
+	db, err := utils.GetGormDB()
+	if err != nil {
+		return nil, err
+	}
+	indexer := repo.NewRepoIndexer(db)
+	cachePaths, err := indexer.ListAllCachePaths()
+	if err != nil {
+		return nil, err
+	}
+
+	type result struct {
+		path string
+		size int64
+	}
+	results := make([]result, len(cachePaths))
+	var wg sync.WaitGroup
+	for i, cp := range cachePaths {
+		wg.Add(1)
+		go func(idx int, p string) {
+			defer wg.Done()
+			if _, err := os.Stat(p); os.IsNotExist(err) {
+				results[idx] = result{path: p, size: 0}
+				return
+			}
+			results[idx] = result{path: p, size: walkDirSize(p)}
+		}(i, cp)
+	}
+	wg.Wait()
+
+	sort.Slice(results, func(i, j int) bool { return results[i].size > results[j].size })
+
+	top := make([]CacheTopItem, 0, n)
+	for i := 0; i < n && i < len(results); i++ {
+		if results[i].size == 0 {
+			break
+		}
+		top = append(top, CacheTopItem{
+			Name: filepath.Base(results[i].path),
+			Path: results[i].path,
+			Size: results[i].size,
+		})
+	}
+	return top, nil
 }
 
 // PurgeCachedRepo deletes a cache directory from disk. The path must live

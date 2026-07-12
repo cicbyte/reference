@@ -34,6 +34,8 @@ export function GetAppConfig():Promise<main.AppConfigDTO>;
 
 export function GetCacheSize(arg1:string):Promise<number>;
 
+export function GetCacheTopN(arg1:number):Promise<Array<main.CacheTopItem>>;
+
 export function GetCurrentProject():Promise<main.ProjectInfo>;
 
 export function GetDirSizeAsync(arg1:string):Promise<number>;
