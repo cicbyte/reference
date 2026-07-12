@@ -2,7 +2,6 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useLayoutStore } from '../../stores/layout'
-import { useThemeStore } from '../../stores/theme'
 import { useProjectStore } from '../../stores/project'
 import {
   DashboardOutlined,
@@ -15,16 +14,14 @@ import {
   PieChartOutlined,
   ReadOutlined,
   SettingOutlined,
-  BulbOutlined,
-  BulbFilled,
   CaretRightFilled,
+  BranchesOutlined,
 } from '@ant-design/icons-vue'
 import logoUrl from '../../assets/logo.svg'
 
 const route = useRoute()
 const router = useRouter()
 const layout = useLayoutStore()
-const theme = useThemeStore()
 const project = useProjectStore()
 
 // project-scoped routes require a selected project; disable them otherwise.
@@ -192,14 +189,9 @@ const expandedWidth = 200
     </nav>
 
     <div class="sidebar-bottom">
-      <div class="nav-item" @click="theme.toggleTheme()" title="切换主题">
-        <BulbFilled v-if="theme.isDark" class="nav-icon" />
-        <BulbOutlined v-else class="nav-icon" />
-        <span v-if="!layout.sidebarCollapsed" class="nav-label">{{ theme.isDark ? '暗色' : '亮色' }}</span>
-      </div>
-      <div class="nav-item" @click="navigate('/settings')" :class="{ active: route.path === '/settings' }" title="设置">
-        <SettingOutlined class="nav-icon" />
-        <span v-if="!layout.sidebarCollapsed" class="nav-label">设置</span>
+      <div v-if="project.currentName" class="sidebar-project" :title="project.currentDir">
+        <BranchesOutlined class="sidebar-project-icon" />
+        <span v-if="!layout.sidebarCollapsed" class="sidebar-project-name">{{ project.currentName }}</span>
       </div>
     </div>
   </div>
@@ -341,19 +333,38 @@ const expandedWidth = 200
 
 .sidebar-bottom {
   height: var(--footer-height);
-  padding: 0 var(--spacing-sm);
+  padding: 0 10px;
   display: flex;
-  flex-direction: row;
   align-items: center;
-  gap: var(--spacing-xs);
   border-top: 1px solid var(--color-border);
   flex-shrink: 0;
   overflow: hidden;
 }
-.sidebar-bottom .nav-item { flex: 1; justify-content: center; padding: 8px; }
-
-.collapsed .sidebar-bottom { height: auto; flex-direction: column; gap: 2px; padding: var(--spacing-sm); }
-.collapsed .sidebar-bottom .nav-item { flex: none; width: 100%; padding: 10px; }
+.sidebar-project {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-bg);
+  cursor: default;
+  min-width: 0;
+}
+.sidebar-project-icon {
+  font-size: 12px;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+.sidebar-project-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-primary);
+  font-family: 'Cascadia Code', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.collapsed .sidebar-bottom { justify-content: center; padding: 0; }
 .collapsed .sidebar-logo { justify-content: center; padding: var(--spacing-md) 0; }
 .collapsed .nav-item { justify-content: center; padding: 10px; }
 </style>
