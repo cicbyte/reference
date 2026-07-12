@@ -91,7 +91,7 @@ async function handleSave() {
         type="info"
         show-icon
         message="修改存储路径后，需重启应用以触发数据迁移（已有缓存的路径记录会自动更新）。"
-        style="max-width: 720px"
+        style="max-width: 100%"
       />
     </a-spin>
   </div>

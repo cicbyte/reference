@@ -2,7 +2,7 @@
    Imported via `@import './settings-shared.css'` in each <style scoped>. */
 
 .settings-form {
-  max-width: 720px;
+  width: 100%;
 }
 
 .setting-group {
