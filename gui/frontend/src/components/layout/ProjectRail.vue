@@ -217,16 +217,13 @@ function onRemove(p, clean) {
       </div>
     </div>
 
-    <!-- add button (sits above the footer spacer) -->
-    <div class="rail-add-area">
+    <!-- footer: add button + aligns with global footer -->
+    <div class="rail-footer">
       <button class="rail-add" :title="layout.projectRailCollapsed ? '添加项目' : ''" @click="onAdd">
         <PlusOutlined />
         <span v-if="!layout.projectRailCollapsed">添加项目</span>
       </button>
     </div>
-
-    <!-- footer spacer: aligns with MainContent's global-footer (48px) -->
-    <div class="rail-footer-spacer"></div>
 
     <DiagnoseModal v-model:open="diagnoseOpen" :project-dir="diagnoseDir" @update:open="diagnoseOpen = $event; project.loadProjects()" />
   </div>
@@ -430,10 +427,15 @@ function onRemove(p, clean) {
   color: var(--color-text-tertiary);
 }
 
-/* ---- add area (above footer spacer) ---- */
-.rail-add-area {
-  padding: var(--spacing-sm);
+/* ---- footer (add button, same height as global-footer) ---- */
+.rail-footer {
+  height: var(--footer-height);
+  padding: 0 var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  border-top: 1px solid var(--color-border);
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .rail-add {
@@ -442,9 +444,9 @@ function onRemove(p, clean) {
   justify-content: center;
   gap: 6px;
   width: 100%;
-  padding: 8px 12px;
+  padding: 6px 12px;
   border: 1px dashed var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--color-text-secondary);
   cursor: pointer;
@@ -457,14 +459,7 @@ function onRemove(p, clean) {
   background: var(--color-primary-bg);
 }
 .collapsed .rail-add {
-  padding: 10px;
-}
-
-/* ---- footer spacer (aligns with global-footer) ---- */
-.rail-footer-spacer {
-  height: var(--footer-height);
-  border-top: 1px solid var(--color-border);
-  flex-shrink: 0;
+  padding: 6px;
 }
 
 /* ---- collapsed mode ---- */
