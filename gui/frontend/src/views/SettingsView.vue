@@ -4,10 +4,10 @@ import {
   SettingOutlined,
   GlobalOutlined,
   DatabaseOutlined,
-  RobotOutlined,
   InfoCircleOutlined,
   BgColorsOutlined,
 } from '@ant-design/icons-vue'
+import AiSparkIcon from '../components/common/AiSparkIcon.vue'
 import GeneralForm from '../components/settings/GeneralForm.vue'
 import DisplayForm from '../components/settings/DisplayForm.vue'
 import NetworkForm from '../components/settings/NetworkForm.vue'
@@ -20,7 +20,7 @@ const tabs = [
   { key: 'display', icon: BgColorsOutlined, label: '显示' },
   { key: 'storage', icon: DatabaseOutlined, label: '存储' },
   { key: 'network', icon: GlobalOutlined, label: '网络' },
-  { key: 'project', icon: RobotOutlined, label: '项目初始化' },
+  { key: 'project', icon: AiSparkIcon, label: '项目初始化' },
   { key: 'about', icon: InfoCircleOutlined, label: '关于' },
 ]
 const activeTab = ref('general')

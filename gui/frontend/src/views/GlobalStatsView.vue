@@ -2,8 +2,9 @@
 import { ref, computed, onMounted } from 'vue'
 import {
   FolderOutlined, DatabaseOutlined, CloudServerOutlined,
-  ReadOutlined, HddOutlined, WarningOutlined, RobotOutlined,
+  ReadOutlined, HddOutlined, WarningOutlined,
 } from '@ant-design/icons-vue'
+import AiSparkIcon from '../components/common/AiSparkIcon.vue'
 
 const app = window.go?.main?.ReferenceApp
 
@@ -201,7 +202,7 @@ onMounted(async () => {
       </div>
 
       <div class="panel">
-        <div class="panel-head"><RobotOutlined /> AI 助手使用分布</div>
+        <div class="panel-head"><AiSparkIcon :size="16" /> AI 助手使用分布</div>
         <a-spin v-if="projectsLoading" size="small" />
         <div v-else-if="agentUsage.length" class="bar-list">
           <div v-for="item in agentUsage" :key="item.name" class="bar-row">

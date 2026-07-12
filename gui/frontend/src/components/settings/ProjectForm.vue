@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
-import { RobotOutlined } from '@ant-design/icons-vue'
+import AiSparkIcon from '../common/AiSparkIcon.vue'
 
 const loading = ref(true)
 const saving = ref(false)
@@ -39,7 +39,7 @@ async function handleSave() {
   <div class="settings-form">
     <a-spin :spinning="loading">
       <div class="setting-group">
-        <div class="group-title"><RobotOutlined /> 编程助手</div>
+        <div class="group-title"><AiSparkIcon :size="16" /> 编程助手</div>
 
         <div class="row-help" style="margin-bottom: 12px;">
           选择要在当前项目注入配置的 AI 助手（可多选）。配置会写入
