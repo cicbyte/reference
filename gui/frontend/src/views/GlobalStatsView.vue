@@ -36,7 +36,8 @@ const agentNameMap = { claude: 'Claude', codex: 'Codex', zcode: 'ZCode', mimocod
 const platformDist = computed(() => {
   const groups = {}
   for (const r of repos.value) {
-    const key = r.type === 'local' ? '本地仓库' : (r.host || '未知')
+    if (r.type === 'local') continue  // local repos are not platforms
+    const key = r.host || '未知'
     groups[key] = (groups[key] || 0) + 1
   }
   const entries = Object.entries(groups).sort((a, b) => b[1] - a[1])
