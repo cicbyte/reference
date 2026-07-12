@@ -6,8 +6,10 @@ import {
   DatabaseOutlined,
   RobotOutlined,
   InfoCircleOutlined,
+  BgColorsOutlined,
 } from '@ant-design/icons-vue'
 import GeneralForm from '../components/settings/GeneralForm.vue'
+import DisplayForm from '../components/settings/DisplayForm.vue'
 import NetworkForm from '../components/settings/NetworkForm.vue'
 import StorageForm from '../components/settings/StorageForm.vue'
 import ProjectForm from '../components/settings/ProjectForm.vue'
@@ -15,6 +17,7 @@ import AboutForm from '../components/settings/AboutForm.vue'
 
 const tabs = [
   { key: 'general', icon: SettingOutlined, label: '通用' },
+  { key: 'display', icon: BgColorsOutlined, label: '显示' },
   { key: 'storage', icon: DatabaseOutlined, label: '存储' },
   { key: 'network', icon: GlobalOutlined, label: '网络' },
   { key: 'project', icon: RobotOutlined, label: '项目初始化' },
@@ -48,6 +51,7 @@ const activeTab = ref('general')
     <!-- Right: form content -->
     <div class="settings-content">
       <GeneralForm v-if="activeTab === 'general'" />
+      <DisplayForm v-else-if="activeTab === 'display'" />
       <StorageForm v-else-if="activeTab === 'storage'" />
       <NetworkForm v-else-if="activeTab === 'network'" />
       <ProjectForm v-else-if="activeTab === 'project'" />
