@@ -3,6 +3,21 @@
 
 .settings-form {
   width: 100%;
+  max-width: 760px;
+}
+
+/* page header (title + description) at top of every form */
+.form-header {
+  margin-bottom: var(--spacing-md);
+}
+.form-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 16px; font-weight: 700; color: var(--color-text);
+}
+.form-title .anticon { font-size: 17px; color: var(--color-primary); }
+.form-desc {
+  font-size: 13px; color: var(--color-text-tertiary);
+  margin-top: 4px; margin-left: 25px;
 }
 
 .setting-group {
