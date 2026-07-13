@@ -93,7 +93,7 @@ func (p *RemoveProcessor) removeAll() error {
 		}
 
 		if p.config.Purge && r.RefType == models.RefTypeRemote && r.CachePath != "" {
-			if strings.HasPrefix(r.CachePath, reposBase) {
+			if utils.IsPathWithin(r.CachePath, reposBase) {
 				if err := PurgeCache(r.CachePath); err != nil {
 					log.Warn("删除缓存失败", zap.String("repo", refName), zap.Error(err))
 				}
@@ -197,7 +197,7 @@ func (p *RemoveProcessor) purgeCacheIfNeeded(repo *models.Repo) error {
 		return nil
 	}
 	reposBase := utils.ConfigInstance.GetReposDirFromConfig(p.appConfig)
-	if !strings.HasPrefix(repo.CachePath, reposBase) {
+	if !utils.IsPathWithin(repo.CachePath, reposBase) {
 		return nil
 	}
 	confirmed := p.config.Yes

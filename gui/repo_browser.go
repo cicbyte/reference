@@ -89,7 +89,7 @@ func (a *ReferenceApp) BrowseRepoList(refName string, subPath string) ([]Browser
 		target = filepath.Join(repoPath, subPath)
 	}
 	// path-traversal guard: resolved target must stay under repo root
-	if !strings.HasPrefix(filepath.Clean(target), filepath.Clean(repoPath)) {
+	if !utils.IsPathWithin(target, repoPath) {
 		return nil, fmt.Errorf("路径越界")
 	}
 	entries, err := os.ReadDir(target)
@@ -142,7 +142,7 @@ func (a *ReferenceApp) BrowseRepoRead(refName string, relPath string) (BrowserFi
 		return BrowserFileResult{}, err
 	}
 	full := filepath.Join(repoPath, relPath)
-	if !strings.HasPrefix(filepath.Clean(full), filepath.Clean(repoPath)) {
+	if !utils.IsPathWithin(full, repoPath) {
 		return BrowserFileResult{}, fmt.Errorf("路径越界")
 	}
 	data, err := os.ReadFile(full)
@@ -242,7 +242,7 @@ func browsePathList(rootPath, subPath string) ([]BrowserFileNode, error) {
 	if subPath != "" {
 		target = filepath.Join(rootPath, subPath)
 	}
-	if !strings.HasPrefix(filepath.Clean(target), filepath.Clean(rootPath)) {
+	if !utils.IsPathWithin(target, rootPath) {
 		return nil, fmt.Errorf("路径越界")
 	}
 	entries, err := os.ReadDir(target)
@@ -282,7 +282,7 @@ func browsePathList(rootPath, subPath string) ([]BrowserFileNode, error) {
 
 func browsePathRead(rootPath, relPath string) (BrowserFileResult, error) {
 	full := filepath.Join(rootPath, relPath)
-	if !strings.HasPrefix(filepath.Clean(full), filepath.Clean(rootPath)) {
+	if !utils.IsPathWithin(full, rootPath) {
 		return BrowserFileResult{}, fmt.Errorf("路径越界")
 	}
 	data, err := os.ReadFile(full)
@@ -576,8 +576,7 @@ func (a *ReferenceApp) PurgeCachedRepo(cachePath string) error {
 	}
 	reposDir := utils.ConfigInstance.GetReposDir()
 	cleanPath := filepath.Clean(cachePath)
-	cleanBase := filepath.Clean(reposDir)
-	if !strings.HasPrefix(cleanPath, cleanBase) {
+	if !utils.IsPathWithin(cleanPath, reposDir) {
 		return fmt.Errorf("路径不在缓存目录内，拒绝删除")
 	}
 	if _, err := os.Stat(cleanPath); os.IsNotExist(err) {

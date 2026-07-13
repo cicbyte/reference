@@ -47,6 +47,7 @@ type ProjectInfo struct {
 // ListProjects returns all known projects from the DB (full fields, unlike the
 // trimmed GlobalList). Powers the left-hand project rail.
 func (a *ReferenceApp) ListProjects() ([]ProjectItem, error) {
+	a.waitReady()
 	db, err := utils.GetGormDB()
 	if err != nil {
 		return nil, err
@@ -89,6 +90,7 @@ func (a *ReferenceApp) SwitchProject(dir string) (ProjectInfo, error) {
 // none was explicitly switched. Returns empty ProjectInfo (no error) if there
 // is no project context at all — the UI shows its empty state.
 func (a *ReferenceApp) GetCurrentProject() (ProjectInfo, error) {
+	a.waitReady()
 	dir, err := a.getCurrentProject()
 	if err != nil {
 		return ProjectInfo{}, nil // no error: empty state is valid
@@ -263,6 +265,7 @@ type RepoItem struct {
 }
 
 func (a *ReferenceApp) ListRepos() ([]RepoItem, error) {
+	a.waitReady()
 	projectDir, err := a.getCurrentProject()
 	if err != nil {
 		return nil, fmt.Errorf("无法获取 Git 根目录: %w", err)
@@ -518,6 +521,7 @@ func (a *ReferenceApp) GlobalList() ([]map[string]interface{}, error) {
 }
 
 func (a *ReferenceApp) GlobalStats() (map[string]interface{}, error) {
+	a.waitReady()
 	db, err := utils.GetGormDB()
 	if err != nil {
 		return nil, err
@@ -720,6 +724,7 @@ type AppConfigDTO struct {
 }
 
 func (a *ReferenceApp) GetAppConfig() (*AppConfigDTO, error) {
+	a.waitReady()
 	cfg := utils.ConfigInstance.LoadConfig() // fresh from disk
 	dto := &AppConfigDTO{
 		ReposPath: cfg.ReposPath,
@@ -790,8 +795,11 @@ func (a *ReferenceApp) SaveAppConfig(patch map[string]interface{}) error {
 		return err
 	}
 	// keep the in-memory bridge consistent so subsequent reads see new values
-	common.AppConfigModel = cfg
+	common.SetAppConfig(cfg)
 	utils.ConfigInstance.ApplyConfig(cfg)
+	// If repos_path changed, migrate DB cache_path records to the new location
+	// so GC / remove --purge / global list keep working without a restart.
+	utils.MigratePathsIfNeeded()
 	return nil
 }
 

@@ -3,6 +3,7 @@ package global
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"sort"
 
 	"github.com/cicbyte/reference/internal/logic/repo"
@@ -74,10 +75,10 @@ func (p *GlobalListProcessor) Execute(ctx context.Context) (*GlobalListResult, e
 		// 轻量检查 broken_count
 		brokenCount := 0
 		if dirExists {
-			reposDir := dir + "\\.reference\\repos"
+			reposDir := filepath.Join(dir, ".reference", "repos")
 			for _, r := range repos {
 				refName := r.GetRefName()
-				linkPath := reposDir + "\\" + refName
+				linkPath := filepath.Join(reposDir, refName)
 				if _, err := os.Stat(linkPath); err != nil {
 					brokenCount++
 				}

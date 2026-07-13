@@ -73,6 +73,10 @@ func cloneViaGitCmd(opts CloneOptions) error {
 	args = append(args, opts.URL, opts.Path)
 
 	cmd := exec.Command("git", args...)
+	// Apply the configured proxy to the git subprocess too — SetupGitProxy only
+	// covers go-git's transport; when we fall back to system git it would
+	// otherwise connect directly and hang on restricted networks.
+	applyProxyToCmd(cmd, opts.Proxy)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		os.RemoveAll(opts.Path)
@@ -123,12 +127,14 @@ func pullViaGitCmd(opts CloneOptions) error {
 	if _, err := os.Stat(filepath.Join(opts.Path, ".git", "shallow")); err == nil {
 		log.Info("检测到浅克隆，执行 unshallow", zap.String("path", opts.Path))
 		unshallow := exec.Command("git", "-C", opts.Path, "fetch", "--unshallow", "origin")
+		applyProxyToCmd(unshallow, opts.Proxy)
 		if out, err := unshallow.CombinedOutput(); err != nil {
 			return fmt.Errorf("unshallow 失败: %s\n%s", err, string(out))
 		}
 	}
 
 	fetch := exec.Command("git", "-C", opts.Path, "fetch", "origin")
+	applyProxyToCmd(fetch, opts.Proxy)
 	if out, err := fetch.CombinedOutput(); err != nil {
 		return fmt.Errorf("fetch 失败: %s\n%s", err, string(out))
 	}
@@ -140,6 +146,24 @@ func pullViaGitCmd(opts CloneOptions) error {
 
 	log.Info("git fetch + reset 完成", zap.String("path", opts.Path))
 	return nil
+}
+
+// applyProxyToCmd injects the configured proxy URL into a git subprocess via
+// environment variables (works for both http/https and git+ssh-with-proxy-helper
+// setups). No-op when proxyURL is empty.
+func applyProxyToCmd(cmd *exec.Cmd, proxyURL string) {
+	if proxyURL == "" {
+		return
+	}
+	if cmd.Env == nil {
+		cmd.Env = os.Environ()
+	}
+	cmd.Env = append(cmd.Env,
+		"HTTP_PROXY="+proxyURL,
+		"HTTPS_PROXY="+proxyURL,
+		"http_proxy="+proxyURL,
+		"https_proxy="+proxyURL,
+	)
 }
 
 func GetRepoMeta(repoPath string) (branch, commit string, commitTime *time.Time, err error) {

@@ -20,7 +20,7 @@ import bash from 'highlight.js/lib/languages/bash'
 import sql from 'highlight.js/lib/languages/sql'
 import rust from 'highlight.js/lib/languages/rust'
 import 'highlight.js/styles/github-dark.css'
-import { marked } from 'marked'
+import { renderMarkdown } from '../utils/markdown'
 import FileTreeNode from '../components/repo/FileTreeNode.vue'
 
 // register only the languages we need (keeps bundle small)
@@ -211,11 +211,7 @@ function openSearchResult(r) {
 
 const renderedMarkdown = computed(() => {
   if (!isMarkdown.value || mdViewMode.value !== 'render') return ''
-  try {
-    return marked(fileContent.value)
-  } catch {
-    return fileContent.value
-  }
+  return renderMarkdown(fileContent.value)
 })
 
 // load root on mount + when refName changes (navigating between repos)

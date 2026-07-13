@@ -17,9 +17,9 @@ import {
 } from '@ant-design/icons-vue'
 import hljs, { hljsLangForName } from '../utils/hljs-setup'
 import 'highlightjs-line-numbers.js/src/highlightjs-line-numbers.js'
-import { marked } from 'marked'
 import FileTreeNode from '../components/repo/FileTreeNode.vue'
 import { formatPath } from '../utils/path'
+import { renderMarkdown } from '../utils/markdown'
 
 const app = window.go?.main?.ReferenceApp
 
@@ -282,7 +282,7 @@ async function purge(repo) {
 
 const renderedMarkdown = computed(() => {
   if (!isMarkdown.value || mdViewMode.value !== 'render') return ''
-  try { return marked(fileContent.value) } catch { return fileContent.value }
+  return renderMarkdown(fileContent.value)
 })
 </script>
 

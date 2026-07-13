@@ -104,7 +104,7 @@ async function handleSave() {
 }
 
 function openDir(dir) {
-  window.go.main.ReferenceApp.OpenInExplorer(dir).catch((e) => message.error('打开失败: ' + e))
+  app?.OpenInExplorer(dir)?.catch((e) => message.error('打开失败: ' + e))
 }
 
 async function pickFolder(field, title) {

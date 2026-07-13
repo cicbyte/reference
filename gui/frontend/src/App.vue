@@ -30,6 +30,10 @@ onMounted(() => {
   if (savedSidebar === 'true') layoutStore.sidebarCollapsed = true
   window.addEventListener('resize', layoutStore.handleResize)
 })
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', layoutStore.handleResize)
+})
 </script>
 
 <template>

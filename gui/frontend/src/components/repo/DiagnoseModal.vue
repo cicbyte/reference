@@ -59,7 +59,7 @@ async function load() {
 
 watch(() => [props.open, props.projectDir], ([open]) => {
   if (open) load()
-}, { immediate: true })
+})
 
 function close() {
   emit('update:open', false)

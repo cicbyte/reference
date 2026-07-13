@@ -11,8 +11,10 @@ import (
 
 	"github.com/cicbyte/reference/internal/common"
 	"github.com/cicbyte/reference/internal/log"
+	logicwiki "github.com/cicbyte/reference/internal/logic/wiki"
 	"github.com/cicbyte/reference/internal/utils"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"go.uber.org/zap"
 )
 
 // ReferenceApp is the main application struct bound to Wails frontend.
@@ -20,10 +22,25 @@ type ReferenceApp struct {
 	ctx           context.Context
 	appMu         sync.RWMutex
 	currentProject string // explicitly selected project dir; empty → fall back to GetGitRoot
+
+	// ready is closed once the startup init chain (dirs / config / db) has run,
+	// so binding methods can block until the backend is actually usable instead
+	// of racing the startup goroutine.
+	ready     chan struct{}
+	readyOnce sync.Once
 }
 
 func NewReferenceApp() *ReferenceApp {
-	return &ReferenceApp{}
+	return &ReferenceApp{ready: make(chan struct{})}
+}
+
+// waitReady blocks until the startup init chain completes. Binding methods that
+// touch the DB / config call this first to avoid racing the async startup.
+func (a *ReferenceApp) waitReady() {
+	select {
+	case <-a.ready:
+	case <-a.ctx.Done():
+	}
 }
 
 // getCurrentProject resolves the active project directory.
@@ -76,15 +93,39 @@ func (a *ReferenceApp) startup(ctx context.Context) {
 
 	// App init — mirrors cmd/root.go init() so the GUI process loads the same
 	// config (custom repos_path / wiki_path), creates dirs, opens the DB, etc.
-	// Without this, GetWikiDir()/GetReposDir() return default paths and ignore
-	// the user's config.yaml overrides.
+	// Runs in a goroutine so the window appears fast; binding methods block on
+	// waitReady() until this completes. Errors are logged, not silently dropped.
 	go func() {
-		_ = utils.InitAppDirs()
-		common.AppConfigModel = utils.ConfigInstance.LoadConfig()
+		defer a.readyOnce.Do(func() { close(a.ready) })
+
+		if err := utils.InitAppDirs(); err != nil {
+			log.Error("初始化目录失败", zap.Error(err))
+			return
+		}
+		common.SetAppConfig(utils.ConfigInstance.LoadConfig())
 		utils.ConfigInstance.ApplyConfig(common.AppConfigModel)
-		_ = utils.InitDataDirs()
-		_ = log.Init(utils.ConfigInstance.GetLogPath())
-		_, _ = utils.GetGormDB()
+		if err := utils.InitDataDirs(); err != nil {
+			log.Error("初始化数据目录失败", zap.Error(err))
+			return
+		}
+		if err := log.Init(utils.ConfigInstance.GetLogPath()); err != nil {
+			fmt.Fprintf(os.Stderr, "日志初始化失败: %v\n", err)
+		}
+		if _, err := utils.GetGormDB(); err != nil {
+			log.Error("数据库连接失败", zap.String("operation", "db init"), zap.Error(err))
+			return
+		}
+		log.Info("数据库连接成功")
+		utils.MigratePathsIfNeeded()
+
+		wikiDir := utils.ConfigInstance.GetWikiDir()
+		if err := logicwiki.EnsureGitInit(wikiDir); err != nil {
+			log.Warn("wiki git 初始化失败", zap.Error(err))
+		}
+		localWikiDir := utils.ConfigInstance.GetLocalWikiDir()
+		if err := logicwiki.EnsureGitInit(localWikiDir); err != nil {
+			log.Warn("localwiki git 初始化失败", zap.Error(err))
+		}
 	}()
 
 	go func() {

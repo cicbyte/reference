@@ -17,16 +17,22 @@ import {
   ZoomInOutlined,
   ZoomOutOutlined,
 } from '@ant-design/icons-vue'
-import { marked } from 'marked'
 import mermaid from 'mermaid'
 import { useLayoutStore } from '../stores/layout'
+import { useThemeStore } from '../stores/theme'
 import { formatPath } from '../utils/path'
+import { renderMarkdown } from '../utils/markdown'
 
 const app = window.go?.main?.ReferenceApp
 const layout = useLayoutStore()
+const themeStore = useThemeStore()
 
-// init mermaid once (dark theme matches the app's default)
-mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' })
+// init mermaid; theme follows the app theme store
+mermaid.initialize({ startOnLoad: false, theme: themeStore.isDark ? 'dark' : 'default', securityLevel: 'strict' })
+// re-init when the user toggles theme so diagrams stay legible
+watch(() => themeStore.isDark, (isDark) => {
+  mermaid.initialize({ startOnLoad: false, theme: isDark ? 'dark' : 'default', securityLevel: 'strict' })
+})
 
 // render mermaid blocks inside the content area after each content change
 async function renderMermaid() {
@@ -349,10 +355,7 @@ function stripFrontmatter(md) {
   return rest.slice(end + 4).replace(/^\s*\n/, '')
 }
 
-const renderedContent = computed(() => {
-  if (!content.value) return ''
-  try { return marked(content.value) } catch { return content.value }
-})
+const renderedContent = computed(() => renderMarkdown(content.value))
 
 // re-render mermaid when switching back to render mode
 watch(viewMode, (mode) => {

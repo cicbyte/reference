@@ -17,13 +17,13 @@ const layout = useLayoutStore()
 
     <div class="global-footer">
       <div class="status-bar">
-        <template v-for="item in layout.footerItems" :key="item.key">
+        <template v-for="(item, idx) in layout.footerItems" :key="item.key">
           <span v-if="item.value" class="status-item">
             <component :is="item.icon" v-if="item.icon" />
             <span class="status-label" v-if="item.label">{{ item.label }}:</span>
             <span class="status-value" :title="item.value">{{ item.value }}</span>
+            <span v-if="idx < layout.footerItems.filter(i => i.value).length - 1" class="status-sep"></span>
           </span>
-          <span v-if="item.value" class="status-sep"></span>
         </template>
         <span class="status-spacer"></span>
       </div>

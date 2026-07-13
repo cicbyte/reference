@@ -121,7 +121,7 @@ func (a *ReferenceApp) ReadWikiEntry(source string, relPath string) (string, err
 		return "", err
 	}
 	full := filepath.Join(root, relPath)
-	if !strings.HasPrefix(filepath.Clean(full), filepath.Clean(root)) {
+	if !utils.IsPathWithin(full, root) {
 		return "", fmt.Errorf("路径越界")
 	}
 	data, err := os.ReadFile(full)

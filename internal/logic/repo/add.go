@@ -13,7 +13,42 @@ import (
 	"github.com/cicbyte/reference/internal/utils"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"strings"
 )
+
+// windowsReservedNames are DOS device names that cannot be used as file/dir
+// names on Windows (case-insensitive), with common extensions stripped.
+var windowsReservedNames = map[string]bool{
+	"CON": true, "PRN": true, "AUX": true, "NUL": true,
+	"COM1": true, "COM2": true, "COM3": true, "COM4": true, "COM5": true,
+	"COM6": true, "COM7": true, "COM8": true, "COM9": true,
+	"LPT1": true, "LPT2": true, "LPT3": true, "LPT4": true, "LPT5": true,
+	"LPT6": true, "LPT7": true, "LPT8": true, "LPT9": true,
+}
+
+// sanitizeLinkName neutralizes a user-supplied repo name so it is safe to use
+// as a single path segment (junction/symlink name). It:
+//   - trims surrounding whitespace
+//   - strips any path separators / traversal via filepath.Base
+//   - rejects empty / "." / ".." / Windows reserved device names
+// On an unusable input it falls back to "repo" rather than failing the whole
+// add operation (the caller already has a valid cache, just needs a safe link).
+func sanitizeLinkName(name string) string {
+	name = strings.TrimSpace(name)
+	// filepath.Base collapses "a/../b" → "b" and strips leading "/" etc.
+	name = filepath.Base(name)
+	upper := strings.ToUpper(name)
+	if name == "" || name == "." || name == ".." || windowsReservedNames[upper] {
+		return "repo"
+	}
+	// strip shell metacharacters that could matter if the name ever reaches a
+	// cmd /c invocation (mklink / rmdir).
+	name = strings.NewReplacer("&", "", "|", "", ";", "", "%", "", "^", "", "(", "", ")", "").Replace(name)
+	if name == "" {
+		return "repo"
+	}
+	return name
+}
 
 type AddConfig struct {
 	Target     string
@@ -89,6 +124,10 @@ func (p *AddProcessor) addRemote(refDir string) (*AddResult, error) {
 	if linkName == "" {
 		linkName = info.LinkName
 	}
+	// Sanitize user-supplied name: strip path separators / traversal, reject
+	// reserved Windows device names. linkName ends up in filepath.Join(refDir,
+	// refName) and CreateLink, so a malicious value could escape the repos dir.
+	linkName = sanitizeLinkName(linkName)
 
 	indexer := NewRepoIndexer(p.db)
 

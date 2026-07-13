@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import {
   CheckOutlined, FolderOpenOutlined, ExclamationCircleFilled,
@@ -49,10 +49,11 @@ function toggle(id) {
   else selected.value = [...selected.value, id]
 }
 
-onMounted(async () => {
+async function loadCurrent() {
   if (!app) { loading.value = false; return }
+  loading.value = true
   try {
-    agents.value = await app.ListAgents()
+    if (!agents.value.length) agents.value = await app.ListAgents()
     if (hasProject.value) {
       const projects = await app.ListProjects()
       const cur = projects.find((p) => p.dir === project.currentDir)
@@ -60,14 +61,26 @@ onMounted(async () => {
         initialAgents.value = [...(cur.agents || [])]
         selected.value = [...(cur.agents || [])]
         initialized.value = cur.initialized
+      } else {
+        initialAgents.value = []
+        selected.value = []
+        initialized.value = false
       }
+    } else {
+      initialAgents.value = []
+      selected.value = []
+      initialized.value = false
     }
   } catch (e) {
-    console.error('List agents failed:', e)
+    console.error('load agents failed:', e)
   } finally {
     loading.value = false
   }
-})
+}
+
+onMounted(loadCurrent)
+// reload when the user switches project while this form is mounted
+watch(() => project.currentDir, loadCurrent)
 
 async function handleSave() {
   if (!hasProject.value) {

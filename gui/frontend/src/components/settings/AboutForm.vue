@@ -39,13 +39,13 @@ onMounted(async () => {
 
 async function copyText(text) {
   try {
-    await window.go.main.ReferenceApp.CopyPath(text)
+    await window.go?.main?.ReferenceApp.CopyPath(text)
     message.success('已复制')
   } catch { message.error('复制失败') }
 }
 
 function openDir(dir) {
-  window.go.main.ReferenceApp.OpenInExplorer(dir).catch((e) => message.error('打开失败: ' + e))
+  window.go?.main?.ReferenceApp?.OpenInExplorer(dir)?.catch((e) => message.error('打开失败: ' + e))
 }
 </script>
 

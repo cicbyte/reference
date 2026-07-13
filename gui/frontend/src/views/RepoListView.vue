@@ -21,8 +21,8 @@ import hljs, { hljsLangForName } from '../utils/hljs-setup'
 // Importing the plugin after hljs-setup (which sets window.hljs) augments our
 // hljs instance with lineNumbersBlockSync / lineNumbersValue.
 import 'highlightjs-line-numbers.js/src/highlightjs-line-numbers.js'
-import { marked } from 'marked'
 import { useProjectStore } from '../stores/project'
+import { renderMarkdown } from '../utils/markdown'
 import FileTreeNode from '../components/repo/FileTreeNode.vue'
 import AddRepoModal from '../components/repo/AddRepoModal.vue'
 import SccModal from '../components/repo/SccModal.vue'
@@ -230,7 +230,7 @@ async function recloneRepo(name) {
 
 const renderedMarkdown = computed(() => {
   if (!isMarkdown.value || mdViewMode.value !== 'render') return ''
-  try { return marked(fileContent.value) } catch { return fileContent.value }
+  return renderMarkdown(fileContent.value)
 })
 </script>
 

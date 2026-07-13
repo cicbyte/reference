@@ -55,10 +55,17 @@ func removeLink(linkPath string) error {
 		}
 		return nil
 	}
-	if err := os.Remove(linkPath); err != nil {
-		return os.RemoveAll(linkPath)
+	// Unix: only remove symbolic links, NEVER a real directory — otherwise a
+	// misidentified link could trigger RemoveAll and recursively delete an
+	// entire real repository. If it's not a symlink, refuse.
+	info, err := os.Lstat(linkPath)
+	if err != nil {
+		return nil // already gone
 	}
-	return nil
+	if info.Mode()&os.ModeSymlink == 0 {
+		return fmt.Errorf("拒绝删除: 不是符号链接 (%s)", linkPath)
+	}
+	return os.Remove(linkPath)
 }
 
 func ReadLink(linkPath string) (string, error) {
