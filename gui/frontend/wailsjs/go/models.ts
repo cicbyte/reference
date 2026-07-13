@@ -2,7 +2,9 @@ export namespace main {
 	
 	export class AgentInfo {
 	    id: string;
-	    display_name: string;
+	    displayName: string;
+	    baseDir: string;
+	    fileCount: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new AgentInfo(source);
@@ -11,7 +13,9 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
-	        this.display_name = source["display_name"];
+	        this.displayName = source["displayName"];
+	        this.baseDir = source["baseDir"];
+	        this.fileCount = source["fileCount"];
 	    }
 	}
 	export class AppConfigDTO {

@@ -613,16 +613,24 @@ func (a *ReferenceApp) ClearProxy() error {
 
 type AgentInfo struct {
 	ID          string `json:"id"`
-	DisplayName string `json:"display_name"`
+	DisplayName string `json:"displayName"`
+	BaseDir     string `json:"baseDir"`
+	FileCount   int    `json:"fileCount"`
 }
 
 func (a *ReferenceApp) ListAgents() ([]AgentInfo, error) {
 	ids := repo.ListAgentIDs()
 	agents := make([]AgentInfo, len(ids))
 	for i, id := range ids {
+		cfg, ok := repo.GetAgentConfig(id)
+		if !ok {
+			continue
+		}
 		agents[i] = AgentInfo{
-			ID:          id,
-			DisplayName: repo.GetAgentDisplayName(id),
+			ID:          cfg.ID,
+			DisplayName: cfg.DisplayName,
+			BaseDir:     cfg.BaseDir,
+			FileCount:   len(cfg.Files),
 		}
 	}
 	return agents, nil
