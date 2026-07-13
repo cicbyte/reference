@@ -44,9 +44,9 @@ const menuGroups = [
     ],
   },
   {
-    key: 'repo', label: '仓库管理', icon: CloudDownloadOutlined,
+    key: 'repo', label: '引用管理', icon: CloudDownloadOutlined,
     children: [
-      { key: '/repos', icon: UnorderedListOutlined, label: '仓库列表' },
+      { key: '/repos', icon: UnorderedListOutlined, label: '引用列表' },
     ],
   },
   {
