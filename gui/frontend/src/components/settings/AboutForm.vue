@@ -7,6 +7,7 @@ import {
   BookOutlined, FileTextOutlined, GithubOutlined,
 } from '@ant-design/icons-vue'
 import AiSparkIcon from '../common/AiSparkIcon.vue'
+import { formatPath } from '../../utils/path'
 
 const loading = ref(true)
 const version = ref(null)
@@ -83,7 +84,7 @@ function openDir(dir) {
                 <a-button size="small" type="text" title="在文件管理器中打开" @click="openDir(paths[p.key])"><FolderOpenOutlined /></a-button>
               </div>
             </div>
-            <div class="path-value mono" :title="paths?.[p.key]">{{ paths?.[p.key] || '—' }}</div>
+            <div class="path-value mono" :title="formatPath(paths?.[p.key])">{{ paths?.[p.key] ? formatPath(paths[p.key]) : '—' }}</div>
           </div>
         </div>
       </div>

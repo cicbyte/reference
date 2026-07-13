@@ -13,6 +13,7 @@ import {
 } from '@ant-design/icons-vue'
 import AiSparkIcon from '../components/common/AiSparkIcon.vue'
 import { useProjectStore } from '../stores/project'
+import { formatPath } from '../utils/path'
 import DiagnoseModal from '../components/repo/DiagnoseModal.vue'
 
 const router = useRouter()
@@ -73,7 +74,7 @@ function agentDisplayName(id) {
     <div class="dashboard-header">
       <h1>{{ project.hasProject ? project.currentName : 'Reference' }}</h1>
       <p class="subtitle">
-        {{ project.hasProject ? project.currentDir : '本地代码仓库引用管理器' }}
+        {{ project.hasProject ? formatPath(project.currentDir) : '本地代码仓库引用管理器' }}
       </p>
     </div>
 

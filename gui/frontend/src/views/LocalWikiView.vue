@@ -18,6 +18,7 @@ import {
 import { marked } from 'marked'
 import mermaid from 'mermaid'
 import { useLayoutStore } from '../stores/layout'
+import { formatPath } from '../utils/path'
 
 const app = window.go?.main?.ReferenceApp
 const layout = useLayoutStore()
@@ -182,7 +183,7 @@ function selectFile(entry) {
   selectedFileKey.value = entry.source + '|' + entry.relPath
   viewMode.value = 'render'
   loadContent(entry)
-  layout.setFooterItem('wiki', 'Wiki', entry.fullPath || entry.relPath, ReadOutlined)
+  layout.setFooterItem('wiki', 'Wiki', formatPath(entry.fullPath || entry.relPath), ReadOutlined)
 }
 
 onUnmounted(() => {
@@ -237,9 +238,9 @@ function statusLabel(s) {
 
 async function openInExplorer(entry) {
   if (!entry?.fullPath) return
-  const parts = entry.fullPath.replace(/\//g, '\\').split('\\')
+  const parts = formatPath(entry.fullPath).split('/').filter(Boolean)
   parts.pop()
-  const dir = parts.join('\\')
+  const dir = parts.join('/')
   try {
     if (app?.OpenInExplorer) await app.OpenInExplorer(dir)
   } catch (e) {

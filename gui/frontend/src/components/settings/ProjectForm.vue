@@ -6,6 +6,7 @@ import {
 } from '@ant-design/icons-vue'
 import AiSparkIcon from '../common/AiSparkIcon.vue'
 import { useProjectStore } from '../../stores/project'
+import { formatPath, joinPath } from '../../utils/path'
 
 const project = useProjectStore()
 const app = window.go?.main?.ReferenceApp
@@ -103,13 +104,13 @@ function clearAll() { selected.value = [] }
         <div class="ctx-info">
           <div class="ctx-row">
             <span class="ctx-label">目标项目</span>
-            <span class="ctx-value" :title="project.currentDir">
+            <span class="ctx-value" :title="formatPath(project.currentDir)">
               {{ project.currentName || '未选择项目' }}
             </span>
           </div>
           <div class="ctx-row" v-if="hasProject">
             <span class="ctx-label">写入位置</span>
-            <span class="ctx-path mono">{{ project.currentDir }}/.reference/reference.settings.json</span>
+            <span class="ctx-path mono">{{ joinPath(project.currentDir, '.reference/reference.settings.json') }}</span>
           </div>
         </div>
         <span class="ctx-state" :class="{ on: initialized }" v-if="hasProject">

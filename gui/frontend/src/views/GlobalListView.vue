@@ -15,6 +15,7 @@ import {
 } from '@ant-design/icons-vue'
 import { useProjectStore } from '../stores/project'
 import DiagnoseModal from '../components/repo/DiagnoseModal.vue'
+import { formatPath } from '../utils/path'
 
 const router = useRouter()
 const project = useProjectStore()
@@ -30,10 +31,10 @@ const expandedGroups = ref(new Set())
 const groupedProjects = computed(() => {
   const groups = {}
   for (const p of projects.value) {
-    // parent dir = group key (normalize separators)
-    const parts = p.dir.replace(/\//g, '\\').split('\\')
+    // parent dir = group key (normalize to forward slashes)
+    const parts = formatPath(p.dir).split('/').filter(Boolean)
     parts.pop()
-    const key = parts.join('\\') || '/'
+    const key = parts.join('/') || '/'
     if (!groups[key]) groups[key] = []
     groups[key].push(p)
   }
@@ -222,7 +223,7 @@ function agentDisplayName(id) {
                         {{ p.name }}
                         <span v-if="!p.exists" class="missing-tag">目录不存在</span>
                       </div>
-                      <div class="card-dir" :title="p.dir">{{ p.dir }}</div>
+                      <div class="card-dir" :title="formatPath(p.dir)">{{ formatPath(p.dir) }}</div>
                     </div>
                   </div>
 

@@ -18,6 +18,7 @@ import {
   BranchesOutlined,
 } from '@ant-design/icons-vue'
 import logoUrl from '../../assets/logo.svg'
+import { formatPath } from '../../utils/path'
 
 const route = useRoute()
 const router = useRouter()
@@ -189,7 +190,7 @@ const expandedWidth = 200
     </nav>
 
     <div class="sidebar-bottom">
-      <div v-if="project.currentName" class="sidebar-project" :title="project.currentDir">
+      <div v-if="project.currentName" class="sidebar-project" :title="formatPath(project.currentDir)">
         <BranchesOutlined class="sidebar-project-icon" />
         <span v-if="!layout.sidebarCollapsed" class="sidebar-project-name">{{ project.currentName }}</span>
       </div>

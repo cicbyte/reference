@@ -11,6 +11,7 @@ import {
   ReloadOutlined,
   DeleteOutlined,
 } from '@ant-design/icons-vue'
+import { formatPath } from '../../utils/path'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -205,7 +206,7 @@ async function removeRepo(d) {
                 </span>
                 <span class="detail-line">
                   <span class="detail-label">target</span>
-                  <span class="mono">{{ d.type === 'remote' ? d.cachePath : d.localPath }}</span>
+                  <span class="mono">{{ formatPath(d.type === 'remote' ? d.cachePath : d.localPath) }}</span>
                   <span :class="d.targetExists ? 'ok-mark' : 'bad-mark'">
                     {{ d.targetExists ? '✓' : '✗' }}
                   </span>

@@ -17,6 +17,7 @@ import {
 } from '@ant-design/icons-vue'
 import { useProjectStore } from '../../stores/project'
 import { useLayoutStore } from '../../stores/layout'
+import { formatPath } from '../../utils/path'
 import DiagnoseModal from '../repo/DiagnoseModal.vue'
 
 const props = defineProps({
@@ -141,7 +142,7 @@ function onRemove(p, clean) {
             :key="p.dir"
             class="flyout-item"
             :class="{ active: p.dir === project.currentDir }"
-            :title="p.dir"
+            :title="formatPath(p.dir)"
             @click="project.switchTo(p.dir)"
           >
             <WarningOutlined v-if="!p.exists" class="warn" />
@@ -169,7 +170,7 @@ function onRemove(p, clean) {
         <div
           class="rail-item"
           :class="{ active: p.dir === project.currentDir }"
-          :title="p.dir"
+          :title="formatPath(p.dir)"
           @click="project.switchTo(p.dir)"
         >
           <div class="rail-item-icon">

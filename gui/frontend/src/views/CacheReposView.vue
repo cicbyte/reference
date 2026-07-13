@@ -19,6 +19,7 @@ import hljs, { hljsLangForName } from '../utils/hljs-setup'
 import 'highlightjs-line-numbers.js/src/highlightjs-line-numbers.js'
 import { marked } from 'marked'
 import FileTreeNode from '../components/repo/FileTreeNode.vue'
+import { formatPath } from '../utils/path'
 
 const app = window.go?.main?.ReferenceApp
 
@@ -328,7 +329,7 @@ const renderedMarkdown = computed(() => {
                     { active: r.cachePath === selectedCachePath },
                     pg.platform !== '本地仓库' && ns.namespace ? 'nested' : '',
                   ]"
-                  :title="r.cachePath"
+                  :title="formatPath(r.cachePath)"
                   @click="selectRepo(r)"
                 >
                   <div class="rail-item-icon" :class="{ 'icon-local': r.type === 'local', 'icon-missing': !r.exists }">
@@ -380,7 +381,7 @@ const renderedMarkdown = computed(() => {
     <div v-else-if="selectedRepo && !selectedRepo.exists" class="cache-missing">
       <WarningOutlined class="cm-icon" />
       <div class="cm-title">仓库路径不存在</div>
-      <div class="cm-path">{{ selectedRepo.cachePath }}</div>
+      <div class="cm-path">{{ formatPath(selectedRepo.cachePath) }}</div>
       <div class="cm-hint" v-if="selectedRepo.type === 'local'">
         本地仓库目录可能已被移动或删除。你可以从项目中重新添加，或移除该引用。
       </div>
