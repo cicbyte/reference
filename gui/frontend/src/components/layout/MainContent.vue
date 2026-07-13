@@ -18,7 +18,7 @@ const layout = useLayoutStore()
     <div class="global-footer">
       <div class="status-bar">
         <template v-for="(item, idx) in layout.footerItems" :key="item.key">
-          <span v-if="item.value" class="status-item">
+          <span v-if="item.value" class="status-item" :class="item.tone ? 'tone-' + item.tone : ''">
             <component :is="item.icon" v-if="item.icon" />
             <span class="status-label" v-if="item.label">{{ item.label }}:</span>
             <span class="status-value" :title="item.value">{{ item.value }}</span>
@@ -102,5 +102,19 @@ const layout = useLayoutStore()
 
 .status-spacer {
   flex: 1;
+}
+
+/* tone coloring for status items (health badge etc.) */
+.status-item.tone-ok .status-value,
+.status-item.tone-ok :deep(.anticon) {
+  color: var(--color-success);
+}
+.status-item.tone-warn .status-value,
+.status-item.tone-warn :deep(.anticon) {
+  color: var(--color-warning);
+}
+.status-item.tone-bad .status-value,
+.status-item.tone-bad :deep(.anticon) {
+  color: var(--color-error);
 }
 </style>

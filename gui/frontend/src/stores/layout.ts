@@ -6,6 +6,8 @@ interface FooterItem {
   label: string
   value: string
   icon?: any
+  /** Optional tone for badges (health state). */
+  tone?: 'ok' | 'warn' | 'bad' | 'default'
 }
 
 export const useLayoutStore = defineStore('layout', () => {
@@ -15,12 +17,12 @@ export const useLayoutStore = defineStore('layout', () => {
   const windowWidth = ref(window.innerWidth)
 
   // Footer status items — views write to this, MainContent renders it.
-  // Each item: { key, icon?, label, value }
+  // Each item: { key, icon?, label, value, tone? }
   const footerItems = ref<FooterItem[]>([])
 
-  function setFooterItem(key: string, label: string, value: string, icon?: any) {
+  function setFooterItem(key: string, label: string, value: string, icon?: any, tone?: 'ok' | 'warn' | 'bad' | 'default') {
     const idx = footerItems.value.findIndex((i) => i.key === key)
-    const item: FooterItem = { key, label, value, icon }
+    const item: FooterItem = { key, label, value, icon, tone }
     if (idx >= 0) footerItems.value[idx] = item
     else footerItems.value.push(item)
   }
