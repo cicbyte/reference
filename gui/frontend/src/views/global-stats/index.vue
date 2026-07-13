@@ -4,7 +4,9 @@ import {
   FolderOutlined, DatabaseOutlined, CloudServerOutlined,
   ReadOutlined, HddOutlined, WarningOutlined,
 } from '@ant-design/icons-vue'
-import AiSparkIcon from '../components/common/AiSparkIcon.vue'
+import AiSparkIcon from '../../components/common/AiSparkIcon.vue'
+import { fmtSize } from '../../utils/format'
+import { agentNameMap } from '../../utils/agents'
 
 const app = window.go?.main?.ReferenceApp
 
@@ -20,17 +22,6 @@ const statsLoading = ref(true)
 const projectsLoading = ref(true)
 const reposLoading = ref(true)
 const wikiLoading = ref(true)
-
-function fmtSize(bytes) {
-  if (bytes == null) return '...'
-  if (!bytes) return '0 B'
-  if (bytes < 1024) return bytes + ' B'
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-  if (bytes < 1024 * 1024 * 1024) return (bytes / 1024 / 1024).toFixed(1) + ' MB'
-  return (bytes / 1024 / 1024 / 1024).toFixed(2) + ' GB'
-}
-
-const agentNameMap = { claude: 'Claude', codex: 'Codex', zcode: 'ZCode', mimocode: 'MiMo', opencode: 'OpenCode' }
 
 // ---- ② platform distribution ----
 const platformDist = computed(() => {

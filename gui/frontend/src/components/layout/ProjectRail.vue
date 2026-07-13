@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { message, Modal } from 'ant-design-vue'
+import { message } from 'ant-design-vue'
 import {
   FolderOutlined,
   PlusOutlined,
@@ -8,17 +8,14 @@ import {
   ReloadOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  AppstoreOutlined,
-  SwapOutlined,
-  MedicineBoxOutlined,
-  FolderOpenOutlined,
-  CopyOutlined,
-  DeleteOutlined,
 } from '@ant-design/icons-vue'
 import { useProjectStore } from '../../stores/project'
 import { useLayoutStore } from '../../stores/layout'
 import { formatPath } from '../../utils/path'
+import { useProjectActions } from '../../composables/useProjectActions'
 import DiagnoseModal from '../repo/DiagnoseModal.vue'
+import ProjectContextMenu from '../shared/ProjectContextMenu.vue'
+import CollapsedFlyout from './CollapsedFlyout.vue'
 
 const props = defineProps({
   // When false (global-scope pages) the rail slides out to width:0 instead of
@@ -28,7 +25,7 @@ const props = defineProps({
 
 const project = useProjectStore()
 const layout = useLayoutStore()
-const collapsedHover = ref(null)
+const { diagnoseOpen, diagnoseDir, onDoctor, onOpenInExplorer, onCopyPath, onRemove } = useProjectActions()
 
 onMounted(async () => {
   await project.loadProjects()
@@ -42,61 +39,8 @@ async function onAdd() {
   }
 }
 
-const app = window.go?.main?.ReferenceApp
-
 async function onSwitch(p) {
   await project.switchTo(p.dir)
-}
-
-// diagnose modal state
-const diagnoseOpen = ref(false)
-const diagnoseDir = ref('')
-
-function onDoctor(p) {
-  diagnoseDir.value = p.dir
-  diagnoseOpen.value = true
-}
-
-async function onOpenInExplorer(p) {
-  if (!app) return
-  try {
-    await app.OpenInExplorer(p.dir)
-  } catch (e) {
-    message.error('打开失败: ' + e)
-  }
-}
-
-async function onCopyPath(p) {
-  if (!app) return
-  try {
-    await app.CopyPath(p.dir)
-    message.success('路径已复制')
-  } catch (e) {
-    message.error('复制失败: ' + e)
-  }
-}
-
-function onRemove(p, clean) {
-  const label = clean ? '移除并清除 .reference' : '移除项目'
-  const content = clean
-    ? `将删除 ${p.name} 的所有引用记录、.reference 目录及注入的 AI 配置文件。此操作不可撤销。`
-    : `将删除 ${p.name} 的所有引用记录和链接,保留 .reference 目录。`
-  Modal.confirm({
-    title: `${label} — ${p.name}`,
-    content,
-    okText: label,
-    okType: clean ? 'danger' : 'primary',
-    cancelText: '取消',
-    async onOk() {
-      try {
-        await app.RemoveProject(p.dir, clean)
-        message.success(`${label}成功`)
-        await project.loadProjects()
-      } catch (e) {
-        message.error(`${label}失败: ` + e)
-      }
-    },
-  })
 }
 </script>
 
@@ -121,43 +65,14 @@ function onRemove(p, clean) {
     </div>
 
     <!-- collapsed: icon + flyout on hover -->
-    <div
+    <CollapsedFlyout
       v-if="layout.projectRailCollapsed"
-      class="rail-collapsed-list"
-    >
-      <div
-        class="rail-icon-btn"
-        :class="{ active: !!project.hasProject }"
-        title="项目"
-        @mouseenter="collapsedHover = 'projects'"
-        @mouseleave="collapsedHover = null"
-      >
-        <AppstoreOutlined />
-      </div>
-      <transition name="flyout">
-        <div v-if="collapsedHover === 'projects'" class="flyout">
-          <div class="flyout-title">项目</div>
-          <div
-            v-for="p in project.projects"
-            :key="p.dir"
-            class="flyout-item"
-            :class="{ active: p.dir === project.currentDir }"
-            :title="formatPath(p.dir)"
-            @click="project.switchTo(p.dir)"
-          >
-            <WarningOutlined v-if="!p.exists" class="warn" />
-            <FolderOutlined v-else />
-            <span class="flyout-name">{{ p.name }}</span>
-            <span class="flyout-count">{{ p.repoCount }}</span>
-          </div>
-          <div v-if="project.projects.length === 0" class="flyout-empty">暂无项目</div>
-          <div class="flyout-add" @click="onAdd">
-            <PlusOutlined />
-            <span>添加项目</span>
-          </div>
-        </div>
-      </transition>
-    </div>
+      :projects="project.projects"
+      :current-dir="project.currentDir"
+      :has-project="project.hasProject"
+      @switch="(dir) => project.switchTo(dir)"
+      @add="onAdd"
+    />
 
     <!-- expanded: full list -->
     <div v-else class="rail-list">
@@ -186,28 +101,15 @@ function onRemove(p, clean) {
           </div>
         </div>
         <template #overlay>
-          <a-menu>
-            <a-menu-item key="switch" @click="onSwitch(p)">
-              <SwapOutlined /> 切换到此项目
-            </a-menu-item>
-            <a-menu-divider />
-            <a-menu-item key="doctor" @click="onDoctor(p)">
-              <MedicineBoxOutlined /> 修复断裂链接
-            </a-menu-item>
-            <a-menu-item key="open" @click="onOpenInExplorer(p)">
-              <FolderOpenOutlined /> 在文件管理器中打开
-            </a-menu-item>
-            <a-menu-item key="copy" @click="onCopyPath(p)">
-              <CopyOutlined /> 复制路径
-            </a-menu-item>
-            <a-menu-divider />
-            <a-menu-item key="remove" danger @click="onRemove(p, false)">
-              <DeleteOutlined /> 移除项目
-            </a-menu-item>
-            <a-menu-item key="clean" danger @click="onRemove(p, true)">
-              <DeleteOutlined /> 移除并清除 .reference
-            </a-menu-item>
-          </a-menu>
+          <ProjectContextMenu
+            :project="p"
+            @switch="onSwitch"
+            @doctor="onDoctor"
+            @open="onOpenInExplorer"
+            @copy="onCopyPath"
+            @remove="(proj) => onRemove(proj, false)"
+            @clean="(proj) => onRemove(proj, true)"
+          />
         </template>
       </a-dropdown>
 
@@ -461,127 +363,5 @@ function onRemove(p, clean) {
 }
 .collapsed .rail-add {
   padding: 6px;
-}
-
-/* ---- collapsed mode ---- */
-.rail-collapsed-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--spacing-sm);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.rail-icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  color: var(--color-text-secondary);
-  font-size: 18px;
-  transition: all var(--transition-fast);
-  position: relative;
-}
-.rail-icon-btn:hover {
-  background: var(--color-hover);
-  color: var(--color-primary);
-}
-.rail-icon-btn.active {
-  background: var(--color-primary-bg);
-  color: var(--color-primary);
-}
-
-/* ---- flyout (collapsed hover popover) ---- */
-.flyout {
-  position: absolute;
-  left: calc(100% + 8px);
-  top: 0;
-  min-width: 200px;
-  max-height: 400px;
-  overflow-y: auto;
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
-  padding: 6px;
-  z-index: 1100;
-}
-.flyout-title {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--color-text-tertiary);
-  padding: 4px 10px;
-}
-.flyout-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 10px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  transition: all var(--transition-fast);
-}
-.flyout-item:hover {
-  background: var(--color-hover);
-  color: var(--color-primary);
-}
-.flyout-item.active {
-  background: var(--color-primary-bg);
-  color: var(--color-primary);
-}
-.flyout-item .warn {
-  color: var(--color-warning);
-}
-.flyout-name {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.flyout-count {
-  font-size: 11px;
-  color: var(--color-text-tertiary);
-}
-.flyout-empty {
-  font-size: 12px;
-  color: var(--color-text-tertiary);
-  padding: 12px 10px;
-  text-align: center;
-}
-.flyout-add {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 10px;
-  margin-top: 4px;
-  border-top: 1px solid var(--color-border-light);
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-  transition: all var(--transition-fast);
-}
-.flyout-add:hover {
-  color: var(--color-primary);
-  background: var(--color-hover);
-}
-
-/* flyout enter/leave animation */
-.flyout-enter-active,
-.flyout-leave-active {
-  transition: opacity var(--transition-fast), transform var(--transition-fast);
-}
-.flyout-enter-from,
-.flyout-leave-to {
-  opacity: 0;
-  transform: translateX(-4px);
 }
 </style>

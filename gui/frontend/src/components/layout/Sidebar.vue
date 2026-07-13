@@ -26,9 +26,8 @@ const layout = useLayoutStore()
 const project = useProjectStore()
 
 // project-scoped routes require a selected project; disable them otherwise.
-// Includes prefix match for dynamic routes like /repos/browse/:name.
-const PROJECT_SCOPED_KEYS = new Set(['/', '/repos', '/doctor'])
-const PROJECT_SCOPED_PREFIXES = ['/repos/browse/']
+const PROJECT_SCOPED_KEYS = new Set(['/', '/repos'])
+const PROJECT_SCOPED_PREFIXES = []
 function isDisabled(key) {
   if (!project.hasProject) {
     if (PROJECT_SCOPED_KEYS.has(key)) return true

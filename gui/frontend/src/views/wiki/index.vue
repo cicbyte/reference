@@ -1,170 +1,109 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { message } from 'ant-design-vue'
 import {
-  ReloadOutlined,
   ReadOutlined,
   FileTextOutlined,
-  FileMarkdownOutlined,
   DeleteOutlined,
   FolderOpenOutlined,
   EyeOutlined,
   CodeOutlined,
-  DownloadOutlined,
-  FileImageOutlined,
-  ZoomInOutlined,
-  ZoomOutOutlined,
 } from '@ant-design/icons-vue'
-import mermaid from 'mermaid'
-import { useLayoutStore } from '../stores/layout'
-import { useThemeStore } from '../stores/theme'
-import { formatPath } from '../utils/path'
-import { renderMarkdown } from '../utils/markdown'
+import { useLayoutStore } from '../../stores/layout'
+import { formatPath } from '../../utils/path'
+import { renderMarkdown } from '../../utils/markdown'
+import { useMermaid } from '../../composables/useMermaid'
+import MermaidModal from '../../components/shared/MermaidModal.vue'
+import WikiRail from './components/WikiRail.vue'
 
 const app = window.go?.main?.ReferenceApp
 const layout = useLayoutStore()
-const themeStore = useThemeStore()
 
-mermaid.initialize({ startOnLoad: false, theme: themeStore.isDark ? 'dark' : 'default', securityLevel: 'strict' })
-watch(() => themeStore.isDark, (isDark) => {
-  mermaid.initialize({ startOnLoad: false, theme: isDark ? 'dark' : 'default', securityLevel: 'strict' })
-})
-
-async function renderMermaid() {
-  await nextTick()
-  const els = document.querySelectorAll('.wc-md .language-mermaid')
-  for (const el of els) {
-    const code = el.textContent
-    if (!code?.trim()) continue
-    try {
-      const id = 'mmd-' + Math.random().toString(36).slice(2, 9)
-      const { svg } = await mermaid.render(id, code)
-      const wrapper = el.closest('pre')
-      if (wrapper) {
-        const container = document.createElement('div')
-        container.className = 'mermaid-rendered'
-        container.innerHTML = svg
-        container.style.cursor = 'zoom-in'
-        container.addEventListener('click', () => openMermaidModal(svg))
-        wrapper.replaceWith(container)
-      }
-    } catch { /* leave as code block on parse error */ }
-  }
-}
-
-// ---- mermaid modal ----
-const mermaidModalOpen = ref(false)
-const mermaidModalSvg = ref('')
-const mermaidZoom = ref(1)
-const mermaidPanX = ref(0)
-const mermaidPanY = ref(0)
-
-function openMermaidModal(svg) {
-  mermaidModalSvg.value = svg
-  mermaidZoom.value = 1
-  mermaidPanX.value = 0
-  mermaidPanY.value = 0
-  mermaidModalOpen.value = true
-}
-
-function zoomIn() { mermaidZoom.value = Math.min(mermaidZoom.value * 1.25, 5) }
-function zoomOut() { mermaidZoom.value = Math.max(mermaidZoom.value / 1.25, 0.2) }
-function zoomReset() {
-  mermaidZoom.value = 1
-  mermaidPanX.value = 0
-  mermaidPanY.value = 0
-}
-
-function onWheel(e) {
-  e.preventDefault()
-  if (e.deltaY < 0) zoomIn()
-  else zoomOut()
-}
-
-let dragging = false
-let dragStart = { x: 0, y: 0 }
-function onDragStart(e) {
-  dragging = true
-  dragStart = { x: e.clientX - mermaidPanX.value, y: e.clientY - mermaidPanY.value }
-}
-function onDragMove(e) {
-  if (!dragging) return
-  mermaidPanX.value = e.clientX - dragStart.x
-  mermaidPanY.value = e.clientY - dragStart.y
-}
-function onDragEnd() { dragging = false }
-
-function downloadSvg() {
-  if (!mermaidModalSvg.value) return
-  const blob = new Blob([mermaidModalSvg.value], { type: 'image/svg+xml' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = 'mermaid-diagram.svg'
-  a.click()
-  URL.revokeObjectURL(url)
-}
-
-function downloadPng() {
-  if (!mermaidModalSvg.value) return
-  const svgBlob = new Blob([mermaidModalSvg.value], { type: 'image/svg+xml' })
-  const url = URL.createObjectURL(svgBlob)
-  const img = new Image()
-  img.onload = () => {
-    const canvas = document.createElement('canvas')
-    const scale = 2
-    canvas.width = img.naturalWidth * scale
-    canvas.height = img.naturalHeight * scale
-    const ctx = canvas.getContext('2d')
-    ctx.fillStyle = '#ffffff'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-    ctx.scale(scale, scale)
-    ctx.drawImage(img, 0, 0)
-    URL.revokeObjectURL(url)
-    canvas.toBlob((blob) => {
-      if (!blob) return
-      const pngUrl = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = pngUrl
-      a.download = 'mermaid-diagram.png'
-      a.click()
-      URL.revokeObjectURL(pngUrl)
-    })
-  }
-  img.src = url
-}
+// ---- shared mermaid (render + enlarge modal) ----
+const { modalOpen, modalSvg, zoom, panX, panY, renderMermaid } = useMermaid()
 
 // ---- data ----
 const entries = ref([])
 const loading = ref(true)
-const selectedRepoKey = ref('')
-const selectedFileKey = ref('')
+const syncing = ref(false)
+const selectedRepoKey = ref('')   // source + '|' + platform + '/' + namespace + '/' + repoName
+const selectedFileKey = ref('')   // source + '|' + relPath
 const content = ref('')
-const rawContent = ref('')
+const rawContent = ref('')       // full raw markdown (with frontmatter)
 const contentLoading = ref(false)
-const viewMode = ref('render')
+const viewMode = ref('render')   // "render" | "source"
 
-// ---- flat repo list (local repos have no platform/namespace grouping) ----
-const repos = computed(() => {
-  const map = {}
+// ---- grouped repos: source → platform → namespace → repoName ----
+const expandedPlatforms = ref(new Set())
+const expandedNamespaces = ref(new Set())
+
+const groupedRepos = computed(() => {
+  const tree = {}
   for (const e of entries.value) {
-    if (!map[e.repoName]) map[e.repoName] = []
-    map[e.repoName].push(e)
+    const platform = e.source === 'local' ? '本地知识库' : (e.platform || '未知平台').toUpperCase()
+    const ns = e.source === 'local' ? '' : (e.namespace || '未知')
+    if (!tree[platform]) tree[platform] = {}
+    if (!tree[platform][ns]) tree[platform][ns] = {}
+    if (!tree[platform][ns][e.repoName]) tree[platform][ns][e.repoName] = []
+    tree[platform][ns][e.repoName].push(e)
   }
-  return Object.keys(map).sort().map((rn) => {
-    const files = map[rn].sort((a, b) => {
-      if (a.fileName === 'reference.md') return -1
-      if (b.fileName === 'reference.md') return 1
-      return a.fileName.localeCompare(b.fileName)
-    })
-    return { repoName: rn, files, fileCount: files.length }
+  const platforms = Object.keys(tree).sort((a, b) => {
+    if (a === '本地知识库') return 1
+    if (b === '本地知识库') return -1
+    return a.localeCompare(b)
   })
+  return platforms.map((p) => ({
+    platform: p,
+    namespaces: Object.keys(tree[p]).sort().map((ns) => ({
+      namespace: ns,
+      repos: Object.keys(tree[p][ns]).sort().map((rn) => {
+        const files = tree[p][ns][rn].sort((a, b) => {
+          // reference.md first, then alpha
+          if (a.fileName === 'reference.md') return -1
+          if (b.fileName === 'reference.md') return 1
+          return a.fileName.localeCompare(b.fileName)
+        })
+        return { repoName: rn, files, fileCount: files.length }
+      }),
+    })),
+  }))
 })
 
+function togglePlatform(p) {
+  const next = new Set(expandedPlatforms.value)
+  next.has(p) ? next.delete(p) : next.add(p)
+  expandedPlatforms.value = next
+}
+function toggleNamespace(key) {
+  const next = new Set(expandedNamespaces.value)
+  next.has(key) ? next.delete(key) : next.add(key)
+  expandedNamespaces.value = next
+}
+
+// auto-expand on first load
+watch(groupedRepos, (groups) => {
+  if (expandedPlatforms.value.size === 0 && groups.length) {
+    const ps = new Set()
+    const ns = new Set()
+    for (const g of groups) {
+      ps.add(g.platform)
+      for (const n of g.namespaces) ns.add(g.platform + '/' + n.namespace)
+    }
+    expandedPlatforms.value = ps
+    expandedNamespaces.value = ns
+  }
+}, { once: true })
+
+// ---- selected repo → its files ----
 const selectedRepoFiles = computed(() => {
   if (!selectedRepoKey.value) return []
+  // fallback: filter from flat entries by repo key parts
+  const parts = selectedRepoKey.value.split('|')
+  const source = parts[0]
+  const pathParts = parts.slice(1).join('|').split('/')
+  const repoName = pathParts[pathParts.length - 1]
   return entries.value
-    .filter((e) => e.repoName === selectedRepoKey.value)
+    .filter((e) => e.source === source && e.repoName === repoName)
     .sort((a, b) => {
       if (a.fileName === 'reference.md') return -1
       if (b.fileName === 'reference.md') return 1
@@ -176,9 +115,10 @@ const selectedEntry = computed(() =>
   entries.value.find((e) => e.source + '|' + e.relPath === selectedFileKey.value),
 )
 
-function selectRepo(repoName) {
-  selectedRepoKey.value = repoName
-  const files = entries.value.filter((e) => e.repoName === repoName)
+function selectRepo(source, repoName) {
+  selectedRepoKey.value = source + '|' + repoName
+  // auto-select reference.md if it exists, else first file
+  const files = entries.value.filter((e) => e.source === source && e.repoName === repoName)
   const refMd = files.find((f) => f.fileName === 'reference.md')
   const target = refMd || files[0]
   if (target) selectFile(target)
@@ -195,11 +135,13 @@ onUnmounted(() => {
   layout.clearFooterItem('wiki')
 })
 
+// ---- load ----
 async function loadEntries() {
   loading.value = true
   try {
     if (app?.ListWikiEntries) {
-      entries.value = await app.ListWikiEntries('local')
+      entries.value = await app.ListWikiEntries('remote')
+      // async-check status for each file
       entries.value.forEach((e) => fetchStatus(e))
     }
   } catch (e) {
@@ -226,6 +168,7 @@ async function deleteEntry(entry) {
     if (app?.DeleteWikiEntry) {
       await app.DeleteWikiEntry(entry.source, entry.relPath)
       message.success('已删除')
+      // if we deleted the currently-viewed file, clear selection
       if (selectedFileKey.value === entry.source + '|' + entry.relPath) {
         selectedFileKey.value = ''
         content.value = ''
@@ -243,6 +186,7 @@ function statusLabel(s) {
 
 async function openInExplorer(entry) {
   if (!entry?.fullPath) return
+  // extract parent directory from full path
   const parts = formatPath(entry.fullPath).split('/').filter(Boolean)
   parts.pop()
   const dir = parts.join('/')
@@ -282,54 +226,52 @@ function stripFrontmatter(md) {
 
 const renderedContent = computed(() => renderMarkdown(content.value))
 
+// re-render mermaid when switching back to render mode
 watch(viewMode, (mode) => {
   if (mode === 'render') renderMermaid()
 })
+
+async function doSync() {
+  syncing.value = true
+  try {
+    if (app?.WikiSync) {
+      await app.WikiSync()
+      message.success('同步成功')
+      await loadEntries()
+    }
+  } catch (e) {
+    message.error('同步失败: ' + e)
+  } finally {
+    syncing.value = false
+  }
+}
 
 onMounted(loadEntries)
 </script>
 
 <template>
   <div class="wiki-view">
-    <!-- col 1: repo rail (flat, no platform grouping) -->
-    <aside class="wiki-rail">
-      <div class="rail-head">
-        <span>本地知识库</span>
-        <button class="rail-btn" title="刷新" @click="loadEntries">
-          <ReloadOutlined />
-        </button>
-      </div>
-      <div class="rail-list">
-        <a-spin v-if="loading" class="rail-spin" />
-        <div
-          v-for="repo in repos"
-          :key="repo.repoName"
-          class="rail-item"
-          :class="{ active: selectedRepoKey === repo.repoName }"
-          :title="repo.repoName"
-          @click="selectRepo(repo.repoName)"
-        >
-          <div class="rail-item-icon">
-            <ReadOutlined v-if="repo.fileCount === 1" />
-            <FileMarkdownOutlined v-else />
-          </div>
-          <div class="rail-item-body">
-            <div class="rail-item-name">{{ repo.repoName }}</div>
-            <div class="rail-item-meta">{{ repo.fileCount }} 个文件</div>
-          </div>
-        </div>
-        <div v-if="!loading && !entries.length" class="rail-empty">
-          <ReadOutlined class="rail-empty-icon" />
-          <span>暂无本地知识文件</span>
-        </div>
-      </div>
-    </aside>
+    <!-- col 1: repo rail (grouped by platform → namespace) -->
+    <WikiRail
+      :grouped-repos="groupedRepos"
+      :expanded-platforms="expandedPlatforms"
+      :expanded-namespaces="expandedNamespaces"
+      :selected-repo-key="selectedRepoKey"
+      :loading="loading"
+      :syncing="syncing"
+      :entries="entries"
+      @select-repo="selectRepo"
+      @toggle-platform="togglePlatform"
+      @toggle-namespace="toggleNamespace"
+      @sync="doSync"
+      @reload="loadEntries"
+    />
 
     <!-- col 2: file list for selected repo -->
     <aside v-if="selectedRepoKey" class="wiki-files">
       <div class="wf-head">
         <FileTextOutlined class="wf-icon" />
-        <span class="wf-title">{{ selectedRepoKey }}</span>
+        <span class="wf-title">{{ selectedRepoKey.split('|')[1] }}</span>
       </div>
       <div class="wf-list">
         <a-dropdown
@@ -385,6 +327,7 @@ onMounted(loadEntries)
             </a-menu>
           </template>
         </a-dropdown>
+        <div v-if="!selectedRepoFiles.length" class="wf-empty">无文件</div>
       </div>
     </aside>
 
@@ -404,6 +347,8 @@ onMounted(loadEntries)
           </span>
         </div>
         <div class="wc-meta">
+          <span v-if="selectedEntry.namespace">{{ selectedEntry.namespace }}/</span>
+          <span class="wc-platform">{{ selectedEntry.platform }}</span>
           <span v-if="selectedEntry.commit" class="wc-commit">{{ selectedEntry.commit }}</span>
           <span v-if="selectedEntry.exploredAt" class="wc-date">{{ selectedEntry.exploredAt }}</span>
         </div>
@@ -419,110 +364,28 @@ onMounted(loadEntries)
       </div>
     </div>
 
-    <!-- mermaid enlarge modal -->
-    <a-modal
-      v-model:open="mermaidModalOpen"
-      :footer="null"
-      :title="null"
-      width="80%"
-      centered
-      destroy-on-close
-    >
-      <div
-        class="mermaid-modal-viewport"
-        @wheel.prevent="onWheel"
-        @mousedown="onDragStart"
-        @mousemove="onDragMove"
-        @mouseup="onDragEnd"
-        @mouseleave="onDragEnd"
-      >
-        <div
-          class="mermaid-modal-body"
-          :style="{ transform: `translate(${mermaidPanX}px, ${mermaidPanY}px) scale(${mermaidZoom})` }"
-          v-html="mermaidModalSvg"
-        ></div>
-      </div>
-      <div class="mermaid-modal-actions">
-        <a-button size="small" @click="zoomOut"><ZoomOutOutlined /></a-button>
-        <span class="zoom-level">{{ Math.round(mermaidZoom * 100) }}%</span>
-        <a-button size="small" @click="zoomIn"><ZoomInOutlined /></a-button>
-        <a-button size="small" @click="zoomReset">重置</a-button>
-        <span class="zoom-spacer"></span>
-        <a-button @click="downloadSvg">
-          <template #icon><DownloadOutlined /></template>
-          SVG
-        </a-button>
-        <a-button @click="downloadPng">
-          <template #icon><FileImageOutlined /></template>
-          PNG
-        </a-button>
-      </div>
-    </a-modal>
+    <!-- mermaid enlarge modal (shared) -->
+    <MermaidModal
+      v-model:open="modalOpen"
+      :svg="modalSvg"
+      v-model:zoom="zoom"
+      v-model:panX="panX"
+      v-model:panY="panY"
+    />
   </div>
 </template>
 
 <style scoped>
-.wiki-view { display: flex; height: 100%; width: 100%; overflow: hidden; }
+.wiki-view {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
 
-/* col 1: repo rail */
-.wiki-rail {
-  width: 220px; min-width: 220px;
-  display: flex; flex-direction: column;
-  border-right: 1px solid var(--color-border);
-  background: var(--color-surface); overflow: hidden;
-}
-.rail-head {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 12px; height: var(--navbar-height);
-  border-bottom: 1px solid var(--color-border); flex-shrink: 0;
-}
-.rail-head > span {
-  font-size: 12px; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.06em; color: var(--color-text-tertiary);
-}
-.rail-btn {
-  display: flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; border: none; background: transparent;
-  color: var(--color-text-tertiary); cursor: pointer;
-  border-radius: var(--radius-xs); transition: all var(--transition-fast);
-}
-.rail-btn:hover { background: var(--color-hover); color: var(--color-primary); }
-.rail-list { flex: 1; overflow-y: auto; padding: var(--spacing-sm); }
-.rail-list::-webkit-scrollbar { width: 5px; }
-.rail-list::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
-.rail-spin { display: flex; justify-content: center; padding: var(--spacing-lg) 0; }
-
-.rail-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 7px 10px; border-radius: var(--radius-md);
-  cursor: pointer; transition: all var(--transition-fast); margin-bottom: 1px;
-}
-.rail-item:hover { background: var(--color-hover); }
-.rail-item.active { background: var(--color-primary-bg); }
-.rail-item-icon {
-  display: flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; border-radius: var(--radius-sm);
-  background: var(--color-background); color: var(--color-text-tertiary);
-  font-size: 13px; flex-shrink: 0; transition: all var(--transition-fast);
-}
-.rail-item:hover .rail-item-icon, .rail-item.active .rail-item-icon { background: var(--color-primary); color: #fff; }
-.rail-item-body { flex: 1; min-width: 0; }
-.rail-item-name {
-  font-size: 13px; font-weight: 500; color: var(--color-text);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.rail-item.active .rail-item-name { color: var(--color-primary); }
-.rail-item-meta { margin-top: 1px; font-size: 11px; color: var(--color-text-tertiary); }
-.rail-empty {
-  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 40px 0;
-}
-.rail-empty-icon { font-size: 28px; color: var(--color-text-tertiary); opacity: 0.35; }
-.rail-empty span { font-size: 13px; color: var(--color-text-secondary); }
-
-/* col 2: file list */
+/* ---- col 2: file list ---- */
 .wiki-files {
-  width: 200px; min-width: 200px;
-  display: flex; flex-direction: column;
+  width: 200px; min-width: 200px; display: flex; flex-direction: column;
   border-right: 1px solid var(--color-border);
   background: var(--color-surface); overflow: hidden;
 }
@@ -532,16 +395,13 @@ onMounted(loadEntries)
   border-bottom: 1px solid var(--color-border); flex-shrink: 0;
 }
 .wf-icon { font-size: 14px; color: var(--color-text-tertiary); }
-.wf-title {
-  font-size: 13px; font-weight: 600; color: var(--color-text);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
+.wf-title { font-size: 13px; font-weight: 600; color: var(--color-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wf-list { flex: 1; overflow-y: auto; padding: var(--spacing-sm); }
 .wf-list::-webkit-scrollbar { width: 5px; }
 .wf-list::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+
 .wf-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 7px 10px; border-radius: var(--radius-md);
+  display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: var(--radius-md);
   cursor: pointer; transition: all var(--transition-fast); margin-bottom: 1px;
 }
 .wf-item:hover { background: var(--color-hover); }
@@ -552,7 +412,8 @@ onMounted(loadEntries)
   background: var(--color-background); color: var(--color-text-tertiary);
   font-size: 12px; flex-shrink: 0; transition: all var(--transition-fast);
 }
-.wf-item:hover .wf-item-icon, .wf-item.active .wf-item-icon { background: var(--color-primary); color: #fff; }
+.wf-item:hover .wf-item-icon,
+.wf-item.active .wf-item-icon { background: var(--color-primary); color: #fff; }
 .wf-item-body { flex: 1; min-width: 0; }
 .wf-item-name {
   font-size: 13px; font-weight: 500; color: var(--color-text);
@@ -565,7 +426,9 @@ onMounted(loadEntries)
   border-radius: 3px; background: var(--color-primary-bg); color: var(--color-primary);
 }
 .wf-problem { border-left: 2px solid var(--color-warning); }
-.wf-status-tag { font-size: 9px; font-weight: 600; padding: 0 4px; border-radius: 3px; }
+.wf-status-tag {
+  font-size: 9px; font-weight: 600; padding: 0 4px; border-radius: 3px;
+}
 .wf-status-tag.st-empty { background: var(--color-error-bg); color: var(--color-error); }
 .wf-status-tag.st-no-fm { background: var(--color-warning-bg); color: var(--color-warning); }
 .wf-delete {
@@ -576,16 +439,16 @@ onMounted(loadEntries)
 }
 .wf-item:hover .wf-delete { opacity: 0.5; }
 .wf-delete:hover { opacity: 1 !important; background: var(--color-error-bg); color: var(--color-error); }
+.wf-empty { padding: 24px; text-align: center; font-size: 12px; color: var(--color-text-tertiary); }
 
-/* col 3: content */
+/* ---- col 3: content ---- */
 .wiki-placeholder {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 12px; color: var(--color-text-tertiary); font-size: 14px;
 }
 .wp-icon { font-size: 48px; opacity: 0.2; }
-.wiki-content {
-  flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--color-background);
-}
+
+.wiki-content { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--color-background); }
 .wc-bar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 20px; height: var(--navbar-height);
@@ -596,16 +459,16 @@ onMounted(loadEntries)
 .wc-icon { color: var(--color-text-tertiary); }
 .wc-file { font-size: 13px; font-weight: 400; color: var(--color-text-secondary); }
 .wc-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; font-size: 12px; color: var(--color-text-tertiary); }
+.wc-platform { color: var(--color-text-secondary); }
 .wc-commit { font-family: 'Cascadia Code', monospace; }
 .wc-date { font-family: 'Cascadia Code', monospace; }
+
 .wc-body { flex: 1; overflow-y: auto; min-height: 0; }
 .wc-body::-webkit-scrollbar { width: 8px; }
 .wc-body::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
 .wc-loading { display: flex; justify-content: center; padding: 40px; }
-.wc-md {
-  padding: 24px 32px; font-size: 14px; line-height: 1.7;
-  color: var(--color-text);
-}
+
+.wc-md { padding: 24px 32px; font-size: 14px; line-height: 1.7; color: var(--color-text); }
 .wc-md :deep(h1) { font-size: 24px; font-weight: 700; margin: 24px 0 12px; }
 .wc-md :deep(h2) { font-size: 20px; font-weight: 600; margin: 20px 0 10px; border-bottom: 1px solid var(--color-border); padding-bottom: 6px; }
 .wc-md :deep(h3) { font-size: 16px; font-weight: 600; margin: 16px 0 8px; }
@@ -627,30 +490,11 @@ onMounted(loadEntries)
   font-size: 13px; line-height: 1.6;
   color: var(--color-text); white-space: pre-wrap; word-break: break-word;
 }
+/* rendered mermaid blocks (created by useMermaid after v-html patch) */
 .mermaid-rendered {
-  display: flex; justify-content: center;
-  margin: 16px 0; padding: 16px;
+  display: flex; justify-content: center; margin: 16px 0; padding: 16px;
   background: var(--color-surface); border: 1px solid var(--color-border);
   border-radius: var(--radius-md); overflow-x: auto;
 }
 .mermaid-rendered svg { max-width: 100%; height: auto; }
-
-.mermaid-modal-viewport {
-  height: calc(80vh - 100px); overflow: hidden; cursor: grab;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--color-background); border-radius: var(--radius-md);
-}
-.mermaid-modal-viewport:active { cursor: grabbing; }
-.mermaid-modal-body {
-  text-align: center; padding: 16px;
-  transition: transform 0.1s ease;
-  transform-origin: center center;
-}
-.mermaid-modal-body svg { max-width: 100%; height: auto; }
-.mermaid-modal-actions {
-  display: flex; align-items: center; gap: 8px;
-  padding: 12px 0 0; border-top: 1px solid var(--color-border-light);
-}
-.zoom-level { font-size: 12px; color: var(--color-text-secondary); min-width: 42px; text-align: center; }
-.zoom-spacer { flex: 1; }
 </style>

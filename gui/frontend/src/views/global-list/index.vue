@@ -13,18 +13,39 @@ import {
   MedicineBoxOutlined,
   CopyOutlined,
 } from '@ant-design/icons-vue'
-import { useProjectStore } from '../stores/project'
-import DiagnoseModal from '../components/repo/DiagnoseModal.vue'
-import { formatPath } from '../utils/path'
+import { useProjectStore } from '../../stores/project'
+import DiagnoseModal from '../../components/repo/DiagnoseModal.vue'
+import { formatPath } from '../../utils/path'
+import { agentDisplayName } from '../../utils/agents'
+import { useProjectActions } from '../../composables/useProjectActions'
 
 const router = useRouter()
 const project = useProjectStore()
 const loading = ref(true)
 const projects = ref([])
-const diagnoseOpen = ref(false)
-const diagnoseDir = ref('')
 
 const app = window.go?.main?.ReferenceApp
+
+async function loadProjects() {
+  loading.value = true
+  try {
+    if (app?.ListProjects) {
+      projects.value = await app.ListProjects()
+    }
+  } catch (e) {
+    message.error('加载失败: ' + e)
+  } finally {
+    loading.value = false
+  }
+}
+
+const {
+  diagnoseOpen,
+  diagnoseDir,
+  onDoctor,
+  onCopyPath,
+  onRemove,
+} = useProjectActions(loadProjects)
 
 // ---- grouping by parent directory ----
 const expandedGroups = ref(new Set())
@@ -64,19 +85,6 @@ const brokenProjects = computed(() =>
   projects.value.filter((p) => !p.exists || p.brokenCount > 0).length,
 )
 
-async function loadProjects() {
-  loading.value = true
-  try {
-    if (app?.ListProjects) {
-      projects.value = await app.ListProjects()
-    }
-  } catch (e) {
-    message.error('加载失败: ' + e)
-  } finally {
-    loading.value = false
-  }
-}
-
 onMounted(loadProjects)
 
 function cleanupMissing() {
@@ -109,49 +117,6 @@ function switchTo(p) {
     message.success(`已切换到 ${p.name}`)
     router.push('/')
   })
-}
-
-function onDoctor(p) {
-  diagnoseDir.value = p.dir
-  diagnoseOpen.value = true
-}
-
-async function onCopyPath(p) {
-  try {
-    await app.CopyPath(p.dir)
-    message.success('路径已复制')
-  } catch (e) {
-    message.error('复制失败: ' + e)
-  }
-}
-
-function onRemove(p, clean) {
-  const label = clean ? '移除并清除 .reference' : '移除项目'
-  const content = clean
-    ? `将删除 ${p.name} 的所有引用记录、.reference 目录及注入的 AI 配置文件。`
-    : `将删除 ${p.name} 的所有引用记录和链接,保留 .reference 目录。`
-  Modal.confirm({
-    title: `${label} — ${p.name}`,
-    content,
-    okText: label,
-    okType: clean ? 'danger' : 'primary',
-    cancelText: '取消',
-    async onOk() {
-      try {
-        await app.RemoveProject(p.dir, clean)
-        message.success(`${label}成功`)
-        await loadProjects()
-        await project.loadProjects()
-      } catch (e) {
-        message.error(`${label}失败: ` + e)
-      }
-    },
-  })
-}
-
-function agentDisplayName(id) {
-  const map = { claude: 'Claude', codex: 'Codex', zcode: 'ZCode', mimocode: 'MiMo', opencode: 'OpenCode' }
-  return map[id] || id
 }
 </script>
 
