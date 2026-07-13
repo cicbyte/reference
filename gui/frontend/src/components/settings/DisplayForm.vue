@@ -1,12 +1,16 @@
 <script setup>
 import { computed } from 'vue'
 import { message } from 'ant-design-vue'
-import { BgColorsOutlined } from '@ant-design/icons-vue'
+import { BgColorsOutlined, GlobalOutlined } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { useThemeStore } from '@/stores/theme'
 import { useLayoutStore } from '@/stores/layout'
+import { useLocaleStore } from '@/stores/locale'
 
+const { t } = useI18n()
 const theme = useThemeStore()
 const layout = useLayoutStore()
+const locale = useLocaleStore()
 
 const themeMode = computed({
   get: () => theme.currentTheme,
@@ -23,20 +27,25 @@ const sidebarDefaultCollapsed = computed({
   set: (v) => {
     localStorage.setItem('reference-sidebar-collapsed', String(v))
     layout.sidebarCollapsed = v
-    message.success(v ? '已设为默认折叠' : '已设为默认展开')
+    message.success(v ? t('settings.display.collapsed') : t('settings.display.expanded'))
   },
+})
+
+const currentLocale = computed({
+  get: () => locale.currentLocale,
+  set: (v) => locale.setLocale(v),
 })
 </script>
 
 <template>
   <div class="settings-form">
     <div class="form-header">
-      <div class="form-title"><BgColorsOutlined /> 显示</div>
-      <div class="form-desc">自定义应用的外观主题与布局行为。</div>
+      <div class="form-title"><BgColorsOutlined /> {{ t('settings.display.title') }}</div>
+      <div class="form-desc">{{ t('settings.display.desc') }}</div>
     </div>
 
     <div class="setting-group">
-      <div class="group-title">外观主题</div>
+      <div class="group-title">{{ t('settings.display.appearance') }}</div>
 
       <!-- visual theme picker -->
       <div class="theme-picker">
@@ -50,7 +59,7 @@ const sidebarDefaultCollapsed = computed({
             <div class="tp-bar tp-bar-side"></div>
             <div class="tp-bar tp-bar-main"></div>
           </div>
-          <div class="theme-card-label">深色</div>
+          <div class="theme-card-label">{{ t('settings.display.dark') }}</div>
         </div>
         <div
           class="theme-card"
@@ -62,26 +71,41 @@ const sidebarDefaultCollapsed = computed({
             <div class="tp-bar tp-bar-side"></div>
             <div class="tp-bar tp-bar-main"></div>
           </div>
-          <div class="theme-card-label">浅色</div>
+          <div class="theme-card-label">{{ t('settings.display.light') }}</div>
         </div>
       </div>
     </div>
 
     <div class="setting-group">
-      <div class="group-title">布局</div>
+      <div class="group-title">{{ t('settings.display.language') }}</div>
 
       <div class="setting-row">
         <div class="row-label">
-          <div class="row-title">默认显示项目栏</div>
-          <div class="row-help">控制启动时是否显示左侧项目滑轨</div>
+          <div class="row-title"><GlobalOutlined /> {{ t('settings.display.language') }}</div>
+          <div class="row-help">{{ t('settings.display.languageHelp') }}</div>
+        </div>
+        <a-radio-group v-model:value="currentLocale" button-style="solid">
+          <a-radio-button value="zh-CN">{{ t('settings.display.zhCN') }}</a-radio-button>
+          <a-radio-button value="en">{{ t('settings.display.en') }}</a-radio-button>
+        </a-radio-group>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <div class="group-title">{{ t('settings.display.layout') }}</div>
+
+      <div class="setting-row">
+        <div class="row-label">
+          <div class="row-title">{{ t('settings.display.showRail') }}</div>
+          <div class="row-help">{{ t('settings.display.showRailHelp') }}</div>
         </div>
         <a-switch v-model:checked="railVisible" />
       </div>
 
       <div class="setting-row">
         <div class="row-label">
-          <div class="row-title">默认折叠功能侧栏</div>
-          <div class="row-help">启动时自动收起功能菜单，仅显示图标</div>
+          <div class="row-title">{{ t('settings.display.collapseSidebar') }}</div>
+          <div class="row-help">{{ t('settings.display.collapseSidebarHelp') }}</div>
         </div>
         <a-switch v-model:checked="sidebarDefaultCollapsed" />
       </div>

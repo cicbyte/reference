@@ -9,6 +9,7 @@ import {
   EyeOutlined,
   CodeOutlined,
 } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { useLayoutStore } from '@/stores/layout'
 import { formatPath } from '@/utils/path'
 import { renderMarkdown } from '@/utils/markdown'
@@ -18,6 +19,11 @@ import WikiRail from './components/WikiRail.vue'
 
 const app = window.go?.main?.ReferenceApp
 const layout = useLayoutStore()
+const { t } = useI18n()
+
+// Stable sentinel used as the platform grouping key for local entries.
+// Kept distinct from any display string so translation never breaks logic.
+const LOCAL_PLATFORM_KEY = '__local__'
 
 // ---- shared mermaid (render + enlarge modal) ----
 const { modalOpen, modalSvg, zoom, panX, panY, renderMermaid } = useMermaid()
@@ -40,16 +46,16 @@ const expandedNamespaces = ref(new Set())
 const groupedRepos = computed(() => {
   const tree = {}
   for (const e of entries.value) {
-    const platform = e.source === 'local' ? '本地知识库' : (e.platform || '未知平台').toUpperCase()
-    const ns = e.source === 'local' ? '' : (e.namespace || '未知')
+    const platform = e.source === 'local' ? LOCAL_PLATFORM_KEY : (e.platform || '').toUpperCase()
+    const ns = e.source === 'local' ? '' : (e.namespace || '')
     if (!tree[platform]) tree[platform] = {}
     if (!tree[platform][ns]) tree[platform][ns] = {}
     if (!tree[platform][ns][e.repoName]) tree[platform][ns][e.repoName] = []
     tree[platform][ns][e.repoName].push(e)
   }
   const platforms = Object.keys(tree).sort((a, b) => {
-    if (a === '本地知识库') return 1
-    if (b === '本地知识库') return -1
+    if (a === LOCAL_PLATFORM_KEY) return 1
+    if (b === LOCAL_PLATFORM_KEY) return -1
     return a.localeCompare(b)
   })
   return platforms.map((p) => ({
@@ -145,7 +151,7 @@ async function loadEntries() {
       entries.value.forEach((e) => fetchStatus(e))
     }
   } catch (e) {
-    message.error('加载失败: ' + e)
+    message.error(t('wiki.loadFailed') + ': ' + e)
   } finally {
     loading.value = false
   }
@@ -167,7 +173,7 @@ async function deleteEntry(entry) {
   try {
     if (app?.DeleteWikiEntry) {
       await app.DeleteWikiEntry(entry.source, entry.relPath)
-      message.success('已删除')
+      message.success(t('wiki.deleteSuccess'))
       // if we deleted the currently-viewed file, clear selection
       if (selectedFileKey.value === entry.source + '|' + entry.relPath) {
         selectedFileKey.value = ''
@@ -176,12 +182,16 @@ async function deleteEntry(entry) {
       await loadEntries()
     }
   } catch (e) {
-    message.error('删除失败: ' + e)
+    message.error(t('wiki.deleteFailed') + ': ' + e)
   }
 }
 
 function statusLabel(s) {
-  return { ok: '', empty: '空文件', 'no-fm': '无元数据' }[s] || ''
+  return {
+    ok: t('wiki.statusOk'),
+    empty: t('wiki.statusEmpty'),
+    'no-fm': t('wiki.statusNoFm'),
+  }[s] || ''
 }
 
 async function openInExplorer(entry) {
@@ -193,7 +203,7 @@ async function openInExplorer(entry) {
   try {
     if (app?.OpenInExplorer) await app.OpenInExplorer(dir)
   } catch (e) {
-    message.error('打开失败: ' + e)
+    message.error(t('common.openFailed') + ': ' + e)
   }
 }
 
@@ -209,7 +219,7 @@ async function loadContent(entry) {
       content.value = stripFrontmatter(raw)
     }
   } catch (e) {
-    message.error('读取失败: ' + e)
+    message.error(t('wiki.readFailed') + ': ' + e)
   } finally {
     contentLoading.value = false
     if (viewMode.value === 'render') renderMermaid()
@@ -236,11 +246,11 @@ async function doSync() {
   try {
     if (app?.WikiSync) {
       await app.WikiSync()
-      message.success('同步成功')
+      message.success(t('wiki.syncSuccess'))
       await loadEntries()
     }
   } catch (e) {
-    message.error('同步失败: ' + e)
+    message.error(t('wiki.syncFailed') + ': ' + e)
   } finally {
     syncing.value = false
   }
@@ -294,10 +304,10 @@ onMounted(loadEntries)
             </div>
             <div class="wf-item-body">
               <div class="wf-item-name">
-                {{ file.fileName === 'reference.md' ? '架构总览' : file.fileName.replace('.md', '') }}
+                {{ file.fileName === 'reference.md' ? t('wiki.architectureOverview') : file.fileName.replace('.md', '') }}
               </div>
               <div class="wf-item-meta">
-                <span v-if="file.fileName !== 'reference.md'" class="wf-topic-tag">主题</span>
+                <span v-if="file.fileName !== 'reference.md'" class="wf-topic-tag">{{ t('wiki.topic') }}</span>
                 <span v-if="file.status && file.status !== 'ok'" class="wf-status-tag" :class="'st-' + file.status">
                   {{ statusLabel(file.status) }}
                 </span>
@@ -306,11 +316,11 @@ onMounted(loadEntries)
             </div>
             <a-popconfirm
               v-if="file.status && file.status !== 'ok'"
-              :title="`删除 ${file.fileName}？`"
-              ok-text="删除" ok-type="danger" cancel-text="取消"
+              :title="t('wiki.deleteConfirm', { name: file.fileName })"
+              :ok-text="t('common.delete')" ok-type="danger" :cancel-text="t('common.cancel')"
               @confirm="deleteEntry(file)"
             >
-              <button class="wf-delete" title="删除此文件" @click.stop>
+              <button class="wf-delete" :title="t('common.delete')" @click.stop>
                 <DeleteOutlined />
               </button>
             </a-popconfirm>
@@ -318,23 +328,23 @@ onMounted(loadEntries)
           <template #overlay>
             <a-menu>
               <a-menu-item @click="openInExplorer(file)">
-                <FolderOpenOutlined /> 在文件管理器中打开
+                <FolderOpenOutlined /> {{ t('common.openInExplorer') }}
               </a-menu-item>
               <a-menu-divider />
               <a-menu-item danger @click="deleteEntry(file)">
-                <DeleteOutlined /> 删除
+                <DeleteOutlined /> {{ t('common.delete') }}
               </a-menu-item>
             </a-menu>
           </template>
         </a-dropdown>
-        <div v-if="!selectedRepoFiles.length" class="wf-empty">无文件</div>
+        <div v-if="!selectedRepoFiles.length" class="wf-empty">{{ t('wiki.noFiles') }}</div>
       </div>
     </aside>
 
     <!-- col 3: markdown content -->
     <div v-if="!selectedEntry" class="wiki-placeholder">
       <ReadOutlined class="wp-icon" />
-      <div>从左侧选择仓库和知识文件查看内容</div>
+      <div>{{ t('wiki.selectFile') }}</div>
     </div>
 
     <div v-else class="wiki-content">
@@ -353,8 +363,8 @@ onMounted(loadEntries)
           <span v-if="selectedEntry.exploredAt" class="wc-date">{{ selectedEntry.exploredAt }}</span>
         </div>
         <a-radio-group v-model:value="viewMode" size="small" button-style="solid">
-          <a-radio-button value="render"><EyeOutlined /> 渲染</a-radio-button>
-          <a-radio-button value="source"><CodeOutlined /> 源码</a-radio-button>
+          <a-radio-button value="render"><EyeOutlined /> {{ t('wiki.renderMode') }}</a-radio-button>
+          <a-radio-button value="source"><CodeOutlined /> {{ t('wiki.sourceMode') }}</a-radio-button>
         </a-radio-group>
       </div>
       <div class="wc-body">

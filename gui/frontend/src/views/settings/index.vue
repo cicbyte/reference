@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import {
   BgColorsOutlined,
   DatabaseOutlined,
@@ -7,6 +7,7 @@ import {
   FileTextOutlined,
   InfoCircleOutlined,
 } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
 import AiSparkIcon from '@/components/common/AiSparkIcon.vue'
 import DisplayForm from '@/components/settings/DisplayForm.vue'
 import StorageForm from '@/components/settings/StorageForm.vue'
@@ -15,14 +16,16 @@ import LoggingForm from '@/components/settings/LoggingForm.vue'
 import ProjectForm from '@/components/settings/ProjectForm.vue'
 import AboutForm from '@/components/settings/AboutForm.vue'
 
-const tabs = [
-  { key: 'display', icon: BgColorsOutlined, label: '显示' },
-  { key: 'storage', icon: DatabaseOutlined, label: '存储' },
-  { key: 'network', icon: GlobalOutlined, label: '网络' },
-  { key: 'logging', icon: FileTextOutlined, label: '日志' },
-  { key: 'project', icon: AiSparkIcon, label: 'AI 助手' },
-  { key: 'about', icon: InfoCircleOutlined, label: '关于' },
-]
+const { t } = useI18n()
+
+const tabs = computed(() => [
+  { key: 'display', icon: BgColorsOutlined, label: t('settings.display.title') },
+  { key: 'storage', icon: DatabaseOutlined, label: t('settings.storage.title') },
+  { key: 'network', icon: GlobalOutlined, label: t('settings.network.title') },
+  { key: 'logging', icon: FileTextOutlined, label: t('settings.logging.title') },
+  { key: 'project', icon: AiSparkIcon, label: t('settings.project.title') },
+  { key: 'about', icon: InfoCircleOutlined, label: t('settings.about.title') },
+])
 const activeTab = ref('display')
 </script>
 
@@ -30,16 +33,16 @@ const activeTab = ref('display')
   <div class="settings-view">
     <!-- Left: group menu -->
     <aside class="settings-sider">
-      <div class="sider-title">设置</div>
+      <div class="sider-title">{{ t('sidebar.settings') }}</div>
       <ul class="group-menu">
-        <li v-for="t in tabs" :key="t.key">
+        <li v-for="tab in tabs" :key="tab.key">
           <a
             class="menu-item"
-            :class="{ active: activeTab === t.key }"
-            @click="activeTab = t.key"
+            :class="{ active: activeTab === tab.key }"
+            @click="activeTab = tab.key"
           >
-            <component :is="t.icon" />
-            <span>{{ t.label }}</span>
+            <component :is="tab.icon" />
+            <span>{{ tab.label }}</span>
           </a>
         </li>
       </ul>

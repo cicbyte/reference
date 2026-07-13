@@ -1,5 +1,8 @@
 <script setup>
 import { LinkOutlined } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 defineProps({
   loading: { type: Boolean, default: false },
@@ -13,7 +16,7 @@ const emit = defineEmits(['navigate'])
   <!-- repo grid: full width -->
   <a-spin :spinning="loading" class="dash-section">
     <div class="section-head">
-      <h3>引用仓库</h3>
+      <h3>{{ t('dashboard.repoGridTitle') }}</h3>
       <span class="section-count">{{ repos.length }}</span>
     </div>
 
@@ -30,7 +33,7 @@ const emit = defineEmits(['navigate'])
           <div class="repo-card-header">
             <span class="repo-name">{{ repo.name }}</span>
             <a-tag :color="repo.type === 'remote' ? 'blue' : 'green'" class="repo-tag">
-              {{ repo.type === 'remote' ? '远程' : '本地' }}
+              {{ repo.type === 'remote' ? t('repos.remote') : t('repos.local') }}
             </a-tag>
           </div>
           <div class="repo-card-body">
@@ -43,8 +46,8 @@ const emit = defineEmits(['navigate'])
         </div>
       </div>
     </div>
-    <a-empty v-else-if="!loading" description="暂无引用仓库">
-      <a-button type="primary" @click="emit('navigate', '/repos')">添加第一个仓库</a-button>
+    <a-empty v-else-if="!loading" :description="t('dashboard.repoGridEmpty')">
+      <a-button type="primary" @click="emit('navigate', '/repos')">{{ t('dashboard.addFirstRepo') }}</a-button>
     </a-empty>
   </a-spin>
 </template>

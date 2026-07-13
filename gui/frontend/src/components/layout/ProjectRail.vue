@@ -9,6 +9,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { useProjectStore } from '@/stores/project'
 import { useLayoutStore } from '@/stores/layout'
 import { formatPath } from '@/utils/path'
@@ -25,6 +26,7 @@ const props = defineProps({
 
 const project = useProjectStore()
 const layout = useLayoutStore()
+const { t } = useI18n()
 const { diagnoseOpen, diagnoseDir, onDoctor, onOpenInExplorer, onCopyPath, onRemove } = useProjectActions()
 
 onMounted(async () => {
@@ -35,7 +37,7 @@ onMounted(async () => {
 async function onAdd() {
   const ok = await project.pickAndAdd()
   if (ok) {
-    message.success(`已切换到 ${project.currentName}`)
+    message.success(t('projectRail.switchHint', { name: project.currentName }))
   }
 }
 
@@ -52,14 +54,14 @@ async function onSwitch(p) {
     <div class="rail-title">
       <button
         class="rail-toggle"
-        :title="layout.projectRailCollapsed ? '展开项目栏' : '折叠项目栏'"
+        :title="layout.projectRailCollapsed ? t('projectRail.expandRail') : t('projectRail.collapseRail')"
         @click="layout.toggleProjectRail()"
       >
         <MenuUnfoldOutlined v-if="layout.projectRailCollapsed" />
         <MenuFoldOutlined v-else />
       </button>
-      <span v-if="!layout.projectRailCollapsed" class="rail-title-text">项目</span>
-      <button v-if="!layout.projectRailCollapsed" class="rail-refresh" title="刷新列表" @click="project.loadProjects()">
+      <span v-if="!layout.projectRailCollapsed" class="rail-title-text">{{ t('projectRail.title') }}</span>
+      <button v-if="!layout.projectRailCollapsed" class="rail-refresh" :title="t('projectRail.refreshList')" @click="project.loadProjects()">
         <ReloadOutlined />
       </button>
     </div>
@@ -95,8 +97,8 @@ async function onSwitch(p) {
           <div class="rail-item-body">
             <div class="rail-item-name">{{ p.name }}</div>
             <div class="rail-item-meta">
-              <span class="rail-count">{{ p.repoCount }} 个引用</span>
-              <span v-if="p.brokenCount > 0" class="rail-broken">{{ p.brokenCount }} 断链</span>
+              <span class="rail-count">{{ t('globalList.repoCount', { n: p.repoCount }) }}</span>
+              <span v-if="p.brokenCount > 0" class="rail-broken">{{ t('globalList.brokenCount', { n: p.brokenCount }) }}</span>
             </div>
           </div>
         </div>
@@ -115,16 +117,16 @@ async function onSwitch(p) {
 
       <div v-if="!project.loading && project.projects.length === 0" class="rail-empty">
         <FolderOutlined class="rail-empty-icon" />
-        <span>暂无项目</span>
-        <span class="rail-empty-tip">点击下方添加</span>
+        <span>{{ t('projectRail.empty') }}</span>
+        <span class="rail-empty-tip">{{ t('projectRail.emptyTip') }}</span>
       </div>
     </div>
 
     <!-- footer: add button + aligns with global footer -->
     <div class="rail-footer">
-      <button class="rail-add" :title="layout.projectRailCollapsed ? '添加项目' : ''" @click="onAdd">
+      <button class="rail-add" :title="layout.projectRailCollapsed ? t('projectRail.addProject') : ''" @click="onAdd">
         <PlusOutlined />
-        <span v-if="!layout.projectRailCollapsed">添加项目</span>
+        <span v-if="!layout.projectRailCollapsed">{{ t('projectRail.addProject') }}</span>
       </button>
     </div>
 

@@ -4,9 +4,12 @@ import {
   FolderOutlined, DatabaseOutlined, CloudServerOutlined,
   ReadOutlined, HddOutlined, WarningOutlined,
 } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
 import AiSparkIcon from '@/components/common/AiSparkIcon.vue'
 import { fmtSize } from '@/utils/format'
 import { agentNameMap } from '@/utils/agents'
+
+const { t } = useI18n()
 
 const app = window.go?.main?.ReferenceApp
 
@@ -28,7 +31,7 @@ const platformDist = computed(() => {
   const groups = {}
   for (const r of repos.value) {
     if (r.type === 'local') continue  // local repos are not platforms
-    const key = r.host || '未知'
+    const key = r.host || t('common.unknown')
     groups[key] = (groups[key] || 0) + 1
   }
   const entries = Object.entries(groups).sort((a, b) => b[1] - a[1])
@@ -127,7 +130,7 @@ onMounted(async () => {
 
 <template>
   <div class="stats-view">
-    <div class="page-header"><h2>全局统计</h2></div>
+    <div class="page-header"><h2>{{ t('globalStats.title') }}</h2></div>
 
     <!-- ① overview cards -->
     <div class="stats-grid">
@@ -135,45 +138,45 @@ onMounted(async () => {
         <div class="sc-icon sc-blue"><FolderOutlined /></div>
         <div class="sc-body">
           <div class="sc-value">{{ stats?.total_projects ?? '...' }}</div>
-          <div class="sc-label">项目总数</div>
+          <div class="sc-label">{{ t('globalStats.totalProjects') }}</div>
         </div>
         <div class="sc-extra" v-if="stats?.deleted_projects > 0">
-          <span class="extra-warn"><WarningOutlined /> {{ stats.deleted_projects }} 失效</span>
+          <span class="extra-warn"><WarningOutlined /> {{ t('globalStats.invalidProjects', { n: stats.deleted_projects }) }}</span>
         </div>
       </div>
       <div class="stat-card">
         <div class="sc-icon sc-cyan"><CloudServerOutlined /></div>
         <div class="sc-body">
           <div class="sc-value">{{ stats?.total_repos ?? '...' }}</div>
-          <div class="sc-label">缓存仓库</div>
+          <div class="sc-label">{{ t('globalStats.cachedRepos') }}</div>
         </div>
       </div>
       <div class="stat-card">
         <div class="sc-icon sc-purple"><HddOutlined /></div>
         <div class="sc-body">
           <div class="sc-value">{{ fmtSize(cacheSize) }}</div>
-          <div class="sc-label">仓库缓存</div>
+          <div class="sc-label">{{ t('globalStats.cacheSize') }}</div>
         </div>
       </div>
       <div class="stat-card">
         <div class="sc-icon sc-green"><ReadOutlined /></div>
         <div class="sc-body">
           <div class="sc-value">{{ fmtSize(wikiSize) }}</div>
-          <div class="sc-label">知识库</div>
+          <div class="sc-label">{{ t('globalStats.wikiSize') }}</div>
         </div>
       </div>
       <div class="stat-card">
         <div class="sc-icon sc-orange"><DatabaseOutlined /></div>
         <div class="sc-body">
           <div class="sc-value">{{ fmtSize(stats?.db_size) }}</div>
-          <div class="sc-label">数据库</div>
+          <div class="sc-label">{{ t('globalStats.dbSize') }}</div>
         </div>
       </div>
       <div class="stat-card">
         <div class="sc-icon sc-blue"><FolderOutlined /></div>
         <div class="sc-body">
           <div class="sc-value">{{ stats?.existing_projects ?? '...' }}</div>
-          <div class="sc-label">活跃项目</div>
+          <div class="sc-label">{{ t('globalStats.activeProjects') }}</div>
         </div>
       </div>
     </div>
@@ -181,7 +184,7 @@ onMounted(async () => {
     <!-- ②③ platform + agent distribution -->
     <div class="dual-row">
       <div class="panel">
-        <div class="panel-head"><CloudServerOutlined /> 仓库平台分布</div>
+        <div class="panel-head"><CloudServerOutlined /> {{ t('globalStats.platformDist') }}</div>
         <a-spin v-if="reposLoading" size="small" />
         <div v-else-if="platformDist.length" class="bar-list">
           <div v-for="item in platformDist" :key="item.name" class="bar-row">
@@ -192,11 +195,11 @@ onMounted(async () => {
             <span class="bar-count">{{ item.count }}</span>
           </div>
         </div>
-        <div v-else class="panel-empty">暂无数据</div>
+        <div v-else class="panel-empty">{{ t('common.noData') }}</div>
       </div>
 
       <div class="panel">
-        <div class="panel-head"><AiSparkIcon :size="16" /> AI 助手使用分布</div>
+        <div class="panel-head"><AiSparkIcon :size="16" /> {{ t('globalStats.agentUsage') }}</div>
         <a-spin v-if="projectsLoading" size="small" />
         <div v-else-if="agentUsage.length" class="bar-list">
           <div v-for="item in agentUsage" :key="item.name" class="bar-row">
@@ -204,17 +207,17 @@ onMounted(async () => {
             <div class="bar-track">
               <div class="bar-fill sc-purple" :style="{ width: item.pct + '%' }"></div>
             </div>
-            <span class="bar-count">{{ item.count }} 项目</span>
+            <span class="bar-count">{{ t('globalStats.agentProjects', { n: item.count }) }}</span>
           </div>
         </div>
-        <div v-else class="panel-empty">暂无配置</div>
+        <div v-else class="panel-empty">{{ t('globalStats.noConfig') }}</div>
       </div>
     </div>
 
     <!-- ④⑤ top projects + wiki overview -->
     <div class="dual-row">
       <div class="panel">
-        <div class="panel-head"><FolderOutlined /> 引用数 Top 5 项目</div>
+        <div class="panel-head"><FolderOutlined /> {{ t('globalStats.topProjects') }}</div>
         <a-spin v-if="projectsLoading" size="small" />
         <div v-else-if="topProjects.length" class="bar-list">
           <div v-for="item in topProjects" :key="item.name" class="bar-row">
@@ -225,19 +228,19 @@ onMounted(async () => {
             <span class="bar-count">{{ item.count }}</span>
           </div>
         </div>
-        <div v-else class="panel-empty">暂无引用</div>
+        <div v-else class="panel-empty">{{ t('globalStats.noRefs') }}</div>
       </div>
 
       <div class="panel">
-        <div class="panel-head"><ReadOutlined /> 知识库概况</div>
+        <div class="panel-head"><ReadOutlined /> {{ t('globalStats.wikiOverview') }}</div>
         <a-spin v-if="wikiLoading" size="small" />
         <div v-else class="kv-list">
-          <div class="kv-row"><span>远程知识文件</span><span class="kv-val">{{ wikiStats.remoteCount }}</span></div>
-          <div class="kv-row"><span>本地知识文件</span><span class="kv-val">{{ wikiStats.localCount }}</span></div>
-          <div class="kv-row"><span>覆盖仓库数</span><span class="kv-val">{{ wikiStats.repoCount }}</span></div>
-          <div class="kv-row"><span>平台数</span><span class="kv-val">{{ wikiStats.platformCount }}</span></div>
+          <div class="kv-row"><span>{{ t('globalStats.remoteWikiFiles') }}</span><span class="kv-val">{{ wikiStats.remoteCount }}</span></div>
+          <div class="kv-row"><span>{{ t('globalStats.localWikiFiles') }}</span><span class="kv-val">{{ wikiStats.localCount }}</span></div>
+          <div class="kv-row"><span>{{ t('globalStats.coveredRepos') }}</span><span class="kv-val">{{ wikiStats.repoCount }}</span></div>
+          <div class="kv-row"><span>{{ t('globalStats.platformCount') }}</span><span class="kv-val">{{ wikiStats.platformCount }}</span></div>
           <div class="kv-platforms" v-if="wikiStats.platforms.length">
-            <span class="kv-platform-label">平台:</span>
+            <span class="kv-platform-label">{{ t('globalStats.platforms') }}:</span>
             <span v-for="p in wikiStats.platforms" :key="p" class="kv-platform-chip">{{ p }}</span>
           </div>
         </div>
@@ -246,7 +249,7 @@ onMounted(async () => {
 
     <!-- ⑥ cache top 5 -->
     <div class="panel full">
-      <div class="panel-head"><HddOutlined /> 缓存占用 Top 5</div>
+      <div class="panel-head"><HddOutlined /> {{ t('globalStats.cacheTop') }}</div>
       <a-spin v-if="topCacheLoading" size="small" />
       <div v-else-if="topCache.length" class="bar-list">
         <div v-for="item in topCache" :key="item.name" class="bar-row">
@@ -257,7 +260,7 @@ onMounted(async () => {
           <span class="bar-count">{{ fmtSize(item.size) }}</span>
         </div>
       </div>
-      <div v-else class="panel-empty">暂无缓存数据</div>
+      <div v-else class="panel-empty">{{ t('globalStats.noCacheData') }}</div>
     </div>
   </div>
 </template>

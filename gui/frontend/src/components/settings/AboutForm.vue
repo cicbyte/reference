@@ -6,20 +6,23 @@ import {
   SettingOutlined, DatabaseOutlined, CloudServerOutlined,
   BookOutlined, FileTextOutlined, GithubOutlined,
 } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
 import AiSparkIcon from '@/components/common/AiSparkIcon.vue'
 import { formatPath } from '@/utils/path'
+
+const { t } = useI18n()
 
 const loading = ref(true)
 const version = ref(null)
 const paths = ref(null)
 
-// icon component refs (avoid emoji)
+// icon component refs (avoid emoji); labels resolved via t(labelKey) in template
 const pathItems = ref([
-  { label: '配置文件', key: 'config', icon: SettingOutlined },
-  { label: '数据库', key: 'db', icon: DatabaseOutlined },
-  { label: '仓库缓存', key: 'repos', icon: CloudServerOutlined },
-  { label: '知识库', key: 'wiki', icon: BookOutlined },
-  { label: '日志目录', key: 'logDir', icon: FileTextOutlined },
+  { labelKey: 'settings.about.configFile', key: 'config', icon: SettingOutlined },
+  { labelKey: 'settings.about.database', key: 'db', icon: DatabaseOutlined },
+  { labelKey: 'settings.about.reposCache', key: 'repos', icon: CloudServerOutlined },
+  { labelKey: 'settings.about.knowledgeBase', key: 'wiki', icon: BookOutlined },
+  { labelKey: 'settings.about.logDir', key: 'logDir', icon: FileTextOutlined },
 ])
 
 onMounted(async () => {
@@ -40,20 +43,20 @@ onMounted(async () => {
 async function copyText(text) {
   try {
     await window.go?.main?.ReferenceApp.CopyPath(text)
-    message.success('已复制')
-  } catch { message.error('复制失败') }
+    message.success(t('common.copied'))
+  } catch { message.error(t('common.copyFailed')) }
 }
 
 function openDir(dir) {
-  window.go?.main?.ReferenceApp?.OpenInExplorer(dir)?.catch((e) => message.error('打开失败: ' + e))
+  window.go?.main?.ReferenceApp?.OpenInExplorer(dir)?.catch((e) => message.error(t('common.openFailed') + ': ' + e))
 }
 </script>
 
 <template>
   <div class="settings-form">
     <div class="form-header">
-      <div class="form-title"><InfoCircleOutlined /> 关于</div>
-      <div class="form-desc">应用版本与系统路径信息。</div>
+      <div class="form-title"><InfoCircleOutlined /> {{ t('settings.about.title') }}</div>
+      <div class="form-desc">{{ t('settings.about.desc') }}</div>
     </div>
 
     <a-spin :spinning="loading">
@@ -62,7 +65,7 @@ function openDir(dir) {
         <div class="hero-logo"><AiSparkIcon :size="40" /></div>
         <div class="hero-info">
           <div class="hero-name">reference</div>
-          <div class="hero-tagline">本地 Git 仓库引用管理器 · 为 AI 辅助编程而生</div>
+          <div class="hero-tagline">{{ t('settings.about.tagline') }}</div>
           <div class="hero-version">
             <span class="ver-badge">v{{ version?.version || 'dev' }}</span>
             <span class="ver-meta mono" v-if="version?.commit">{{ String(version.commit).slice(0, 8) }}</span>
@@ -73,15 +76,15 @@ function openDir(dir) {
 
       <!-- system paths grid -->
       <div class="setting-group">
-        <div class="group-title">系统路径</div>
+        <div class="group-title">{{ t('settings.about.systemPaths') }}</div>
         <div class="path-grid">
           <div v-for="p in pathItems" :key="p.key" class="path-cell">
             <div class="path-cell-head">
               <span class="path-icon"><component :is="p.icon" /></span>
-              <span class="path-label">{{ p.label }}</span>
+              <span class="path-label">{{ t(p.labelKey) }}</span>
               <div class="path-actions" v-if="paths?.[p.key]">
-                <a-button size="small" type="text" title="复制" @click="copyText(paths[p.key])"><CopyOutlined /></a-button>
-                <a-button size="small" type="text" title="在文件管理器中打开" @click="openDir(paths[p.key])"><FolderOpenOutlined /></a-button>
+                <a-button size="small" type="text" :title="t('common.copy')" @click="copyText(paths[p.key])"><CopyOutlined /></a-button>
+                <a-button size="small" type="text" :title="t('common.openInExplorer')" @click="openDir(paths[p.key])"><FolderOpenOutlined /></a-button>
               </div>
             </div>
             <div class="path-value mono" :title="formatPath(paths?.[p.key])">{{ paths?.[p.key] ? formatPath(paths[p.key]) : '—' }}</div>
@@ -91,13 +94,13 @@ function openDir(dir) {
 
       <!-- links -->
       <div class="setting-group">
-        <div class="group-title">资源</div>
+        <div class="group-title">{{ t('settings.about.resources') }}</div>
         <div class="link-list">
           <a href="https://github.com/cicbyte/reference" target="_blank" class="link-item">
             <span class="link-ico"><GithubOutlined /></span>
             <div>
-              <div class="link-title">GitHub 仓库</div>
-              <div class="link-desc">源码、Issue 与发布</div>
+              <div class="link-title">{{ t('settings.about.githubRepo') }}</div>
+              <div class="link-desc">{{ t('settings.about.githubDesc') }}</div>
             </div>
           </a>
         </div>

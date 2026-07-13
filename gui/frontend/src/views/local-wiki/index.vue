@@ -9,6 +9,7 @@ import {
   EyeOutlined,
   CodeOutlined,
 } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { useLayoutStore } from '@/stores/layout'
 import { formatPath } from '@/utils/path'
 import { renderMarkdown } from '@/utils/markdown'
@@ -18,6 +19,7 @@ import WikiRail from './components/WikiRail.vue'
 
 const app = window.go?.main?.ReferenceApp
 const layout = useLayoutStore()
+const { t } = useI18n()
 
 // ---- shared mermaid (render + enlarge modal) ----
 const { modalOpen, modalSvg, zoom, panX, panY, renderMermaid } = useMermaid()
@@ -91,7 +93,7 @@ async function loadEntries() {
       entries.value.forEach((e) => fetchStatus(e))
     }
   } catch (e) {
-    message.error('加载失败: ' + e)
+    message.error(t('localWiki.loadFailed') + ': ' + e)
   } finally {
     loading.value = false
   }
@@ -113,7 +115,7 @@ async function deleteEntry(entry) {
   try {
     if (app?.DeleteWikiEntry) {
       await app.DeleteWikiEntry(entry.source, entry.relPath)
-      message.success('已删除')
+      message.success(t('localWiki.deleteSuccess'))
       if (selectedFileKey.value === entry.source + '|' + entry.relPath) {
         selectedFileKey.value = ''
         content.value = ''
@@ -121,12 +123,16 @@ async function deleteEntry(entry) {
       await loadEntries()
     }
   } catch (e) {
-    message.error('删除失败: ' + e)
+    message.error(t('localWiki.deleteFailed') + ': ' + e)
   }
 }
 
 function statusLabel(s) {
-  return { ok: '', empty: '空文件', 'no-fm': '无元数据' }[s] || ''
+  return {
+    ok: t('localWiki.statusOk'),
+    empty: t('localWiki.statusEmpty'),
+    'no-fm': t('localWiki.statusNoFm'),
+  }[s] || ''
 }
 
 async function openInExplorer(entry) {
@@ -137,7 +143,7 @@ async function openInExplorer(entry) {
   try {
     if (app?.OpenInExplorer) await app.OpenInExplorer(dir)
   } catch (e) {
-    message.error('打开失败: ' + e)
+    message.error(t('common.openFailed') + ': ' + e)
   }
 }
 
@@ -153,7 +159,7 @@ async function loadContent(entry) {
       content.value = stripFrontmatter(raw)
     }
   } catch (e) {
-    message.error('读取失败: ' + e)
+    message.error(t('localWiki.readFailed') + ': ' + e)
   } finally {
     contentLoading.value = false
     if (viewMode.value === 'render') renderMermaid()
@@ -216,10 +222,10 @@ onMounted(loadEntries)
             </div>
             <div class="wf-item-body">
               <div class="wf-item-name">
-                {{ file.fileName === 'reference.md' ? '架构总览' : file.fileName.replace('.md', '') }}
+                {{ file.fileName === 'reference.md' ? t('localWiki.architectureOverview') : file.fileName.replace('.md', '') }}
               </div>
               <div class="wf-item-meta">
-                <span v-if="file.fileName !== 'reference.md'" class="wf-topic-tag">主题</span>
+                <span v-if="file.fileName !== 'reference.md'" class="wf-topic-tag">{{ t('localWiki.topic') }}</span>
                 <span v-if="file.status && file.status !== 'ok'" class="wf-status-tag" :class="'st-' + file.status">
                   {{ statusLabel(file.status) }}
                 </span>
@@ -228,11 +234,11 @@ onMounted(loadEntries)
             </div>
             <a-popconfirm
               v-if="file.status && file.status !== 'ok'"
-              :title="`删除 ${file.fileName}？`"
-              ok-text="删除" ok-type="danger" cancel-text="取消"
+              :title="t('localWiki.deleteConfirm', { name: file.fileName })"
+              :ok-text="t('common.delete')" ok-type="danger" :cancel-text="t('common.cancel')"
               @confirm="deleteEntry(file)"
             >
-              <button class="wf-delete" title="删除此文件" @click.stop>
+              <button class="wf-delete" :title="t('common.delete')" @click.stop>
                 <DeleteOutlined />
               </button>
             </a-popconfirm>
@@ -240,11 +246,11 @@ onMounted(loadEntries)
           <template #overlay>
             <a-menu>
               <a-menu-item @click="openInExplorer(file)">
-                <FolderOpenOutlined /> 在文件管理器中打开
+                <FolderOpenOutlined /> {{ t('common.openInExplorer') }}
               </a-menu-item>
               <a-menu-divider />
               <a-menu-item danger @click="deleteEntry(file)">
-                <DeleteOutlined /> 删除
+                <DeleteOutlined /> {{ t('common.delete') }}
               </a-menu-item>
             </a-menu>
           </template>
@@ -255,7 +261,7 @@ onMounted(loadEntries)
     <!-- col 3: markdown content -->
     <div v-if="!selectedEntry" class="wiki-placeholder">
       <ReadOutlined class="wp-icon" />
-      <div>从左侧选择仓库和知识文件查看内容</div>
+      <div>{{ t('localWiki.selectFile') }}</div>
     </div>
 
     <div v-else class="wiki-content">
@@ -272,8 +278,8 @@ onMounted(loadEntries)
           <span v-if="selectedEntry.exploredAt" class="wc-date">{{ selectedEntry.exploredAt }}</span>
         </div>
         <a-radio-group v-model:value="viewMode" size="small" button-style="solid">
-          <a-radio-button value="render"><EyeOutlined /> 渲染</a-radio-button>
-          <a-radio-button value="source"><CodeOutlined /> 源码</a-radio-button>
+          <a-radio-button value="render"><EyeOutlined /> {{ t('localWiki.renderMode') }}</a-radio-button>
+          <a-radio-button value="source"><CodeOutlined /> {{ t('localWiki.sourceMode') }}</a-radio-button>
         </a-radio-group>
       </div>
       <div class="wc-body">

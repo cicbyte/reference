@@ -6,6 +6,9 @@ import {
   LinkOutlined,
   ApiOutlined,
 } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 defineProps({
   repos: { type: Array, default: () => [] },
@@ -25,14 +28,14 @@ const emit = defineEmits(['navigate', 'diagnose'])
       <div class="stat-icon stat-blue"><DatabaseOutlined /></div>
       <div class="stat-body">
         <div class="stat-value">{{ repos.length }}</div>
-        <div class="stat-label">引用仓库</div>
+        <div class="stat-label">{{ t('dashboard.statRepos') }}</div>
       </div>
     </div>
     <div class="stat-card">
       <div class="stat-icon stat-cyan"><CloudServerOutlined /></div>
       <div class="stat-body">
         <div class="stat-value">{{ remoteCount }} <span class="stat-sub">/ {{ localCount }}</span></div>
-        <div class="stat-label">远程 / 本地</div>
+        <div class="stat-label">{{ t('dashboard.statRemoteLocal') }}</div>
       </div>
     </div>
     <div class="stat-card" :class="{ 'stat-warn': brokenCount > 0 }" @click="emit('diagnose')">
@@ -42,14 +45,14 @@ const emit = defineEmits(['navigate', 'diagnose'])
       </div>
       <div class="stat-body">
         <div class="stat-value">{{ brokenCount }}</div>
-        <div class="stat-label">{{ brokenCount > 0 ? '断裂链接' : '链接正常' }}</div>
+        <div class="stat-label">{{ brokenCount > 0 ? t('dashboard.statBroken') : t('dashboard.healthHealthy') }}</div>
       </div>
     </div>
     <div class="stat-card">
       <div class="stat-icon stat-purple"><ApiOutlined /></div>
       <div class="stat-body">
         <div class="stat-value">{{ agentCount }}</div>
-        <div class="stat-label">AI 助手</div>
+        <div class="stat-label">{{ t('dashboard.statAgents') }}</div>
       </div>
     </div>
   </div>

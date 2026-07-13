@@ -1,8 +1,11 @@
 <script setup>
 import { computed } from 'vue'
 import { ApiOutlined, DatabaseOutlined } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { agentDisplayName } from '@/utils/agents'
 import { useProjectStore } from '@/stores/project'
+
+const { t } = useI18n()
 
 const props = defineProps({
   agents: { type: Array, default: () => [] },
@@ -16,10 +19,10 @@ const project = useProjectStore()
 
 // overall health derived from individual checks
 const healthLabel = computed(() => {
-  if (!project.currentExists) return '异常'
-  if (props.brokenCount > 0) return '需修复'
-  if (props.repoCount === 0) return '空闲'
-  return '健康'
+  if (!project.currentExists) return t('common.failed')
+  if (props.brokenCount > 0) return t('dashboard.statBroken')
+  if (props.repoCount === 0) return t('common.none')
+  return t('dashboard.healthHealthy')
 })
 const healthClass = computed(() => {
   if (!project.currentExists) return 'bad'
@@ -32,14 +35,14 @@ const healthClass = computed(() => {
   <!-- info cards: single full-width row -->
   <div class="dash-section">
     <div class="section-head">
-      <h3>项目信息</h3>
+      <h3>{{ t('dashboard.healthChecks') }}</h3>
     </div>
     <div class="info-row">
       <!-- AI assistants -->
       <div class="side-card">
         <div class="side-card-head">
-          <span class="side-title"><ApiOutlined /> AI 助手</span>
-          <a-button size="small" type="text" class="side-config" @click="emit('navigate', '/settings')">配置</a-button>
+          <span class="side-title"><ApiOutlined /> {{ t('dashboard.aiTitle') }}</span>
+          <a-button size="small" type="text" class="side-config" @click="emit('navigate', '/settings')">{{ t('sidebar.config') }}</a-button>
         </div>
         <div v-if="agents.length > 0" class="agent-grid">
           <div v-for="a in agents" :key="a" class="agent-chip">
@@ -49,32 +52,32 @@ const healthClass = computed(() => {
         </div>
         <div v-else class="side-muted">
           <ApiOutlined class="side-muted-icon" />
-          <span>未配置 AI 助手</span>
+          <span>{{ t('dashboard.aiNone') }}</span>
         </div>
       </div>
 
       <!-- health -->
       <div class="side-card">
         <div class="side-card-head">
-          <span class="side-title"><DatabaseOutlined /> 健康状态</span>
+          <span class="side-title"><DatabaseOutlined /> {{ t('dashboard.healthTitle') }}</span>
           <span class="health-badge" :class="healthClass">{{ healthLabel }}</span>
         </div>
         <div class="check-list">
           <div class="check-row">
             <span :class="['check-dot', project.activeProject?.initialized ? 'ok' : 'off']"></span>
-            <span class="check-label">已初始化</span>
+            <span class="check-label">{{ t('settings.project.initialized') }}</span>
           </div>
           <div class="check-row">
             <span :class="['check-dot', project.currentExists ? 'ok' : 'bad']"></span>
-            <span class="check-label">目录存在</span>
+            <span class="check-label">{{ t('diagnose.targetExists') }}</span>
           </div>
           <div class="check-row">
             <span :class="['check-dot', brokenCount > 0 ? 'warn' : 'ok']"></span>
-            <span class="check-label">{{ brokenCount > 0 ? `${brokenCount} 个断链` : '链接完整' }}</span>
+            <span class="check-label">{{ brokenCount > 0 ? t('globalList.brokenCount', { n: brokenCount }) : t('dashboard.healthHealthy') }}</span>
           </div>
           <div class="check-row">
             <span :class="['check-dot', repoCount > 0 ? 'ok' : 'off']"></span>
-            <span class="check-label">{{ repoCount > 0 ? `${repoCount} 个引用` : '暂无引用' }}</span>
+            <span class="check-label">{{ repoCount > 0 ? t('globalList.repoCount', { n: repoCount }) : t('globalStats.noRefs') }}</span>
           </div>
         </div>
       </div>

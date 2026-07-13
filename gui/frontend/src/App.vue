@@ -2,12 +2,18 @@
 import { computed, onMounted, onBeforeUnmount } from 'vue'
 import { theme } from 'ant-design-vue'
 import zhCN from 'ant-design-vue/es/locale/zh_CN'
+import enUS from 'ant-design-vue/es/locale/en_US'
 import { useThemeStore } from './stores/theme'
 import { useLayoutStore } from './stores/layout'
+import { useLocaleStore } from './stores/locale'
 import AppLayout from './components/layout/AppLayout.vue'
 
 const themeStore = useThemeStore()
 const layoutStore = useLayoutStore()
+const localeStore = useLocaleStore()
+
+// Ant Design component locale follows the app language.
+const antLocale = computed(() => localeStore.isEn ? enUS : zhCN)
 
 const antTheme = computed(() => ({
   algorithm: themeStore.isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
@@ -37,7 +43,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <a-config-provider :theme="antTheme" :locale="zhCN">
+  <a-config-provider :theme="antTheme" :locale="antLocale">
     <AppLayout />
   </a-config-provider>
 </template>

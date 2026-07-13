@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { message } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
 import {
   CheckCircleOutlined,
   WarningOutlined,
@@ -12,6 +13,8 @@ import {
   DeleteOutlined,
 } from '@ant-design/icons-vue'
 import { formatPath } from '@/utils/path'
+
+const { t } = useI18n()
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -51,7 +54,7 @@ async function load() {
       suggestion: d.suggestion,
     }))
   } catch (e) {
-    message.error('诊断失败: ' + e)
+    message.error(t('diagnose.diagnoseFailed') + ': ' + e)
   } finally {
     loading.value = false
   }
@@ -80,10 +83,10 @@ async function fixLink(d) {
   fixingKey.value = d.refName
   try {
     await app.FixRepoLink(props.projectDir, d.refName)
-    message.success(`${d.refName} 链接已修复`)
+    message.success(t('diagnose.fixLinkSuccess'))
     await load()
   } catch (e) {
-    message.error('修复失败: ' + e)
+    message.error(t('diagnose.fixLinkFailed') + ': ' + e)
   } finally {
     fixingKey.value = ''
   }
@@ -91,16 +94,16 @@ async function fixLink(d) {
 
 async function reclone(d) {
   fixingKey.value = d.refName
-  message.loading({ content: `正在重新克隆 ${d.refName}...`, key: 'reclone', duration: 0 })
+  message.loading({ content: t('diagnose.recloneProgress', { name: d.refName }), key: 'reclone', duration: 0 })
   try {
     const timeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('克隆超时(3分钟)')), 180000),
+      setTimeout(() => reject(new Error(t('diagnose.cloneTimeoutLong'))), 180000),
     )
     await Promise.race([app.RecloneRepo(props.projectDir, d.refName), timeout])
-    message.success({ content: `${d.refName} 重新克隆成功`, key: 'reclone' })
+    message.success({ content: t('diagnose.recloneSuccess'), key: 'reclone' })
     await load()
   } catch (e) {
-    message.error({ content: '重新克隆失败: ' + e, key: 'reclone', duration: 5 })
+    message.error({ content: t('diagnose.recloneFailed') + ': ' + e, key: 'reclone', duration: 5 })
   } finally {
     fixingKey.value = ''
   }
@@ -112,10 +115,10 @@ async function relocate(d) {
     if (!dir) return
     fixingKey.value = d.refName
     await app.RelocateLocalRepo(props.projectDir, d.refName, dir)
-    message.success(`${d.refName} 路径已更新`)
+    message.success(t('diagnose.relocatePathUpdated', { name: d.refName }))
     await load()
   } catch (e) {
-    message.error('更新路径失败: ' + e)
+    message.error(t('diagnose.relocatePathFailed') + ': ' + e)
   } finally {
     fixingKey.value = ''
   }
@@ -126,7 +129,7 @@ async function fixAll() {
     (d) => d.status === 'broken-link' || d.status === 'missing-wiki'
   )
   if (!fixable.length) {
-    message.info('没有可自动修复的项')
+    message.info(t('diagnose.autoFixNone'))
     return
   }
   let ok = 0
@@ -136,7 +139,7 @@ async function fixAll() {
       ok++
     } catch { /* skip */ }
   }
-  message.success(`已修复 ${ok}/${fixable.length} 项`)
+  message.success(t('diagnose.autoFixDone', { success: ok, total: fixable.length }))
   await load()
 }
 
@@ -144,10 +147,10 @@ async function removeRepo(d) {
   fixingKey.value = d.refName
   try {
     await app.RemoveRepoFromProject(props.projectDir, d.refName)
-    message.success(`${d.refName} 已移除`)
+    message.success(t('diagnose.removeSuccess'))
     await load()
   } catch (e) {
-    message.error('移除失败: ' + e)
+    message.error(t('diagnose.removeFailed') + ': ' + e)
   } finally {
     fixingKey.value = ''
   }
@@ -167,9 +170,9 @@ async function removeRepo(d) {
       <div class="diag-head">
         <div class="diag-head-icon"><ToolOutlined /></div>
         <div class="diag-head-text">
-          <span class="diag-head-title">诊断修复</span>
+          <span class="diag-head-title">{{ t('diagnose.title') }}</span>
           <span class="diag-head-sub" v-if="!loading">
-            {{ okCount }} 正常 · {{ issueCount }} 需修复
+            {{ t('diagnose.summaryOk', { ok: okCount, issues: issueCount }) }}
           </span>
         </div>
       </div>
@@ -177,7 +180,7 @@ async function removeRepo(d) {
 
     <a-spin :spinning="loading">
       <div v-if="diagnoses.length === 0 && !loading" class="diag-empty">
-        该项目暂无引用仓库
+        {{ t('diagnose.projectEmpty') }}
       </div>
 
       <div class="diag-list">
@@ -196,7 +199,7 @@ async function removeRepo(d) {
               <div class="diag-item-name">
                 {{ d.refName }}
                 <a-tag :color="d.type === 'remote' ? 'blue' : 'green'" class="type-tag">
-                  {{ d.type === 'remote' ? '远程' : '本地' }}
+                  {{ d.type === 'remote' ? t('repos.remote') : t('repos.local') }}
                 </a-tag>
               </div>
               <div class="diag-item-detail">
@@ -213,7 +216,7 @@ async function removeRepo(d) {
                 </span>
                 <span class="detail-line">
                   <span class="detail-label">link</span>
-                  <span>{{ d.linkExists ? '✓ 正常' : '✗ 断裂' }}</span>
+                  <span>{{ d.linkExists ? t('diagnose.statusHealthy') : t('diagnose.statusBrokenLink') }}</span>
                 </span>
               </div>
               <div class="diag-item-suggestion" v-if="d.suggestion">
@@ -232,7 +235,7 @@ async function removeRepo(d) {
               @click="fixLink(d)"
             >
               <template #icon><ToolOutlined /></template>
-              修复链接
+              {{ t('diagnose.fixLink') }}
             </a-button>
             <!-- missing cache (remote) → reclone button -->
             <a-button
@@ -242,7 +245,7 @@ async function removeRepo(d) {
               @click="reclone(d)"
             >
               <template #icon><CloudDownloadOutlined /></template>
-              重新克隆
+              {{ t('diagnose.reclone') }}
             </a-button>
             <!-- missing local → relocate button -->
             <a-button
@@ -252,18 +255,18 @@ async function removeRepo(d) {
               @click="relocate(d)"
             >
               <template #icon><FolderOpenOutlined /></template>
-              选择新路径
+              {{ t('diagnose.relocatePickHint') }}
             </a-button>
             <!-- ok → nothing -->
-            <span v-else class="ok-text">正常</span>
+            <span v-else class="ok-text">{{ t('diagnose.statusOk') }}</span>
 
             <!-- remove (always available) -->
             <a-popconfirm
-              :title="`移除 ${d.refName}？`"
-              ok-text="移除" ok-type="danger" cancel-text="取消"
+              :title="t('globalList.removeTitle', { label: t('diagnose.removeRepo'), name: d.refName })"
+              :ok-text="t('common.delete')" ok-type="danger" :cancel-text="t('common.cancel')"
               @confirm="removeRepo(d)"
             >
-              <a-button size="small" type="text" danger :loading="fixingKey === d.refName" title="移除引用">
+              <a-button size="small" type="text" danger :loading="fixingKey === d.refName" :title="t('diagnose.removeRepo')">
                 <template #icon><DeleteOutlined /></template>
               </a-button>
             </a-popconfirm>
@@ -275,7 +278,7 @@ async function removeRepo(d) {
     <div class="diag-footer">
       <a-button @click="load" :loading="loading" size="small">
         <template #icon><ReloadOutlined /></template>
-        刷新
+        {{ t('common.refresh') }}
       </a-button>
       <a-button
         v-if="autoFixableCount > 0"
@@ -284,10 +287,10 @@ async function removeRepo(d) {
         :disabled="loading"
       >
         <template #icon><ToolOutlined /></template>
-        自动修复链接 ({{ autoFixableCount }})
+        {{ t('diagnose.autoFixAllCount', { n: autoFixableCount }) }}
       </a-button>
       <div class="footer-spacer"></div>
-      <a-button @click="close">关闭</a-button>
+      <a-button @click="close">{{ t('common.close') }}</a-button>
     </div>
   </a-modal>
 </template>

@@ -2,6 +2,9 @@
 import { ref, onMounted, computed } from 'vue'
 import { message } from 'ant-design-vue'
 import { GlobalOutlined, CheckCircleFilled, MinusCircleFilled } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const loading = ref(true)
 const saving = ref(false)
@@ -39,10 +42,10 @@ async function handleSave() {
         },
       })
       dirty.value = false
-      message.success('网络设置已保存')
+      message.success(t('settings.network.saved'))
     }
   } catch (e) {
-    message.error('保存失败: ' + e)
+    message.error(t('common.saveFailed') + ': ' + e)
   } finally {
     saving.value = false
   }
@@ -58,10 +61,10 @@ async function handleClear() {
         network: { proxy: '', gitProxy: '', timeout: form.value.timeout },
       })
       dirty.value = false
-      message.success('代理已清除')
+      message.success(t('settings.network.proxyCleared'))
     }
   } catch (e) {
-    message.error('清除失败: ' + e)
+    message.error(t('settings.network.clearFailed') + ': ' + e)
   } finally {
     saving.value = false
   }
@@ -71,8 +74,8 @@ async function handleClear() {
 <template>
   <div class="settings-form">
     <div class="form-header">
-      <div class="form-title"><GlobalOutlined /> 网络</div>
-      <div class="form-desc">配置代理与超时，用于克隆和拉取远程仓库。</div>
+      <div class="form-title"><GlobalOutlined /> {{ t('settings.network.title') }}</div>
+      <div class="form-desc">{{ t('settings.network.desc') }}</div>
     </div>
 
     <a-spin :spinning="loading">
@@ -80,16 +83,16 @@ async function handleClear() {
       <div class="proxy-status" :class="proxyActive ? 'on' : 'off'">
         <CheckCircleFilled v-if="proxyActive" class="ps-icon" />
         <MinusCircleFilled v-else class="ps-icon" />
-        <span>{{ proxyActive ? '代理已启用' : '未配置代理，使用直连' }}</span>
+        <span>{{ proxyActive ? t('settings.network.proxyOn') : t('settings.network.proxyOff') }}</span>
       </div>
 
       <div class="setting-group">
-        <div class="group-title">代理</div>
+        <div class="group-title">{{ t('settings.network.proxy') }}</div>
 
         <div class="setting-row">
           <div class="row-label">
-            <div class="row-title">HTTP 代理</div>
-            <div class="row-help">HTTP/HTTPS 请求使用的代理地址</div>
+            <div class="row-title">{{ t('settings.network.httpProxy') }}</div>
+            <div class="row-help">{{ t('settings.network.httpProxyHelp') }}</div>
           </div>
           <a-input
             v-model:value="form.proxy"
@@ -101,8 +104,8 @@ async function handleClear() {
 
         <div class="setting-row">
           <div class="row-label">
-            <div class="row-title">Git 专用代理</div>
-            <div class="row-help">Git 操作专用代理，为空则回退到 HTTP 代理</div>
+            <div class="row-title">{{ t('settings.network.gitProxy') }}</div>
+            <div class="row-help">{{ t('settings.network.gitProxyHelp') }}</div>
           </div>
           <a-input
             v-model:value="form.gitProxy"
@@ -114,24 +117,24 @@ async function handleClear() {
       </div>
 
       <div class="setting-group">
-        <div class="group-title">超时</div>
+        <div class="group-title">{{ t('settings.network.timeout') }}</div>
 
         <div class="setting-row">
           <div class="row-label">
-            <div class="row-title">超时时间</div>
-            <div class="row-help">克隆 / 拉取操作的超时阈值</div>
+            <div class="row-title">{{ t('settings.network.timeout') }}</div>
+            <div class="row-help">{{ t('settings.network.timeoutHelp') }}</div>
           </div>
           <a-input-number
             v-model:value="form.timeout" :min="30" :max="3600" :step="30"
             class="row-control" style="width: 160px" @change="markDirty"
           >
-            <template #addonAfter>秒</template>
+            <template #addonAfter>{{ t('settings.network.seconds') }}</template>
           </a-input-number>
         </div>
 
         <div class="group-actions">
-          <a-button type="primary" :loading="saving" :disabled="!dirty" @click="handleSave">保存</a-button>
-          <a-button :loading="saving" :disabled="!proxyActive && !dirty" @click="handleClear">清除代理</a-button>
+          <a-button type="primary" :loading="saving" :disabled="!dirty" @click="handleSave">{{ t('common.save') }}</a-button>
+          <a-button :loading="saving" :disabled="!proxyActive && !dirty" @click="handleClear">{{ t('settings.network.clearProxy') }}</a-button>
         </div>
       </div>
     </a-spin>

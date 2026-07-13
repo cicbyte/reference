@@ -10,6 +10,7 @@
  */
 import { ref } from 'vue'
 import { message, Modal } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
 import { useProjectStore } from '@/stores/project'
 
 interface ProjectLike {
@@ -19,6 +20,7 @@ interface ProjectLike {
 }
 
 export function useProjectActions(onRemoved?: () => void | Promise<void>) {
+  const { t } = useI18n()
   const app = window.go?.main?.ReferenceApp
   const project = useProjectStore()
 
@@ -35,7 +37,7 @@ export function useProjectActions(onRemoved?: () => void | Promise<void>) {
     try {
       await app.OpenInExplorer(p.dir)
     } catch (e) {
-      message.error('打开失败: ' + e)
+      message.error(t('common.openFailed') + ': ' + e)
     }
   }
 
@@ -43,31 +45,31 @@ export function useProjectActions(onRemoved?: () => void | Promise<void>) {
     if (!app) return
     try {
       await app.CopyPath(p.dir)
-      message.success('路径已复制')
+      message.success(t('common.copied'))
     } catch (e) {
-      message.error('复制失败: ' + e)
+      message.error(t('common.copyFailed') + ': ' + e)
     }
   }
 
   function onRemove(p: ProjectLike, clean: boolean) {
-    const label = clean ? '移除并清除 .reference' : '移除项目'
+    const label = clean ? t('globalList.removeClean') : t('globalList.removeProject')
     const content = clean
-      ? `将删除 ${p.name} 的所有引用记录、.reference 目录及注入的 AI 配置文件。此操作不可撤销。`
-      : `将删除 ${p.name} 的所有引用记录和链接，保留 .reference 目录。`
+      ? t('globalList.removeCleanContent', { name: p.name })
+      : t('globalList.removeContent', { name: p.name })
     Modal.confirm({
-      title: `${label} — ${p.name}`,
+      title: t('globalList.removeTitle', { label, name: p.name }),
       content,
       okText: label,
       okType: clean ? 'danger' : 'primary',
-      cancelText: '取消',
+      cancelText: t('common.cancelText'),
       async onOk() {
         try {
           await app.RemoveProject(p.dir, clean)
-          message.success(`${label}成功`)
+          message.success(t('globalList.removeSuccess', { label }))
           await project.loadProjects()
           if (onRemoved) await onRemoved()
         } catch (e) {
-          message.error(`${label}失败: ` + e)
+          message.error(t('globalList.removeFailed', { label }) + ': ' + e)
         }
       },
     })

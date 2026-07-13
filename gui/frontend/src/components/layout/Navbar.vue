@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { MinusOutlined, BorderOutlined, CloseOutlined, MenuFoldOutlined, MenuUnfoldOutlined, AppstoreOutlined, SettingOutlined } from '@ant-design/icons-vue'
 import { useLayoutStore } from '@/stores/layout'
 import { useThemeStore } from '@/stores/theme'
@@ -10,10 +11,12 @@ const route = useRoute()
 const router = useRouter()
 const layout = useLayoutStore()
 const theme = useThemeStore()
+const { t } = useI18n()
 const app = window.go?.main?.ReferenceApp
 
 const breadcrumbItems = computed(() => {
-  return [{ label: route.meta?.title || 'reference' }]
+  const key = route.meta?.titleKey
+  return [{ label: key ? t(key) : 'reference' }]
 })
 
 // rail toggle is available on all pages, fully user-controlled
@@ -31,7 +34,7 @@ function close() { app?.WindowClose() }
         v-show="canToggleRail && !layout.isMobile"
         class="sidebar-toggle"
         :class="{ 'toggle-active': layout.projectRailVisible }"
-        :title="layout.projectRailVisible ? '隐藏项目栏' : '显示项目栏'"
+        :title="layout.projectRailVisible ? t('navbar.hideRail') : t('navbar.showRail')"
         @click="layout.toggleProjectRailVisible()"
       >
         <AppstoreOutlined />
@@ -40,7 +43,7 @@ function close() { app?.WindowClose() }
       <button
         v-show="!layout.isMobile"
         class="sidebar-toggle"
-        :title="layout.sidebarCollapsed ? '展开侧边栏' : '折叠侧边栏'"
+        :title="layout.sidebarCollapsed ? t('navbar.expandSidebar') : t('navbar.collapseSidebar')"
         @click="layout.toggleSidebar()"
       >
         <MenuUnfoldOutlined v-if="layout.sidebarCollapsed" />
@@ -57,7 +60,7 @@ function close() { app?.WindowClose() }
     <div class="navbar-right">
       <button
         class="win-btn theme-btn"
-        :title="theme.isDark ? '切换到亮色' : '切换到暗色'"
+        :title="theme.isDark ? t('navbar.switchToLight') : t('navbar.switchToDark')"
         @click="theme.toggleTheme()"
       >
         <svg v-if="theme.isDark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -78,18 +81,18 @@ function close() { app?.WindowClose() }
       <button
         class="win-btn"
         :class="{ 'toggle-active': route.path === '/settings' }"
-        title="设置"
+        :title="t('navbar.settings')"
         @click="router.push('/settings')"
       >
         <SettingOutlined />
       </button>
-      <button class="win-btn" title="最小化" @click="minimize">
+      <button class="win-btn" :title="t('navbar.minimize')" @click="minimize">
         <MinusOutlined />
       </button>
-      <button class="win-btn" title="最大化" @click="maximize">
+      <button class="win-btn" :title="t('navbar.maximize')" @click="maximize">
         <BorderOutlined />
       </button>
-      <button class="win-btn win-btn-close" title="关闭" @click="close">
+      <button class="win-btn win-btn-close" :title="t('navbar.close')" @click="close">
         <CloseOutlined />
       </button>
     </div>

@@ -23,6 +23,7 @@ import {
   SearchOutlined, FileOutlined, FileTextOutlined,
   CodeOutlined, EyeOutlined, ArrowLeftOutlined,
 } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
 import hljs, { hljsLangForName } from '@/utils/hljs-setup'
 import 'highlightjs-line-numbers.js/src/highlightjs-line-numbers.js'
 import { renderMarkdown } from '@/utils/markdown'
@@ -34,6 +35,8 @@ const props = defineProps({
   title: { type: String, default: '' },
 })
 const emit = defineEmits(['back'])
+
+const { t } = useI18n()
 
 // ---- file tree ----
 const tree = ref({})
@@ -72,7 +75,7 @@ async function loadRoot() {
     const nodes = await props.api.listDir('')
     tree.value = { __root__: nodes }
   } catch (e) {
-    message.error('加载文件树失败: ' + e)
+    message.error(t('codeBrowser.loadTreeFailed') + ': ' + e)
   }
 }
 
@@ -88,7 +91,7 @@ async function toggleDir(node) {
       try {
         const children = await props.api.listDir(node.path)
         tree.value = { ...tree.value, [node.path]: children }
-      } catch (e) { message.error('读取目录失败: ' + e) }
+      } catch (e) { message.error(t('codeBrowser.readDirFailed') + ': ' + e) }
       finally {
         const ld2 = new Set(loadingDirs.value); ld2.delete(node.path)
         loadingDirs.value = ld2
@@ -109,7 +112,7 @@ async function openFile(node) {
     fileInfo.value = { binary: res.binary, notFound: res.notFound, lines: res.lines }
     fileContent.value = res.content
   } catch (e) {
-    message.error('读取失败: ' + e)
+    message.error(t('codeBrowser.readFailed') + ': ' + e)
   } finally {
     fileLoading.value = false
     if (!fileInfo.value.binary && !fileInfo.value.notFound) {
@@ -181,13 +184,13 @@ defineExpose({ loadRoot, clearSelection })
     <!-- file tree -->
     <aside class="cb-tree">
       <div class="cb-tree-head">
-        <span v-if="showBack" class="cb-back" title="返回列表" @click="emit('back')">
+        <span v-if="showBack" class="cb-back" :title="t('common.back')" @click="emit('back')">
           <ArrowLeftOutlined />
         </span>
         <span class="cb-tree-title">{{ title }}</span>
       </div>
       <div class="bt-search">
-        <a-input :value="searchQuery" placeholder="搜索文件..." size="small" allow-clear
+        <a-input :value="searchQuery" :placeholder="t('codeBrowser.searchFiles')" size="small" allow-clear
           @change="(e) => onSearchInput(e.target.value)">
           <template #prefix><SearchOutlined style="color: var(--color-text-tertiary)" /></template>
         </a-input>
@@ -195,7 +198,7 @@ defineExpose({ loadRoot, clearSelection })
       <div class="bt-body">
         <div v-if="searchQuery.trim()">
           <div v-if="searching" class="bt-loading"><a-spin size="small" /></div>
-          <div v-else-if="!searchResults.length" class="bt-empty">无匹配</div>
+          <div v-else-if="!searchResults.length" class="bt-empty">{{ t('codeBrowser.noMatch') }}</div>
           <div v-for="r in searchResults" :key="r.path"
             class="sr-item" :class="{ active: selectedFile === r.path }"
             :title="r.path" @click="openFile(r)">
@@ -227,20 +230,20 @@ defineExpose({ loadRoot, clearSelection })
         <span class="bc-name"><FileTextOutlined /> {{ filename }}</span>
         <span class="bc-path">{{ selectedFile }}</span>
         <div class="bc-spacer"></div>
-        <span class="bc-lines" v-if="fileInfo.lines">{{ fileInfo.lines }} 行</span>
+        <span class="bc-lines" v-if="fileInfo.lines">{{ fileInfo.lines }} {{ t('common.lines') }}</span>
         <a-radio-group v-if="isMarkdown" v-model:value="mdViewMode" size="small" button-style="solid">
-          <a-radio-button value="render"><EyeOutlined /> 渲染</a-radio-button>
-          <a-radio-button value="source"><CodeOutlined /> 源码</a-radio-button>
+          <a-radio-button value="render"><EyeOutlined /> {{ t('wiki.renderMode') }}</a-radio-button>
+          <a-radio-button value="source"><CodeOutlined /> {{ t('wiki.sourceMode') }}</a-radio-button>
         </a-radio-group>
       </div>
       <div class="bc-body">
-        <div v-if="fileLoading" class="bc-loading"><a-spin tip="读取中..." /></div>
+        <div v-if="fileLoading" class="bc-loading"><a-spin :tip="t('common.loading')" /></div>
         <div v-else-if="!selectedFile" class="bc-placeholder">
           <FileOutlined class="bc-ph-icon" />
-          <div>从左侧选择文件</div>
+          <div>{{ t('codeBrowser.selectFile') }}</div>
         </div>
-        <div v-else-if="fileInfo.notFound" class="bc-state">文件不存在</div>
-        <div v-else-if="fileInfo.binary" class="bc-state">二进制文件</div>
+        <div v-else-if="fileInfo.notFound" class="bc-state">{{ t('codeBrowser.fileNotFound') }}</div>
+        <div v-else-if="fileInfo.binary" class="bc-state">{{ t('common.binaryFile') }}</div>
         <div v-else-if="isMarkdown && mdViewMode === 'render'" class="bc-md" v-html="renderedMarkdown"></div>
         <div v-else class="bc-code">
           <pre class="hljs-code-block"><code ref="codeRef" class="hljs"></code></pre>

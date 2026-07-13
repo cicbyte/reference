@@ -6,6 +6,7 @@ import {
   MedicineBoxOutlined,
   CloudDownloadOutlined,
 } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { useProjectStore } from '@/stores/project'
 import { formatPath } from '@/utils/path'
 import DiagnoseModal from '@/components/repo/DiagnoseModal.vue'
@@ -13,6 +14,7 @@ import StatCards from './components/StatCards.vue'
 import InfoCards from './components/InfoCards.vue'
 import RepoGrid from './components/RepoGrid.vue'
 
+const { t } = useI18n()
 const router = useRouter()
 const project = useProjectStore()
 const repos = ref([])
@@ -57,14 +59,14 @@ function navigate(path) {
     <div class="dashboard-header">
       <h1>{{ project.hasProject ? project.currentName : 'Reference' }}</h1>
       <p class="subtitle">
-        {{ project.hasProject ? formatPath(project.currentDir) : '本地代码仓库引用管理器' }}
+        {{ project.hasProject ? formatPath(project.currentDir) : t('dashboard.subtitle') }}
       </p>
     </div>
 
     <!-- no project: empty state -->
     <a-empty
       v-if="!project.hasProject"
-      description="请从左侧选择一个项目，或添加新项目"
+      :description="t('common.selectProjectFirst')"
     >
       <template #image><CloudDownloadOutlined style="font-size: 48px; color: var(--color-text-tertiary); opacity: 0.4;" /></template>
     </a-empty>
@@ -75,8 +77,8 @@ function navigate(path) {
         v-if="!project.currentExists"
         type="warning"
         show-icon
-        message="该项目目录不存在"
-        description="目录可能已被移动或删除。数据库记录仍然保留，你可以修复断链或移除该项目。"
+        :message="t('dashboard.notInitialized')"
+        :description="t('dashboard.initHint')"
         style="margin-bottom: var(--spacing-lg)"
       />
 
@@ -94,15 +96,15 @@ function navigate(path) {
       <div class="quick-actions">
         <a-button type="primary" @click="router.push('/repos')">
           <template #icon><PlusOutlined /></template>
-          添加仓库
+          {{ t('dashboard.quickAddRepo') }}
         </a-button>
         <a-button @click="router.push('/repos')">
           <template #icon><CloudDownloadOutlined /></template>
-          仓库列表
+          {{ t('dashboard.quickRepoList') }}
         </a-button>
         <a-button @click="diagnoseOpen = true">
           <template #icon><MedicineBoxOutlined /></template>
-          诊断修复
+          {{ t('dashboard.quickDiagnose') }}
         </a-button>
       </div>
 

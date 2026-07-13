@@ -1,6 +1,7 @@
 <script setup>
 import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { BranchesOutlined, CheckCircleOutlined, WarningOutlined, ExclamationCircleOutlined } from '@ant-design/icons-vue'
 import { useLayoutStore } from '@/stores/layout'
 import { useProjectStore } from '@/stores/project'
@@ -13,6 +14,7 @@ import MainContent from './MainContent.vue'
 const route = useRoute()
 const layout = useLayoutStore()
 const project = useProjectStore()
+const { t } = useI18n()
 
 // Project rail visibility is fully user-controlled via the Navbar toggle.
 const showProjectRail = computed(() => layout.projectRailVisible)
@@ -31,21 +33,21 @@ function syncProjectFooter() {
   // repo count with broken-links breakdown
   const broken = p.brokenCount || 0
   const repoValue = broken > 0
-    ? `${p.repoCount} (断裂 ${broken})`
+    ? `${p.repoCount} (${t('footer.brokenShort', { n: broken })})`
     : String(p.repoCount)
-  layout.setFooterItem('repo-count', '引用', repoValue, BranchesOutlined, broken > 0 ? 'warn' : 'default')
+  layout.setFooterItem('repo-count', t('footer.refs'), repoValue, BranchesOutlined, broken > 0 ? 'warn' : 'default')
 
   // health badge
   if (!p.exists) {
-    layout.setFooterItem('health', '状态', '目录缺失', ExclamationCircleOutlined, 'bad')
+    layout.setFooterItem('health', t('footer.health'), t('footer.dirMissing'), ExclamationCircleOutlined, 'bad')
   } else if (broken > 0) {
-    layout.setFooterItem('health', '状态', `${broken} 个断裂`, WarningOutlined, 'warn')
+    layout.setFooterItem('health', t('footer.health'), t('footer.broken', { n: broken }), WarningOutlined, 'warn')
   } else {
-    layout.setFooterItem('health', '状态', '健康', CheckCircleOutlined, 'ok')
+    layout.setFooterItem('health', t('footer.health'), t('footer.healthy'), CheckCircleOutlined, 'ok')
   }
 
   // project path
-  layout.setFooterItem('project-path', '路径', formatPath(project.currentDir))
+  layout.setFooterItem('project-path', t('footer.path'), formatPath(project.currentDir))
 }
 
 watch(() => project.projectEpoch, syncProjectFooter, { immediate: true })

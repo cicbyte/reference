@@ -12,7 +12,10 @@ import {
   CaretRightFilled,
   WarningOutlined,
 } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { fmtSize } from '@/utils/format'
+
+const { t } = useI18n()
 
 const props = defineProps({
   groupedRepos: { type: Array, default: () => [] },
@@ -35,8 +38,8 @@ function isNamespaceExpanded(key) { return props.expandedNamespaces.has(key) }
 <template>
   <aside class="cache-rail">
     <div class="rail-head">
-      <span>仓库缓存</span>
-      <button class="rail-refresh" title="刷新" @click="emit('refresh')">
+      <span>{{ t('cache.title') }}</span>
+      <button class="rail-refresh" :title="t('common.refresh')" @click="emit('refresh')">
         <ReloadOutlined />
       </button>
     </div>
@@ -47,31 +50,31 @@ function isNamespaceExpanded(key) { return props.expandedNamespaces.has(key) }
       <template v-for="pg in groupedRepos" :key="pg.platform">
         <div class="rail-group-head" @click="emit('toggle-platform', pg.platform)">
           <CaretRightFilled class="rail-caret" :class="{ open: isPlatformExpanded(pg.platform) }" />
-          <span class="rail-group-label">{{ pg.platform }}</span>
+          <span class="rail-group-label">{{ pg.platformLabel }}</span>
           <span class="rail-group-count">{{ pg.namespaces.reduce((s, n) => s + n.repos.length, 0) }}</span>
         </div>
 
         <template v-if="isPlatformExpanded(pg.platform)">
           <template v-for="ns in pg.namespaces" :key="pg.platform + '/' + ns.namespace">
-            <!-- namespace sub-group (skip header for 本地仓库) -->
+            <!-- namespace sub-group (skip header for local repos) -->
             <div
-              v-if="pg.platform !== '本地仓库' && ns.namespace"
+              v-if="!pg.isLocal && ns.namespace"
               class="rail-ns-head"
               @click="emit('toggle-namespace', pg.platform + '/' + ns.namespace)"
             >
               <CaretRightFilled class="rail-caret sm" :class="{ open: isNamespaceExpanded(pg.platform + '/' + ns.namespace) }" />
-              <span class="rail-ns-label">{{ ns.namespace }}</span>
+              <span class="rail-ns-label">{{ ns.namespaceLabel }}</span>
               <span class="rail-ns-count">{{ ns.repos.length }}</span>
             </div>
 
-            <template v-if="pg.platform === '本地仓库' || !ns.namespace || isNamespaceExpanded(pg.platform + '/' + ns.namespace)">
+            <template v-if="pg.isLocal || !ns.namespace || isNamespaceExpanded(pg.platform + '/' + ns.namespace)">
               <div
                 v-for="r in ns.repos"
                 :key="r.cachePath"
                 class="rail-item"
                 :class="[
                   { active: r.cachePath === selectedCachePath },
-                  pg.platform !== '本地仓库' && ns.namespace ? 'nested' : '',
+                  !pg.isLocal && ns.namespace ? 'nested' : '',
                 ]"
                 :title="r.cachePath"
                 @click="emit('select', r)"
@@ -84,21 +87,21 @@ function isNamespaceExpanded(key) { return props.expandedNamespaces.has(key) }
                 <div class="rail-item-body">
                   <div class="rail-item-name">
                     {{ r.name }}
-                    <span v-if="!r.exists" class="rail-missing-tag">路径不存在</span>
-                    <span v-else-if="r.type === 'local'" class="rail-type-tag">本地</span>
+                    <span v-if="!r.exists" class="rail-missing-tag">{{ t('cache.pathMissing') }}</span>
+                    <span v-else-if="r.type === 'local'" class="rail-type-tag">{{ t('cache.typeLocal') }}</span>
                   </div>
                   <div class="rail-item-meta">
                     <span class="rail-size">{{ r.exists ? fmtSize(r.size) : '—' }}</span>
-                    <span class="rail-ref">{{ r.refCount }} 引用</span>
+                    <span class="rail-ref">{{ t('cache.refsCount', { n: r.refCount }) }}</span>
                   </div>
                 </div>
                 <a-popconfirm
                   v-if="r.type === 'remote'"
-                  :title="`清理 ${r.name}？`"
-                  ok-text="清理" ok-type="danger" cancel-text="取消"
+                  :title="t('cache.purgeTitle', { name: r.name })"
+                  :ok-text="t('cache.purgeAction')" ok-type="danger" :cancel-text="t('common.cancel')"
                   @confirm="emit('purge', r)"
                 >
-                  <button class="rail-purge" title="清理缓存" @click.stop>
+                  <button class="rail-purge" :title="t('cache.purge')" @click.stop>
                     <DeleteOutlined />
                   </button>
                 </a-popconfirm>
@@ -110,7 +113,7 @@ function isNamespaceExpanded(key) { return props.expandedNamespaces.has(key) }
 
       <div v-if="!loading && !repoCount" class="rail-empty">
         <CloudServerOutlined class="rail-empty-icon" />
-        <span>暂无缓存</span>
+        <span>{{ t('cache.emptyShort') }}</span>
       </div>
     </div>
   </aside>

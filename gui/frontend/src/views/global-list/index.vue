@@ -13,12 +13,14 @@ import {
   MedicineBoxOutlined,
   CopyOutlined,
 } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { useProjectStore } from '@/stores/project'
 import DiagnoseModal from '@/components/repo/DiagnoseModal.vue'
 import { formatPath } from '@/utils/path'
 import { agentDisplayName } from '@/utils/agents'
 import { useProjectActions } from '@/composables/useProjectActions'
 
+const { t } = useI18n()
 const router = useRouter()
 const project = useProjectStore()
 const loading = ref(true)
@@ -33,7 +35,7 @@ async function loadProjects() {
       projects.value = await app.ListProjects()
     }
   } catch (e) {
-    message.error('加载失败: ' + e)
+    message.error(t('wiki.loadFailed') + ': ' + e)
   } finally {
     loading.value = false
   }
@@ -90,13 +92,12 @@ onMounted(loadProjects)
 function cleanupMissing() {
   const missing = missingProjects.value
   if (!missing.length) return
-  const names = missing.map((p) => p.name).join('、')
   Modal.confirm({
-    title: `清理 ${missing.length} 个失效项目`,
-    content: `以下项目目录已不存在:${names}。将从数据库中移除这些项目的引用记录。`,
-    okText: '清理',
+    title: t('globalList.cleanupMissing'),
+    content: t('globalList.cleanupConfirm', { n: missing.length }),
+    okText: t('common.confirm'),
     okType: 'danger',
-    cancelText: '取消',
+    cancelText: t('common.cancelText'),
     async onOk() {
       let ok = 0
       for (const p of missing) {
@@ -105,7 +106,7 @@ function cleanupMissing() {
           ok++
         } catch { /* skip */ }
       }
-      message.success(`已清理 ${ok} 个失效项目`)
+      message.success(t('globalList.cleanupSuccess', { n: ok }))
       await loadProjects()
       await project.loadProjects()
     },
@@ -114,7 +115,7 @@ function cleanupMissing() {
 
 function switchTo(p) {
   project.switchTo(p.dir).then(() => {
-    message.success(`已切换到 ${p.name}`)
+    message.success(t('globalList.switchTo', { name: p.name }))
     router.push('/')
   })
 }
@@ -123,15 +124,15 @@ function switchTo(p) {
 <template>
   <div class="global-list">
     <div class="page-header">
-      <h2>项目列表</h2>
+      <h2>{{ t('sidebar.projectList') }}</h2>
       <div class="header-actions">
         <a-button v-if="missingProjects.length > 0" danger @click="cleanupMissing">
           <template #icon><DeleteOutlined /></template>
-          清理失效项目 ({{ missingProjects.length }})
+          {{ t('globalList.cleanupMissing') }} ({{ missingProjects.length }})
         </a-button>
         <a-button @click="loadProjects" :loading="loading">
           <template #icon><ReloadOutlined /></template>
-          刷新
+          {{ t('common.refresh') }}
         </a-button>
       </div>
     </div>
@@ -141,18 +142,18 @@ function switchTo(p) {
       <div class="sum-item">
         <FolderOutlined class="sum-icon" />
         <span class="sum-val">{{ projects.length }}</span>
-        <span class="sum-lbl">个项目</span>
+        <span class="sum-lbl">{{ t('globalList.summaryProjects') }}</span>
       </div>
       <div class="sum-sep"></div>
       <div class="sum-item">
         <span class="sum-val">{{ totalRepos }}</span>
-        <span class="sum-lbl">个引用</span>
+        <span class="sum-lbl">{{ t('globalList.summaryRepos') }}</span>
       </div>
       <div class="sum-sep"></div>
       <div class="sum-item" v-if="brokenProjects > 0">
         <WarningOutlined class="sum-icon warn" />
         <span class="sum-val warn">{{ brokenProjects }}</span>
-        <span class="sum-lbl">需关注</span>
+        <span class="sum-lbl">{{ t('globalList.summaryBroken') }}</span>
       </div>
     </div>
 
@@ -186,7 +187,7 @@ function switchTo(p) {
                     <div class="card-title-area">
                       <div class="card-title">
                         {{ p.name }}
-                        <span v-if="!p.exists" class="missing-tag">目录不存在</span>
+                        <span v-if="!p.exists" class="missing-tag">{{ t('footer.dirMissing') }}</span>
                       </div>
                       <div class="card-dir" :title="formatPath(p.dir)">{{ formatPath(p.dir) }}</div>
                     </div>
@@ -195,15 +196,15 @@ function switchTo(p) {
                   <div class="card-stats">
                     <div class="stat">
                       <span class="stat-num">{{ p.repoCount }}</span>
-                      <span class="stat-label">引用</span>
+                      <span class="stat-label">{{ t('globalList.summaryRepos') }}</span>
                     </div>
                     <div class="stat" v-if="p.brokenCount > 0">
                       <span class="stat-num warn">{{ p.brokenCount }}</span>
-                      <span class="stat-label">断链</span>
+                      <span class="stat-label">{{ t('globalList.summaryBroken') }}</span>
                     </div>
                     <div class="stat" v-if="p.agents && p.agents.length">
                       <span class="stat-num">{{ p.agents.length }}</span>
-                      <span class="stat-label">助手</span>
+                      <span class="stat-label">{{ t('globalList.agentChip') }}</span>
                     </div>
                   </div>
 
@@ -215,24 +216,24 @@ function switchTo(p) {
               <template #overlay>
                 <a-menu>
                   <a-menu-item v-if="p.exists" @click="switchTo(p)">
-                    <SwapOutlined /> 切换到此项目
+                    <SwapOutlined /> {{ t('globalList.switchToHere') }}
                   </a-menu-item>
                   <a-menu-divider v-if="p.exists" />
                   <a-menu-item v-if="p.exists" @click="onDoctor(p)">
-                    <MedicineBoxOutlined /> 修复断裂链接
+                    <MedicineBoxOutlined /> {{ t('globalList.fixLinks') }}
                   </a-menu-item>
                   <a-menu-item v-if="p.exists" @click="app?.OpenInExplorer(p.dir)">
-                    <FolderOpenOutlined /> 在文件管理器中打开
+                    <FolderOpenOutlined /> {{ t('common.openInExplorer') }}
                   </a-menu-item>
                   <a-menu-item @click="onCopyPath(p)">
-                    <CopyOutlined /> 复制路径
+                    <CopyOutlined /> {{ t('common.copy') }}
                   </a-menu-item>
                   <a-menu-divider />
                   <a-menu-item danger @click="onRemove(p, false)">
-                    <DeleteOutlined /> 移除项目
+                    <DeleteOutlined /> {{ t('globalList.removeProject') }}
                   </a-menu-item>
                   <a-menu-item danger @click="onRemove(p, true)">
-                    <DeleteOutlined /> 移除并清除 .reference
+                    <DeleteOutlined /> {{ t('globalList.removeClean') }}
                   </a-menu-item>
                 </a-menu>
               </template>
@@ -241,7 +242,7 @@ function switchTo(p) {
         </template>
       </div>
 
-      <a-empty v-if="!loading && projects.length === 0" description="暂无项目">
+      <a-empty v-if="!loading && projects.length === 0" :description="t('globalList.empty')">
         <template #image><FolderOutlined style="font-size: 48px; color: var(--color-text-tertiary); opacity: 0.3;" /></template>
       </a-empty>
     </a-spin>

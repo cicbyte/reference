@@ -17,6 +17,9 @@ import {
   SwapOutlined, MedicineBoxOutlined, FolderOpenOutlined,
   CopyOutlined, DeleteOutlined,
 } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 defineProps({
   project: { type: Object, required: true },
@@ -30,27 +33,27 @@ defineEmits(['switch', 'doctor', 'open', 'copy', 'remove', 'clean'])
 <template>
   <a-menu>
     <a-menu-item v-if="showSwitch" key="switch" @click="$emit('switch', project)">
-      <SwapOutlined /> 切换到此项目
+      <SwapOutlined /> {{ t('globalList.switchToHere') }}
     </a-menu-item>
     <a-menu-divider v-if="showSwitch" />
     <a-menu-item key="doctor" @click="$emit('doctor', project)">
-      <MedicineBoxOutlined /> 修复断裂链接
+      <MedicineBoxOutlined /> {{ t('globalList.fixLinks') }}
     </a-menu-item>
     <a-menu-item
       v-if="!showExistsGuard || project.exists"
       key="open" @click="$emit('open', project)"
     >
-      <FolderOpenOutlined /> 在文件管理器中打开
+      <FolderOpenOutlined /> {{ t('common.openInExplorer') }}
     </a-menu-item>
     <a-menu-item key="copy" @click="$emit('copy', project)">
-      <CopyOutlined /> 复制路径
+      <CopyOutlined /> {{ t('common.copy') }}
     </a-menu-item>
     <a-menu-divider />
     <a-menu-item key="remove" danger @click="$emit('remove', project)">
-      <DeleteOutlined /> 移除项目
+      <DeleteOutlined /> {{ t('globalList.removeProject') }}
     </a-menu-item>
     <a-menu-item key="clean" danger @click="$emit('clean', project)">
-      <DeleteOutlined /> 移除并清除 .reference
+      <DeleteOutlined /> {{ t('globalList.removeClean') }}
     </a-menu-item>
   </a-menu>
 </template>

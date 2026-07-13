@@ -13,6 +13,11 @@ import {
   CaretRightFilled,
   FileMarkdownOutlined,
 } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
+
+// Sentinel matching the one used by the parent (views/wiki/index.vue) to
+// tag the platform grouping key for local entries.
+const LOCAL_PLATFORM_KEY = '__local__'
 
 defineProps({
   groupedRepos: { type: Array, default: () => [] },
@@ -31,17 +36,25 @@ const emit = defineEmits([
   'sync',
   'reload',
 ])
+
+const { t } = useI18n()
+
+// Platform display label: local sentinel → localized "Local Knowledge Base";
+// any other platform string is shown verbatim (already uppercased upstream).
+function platformLabel(p) {
+  return p === LOCAL_PLATFORM_KEY ? t('localWiki.title') : p
+}
 </script>
 
 <template>
   <aside class="wiki-rail">
     <div class="rail-head">
-      <span>知识库</span>
+      <span>{{ t('wiki.title') }}</span>
       <div class="rail-actions">
-        <button class="rail-btn" title="同步(pull+commit+push)" :disabled="syncing" @click="emit('sync')">
+        <button class="rail-btn" :title="t('wiki.syncTooltip')" :disabled="syncing" @click="emit('sync')">
           <SyncOutlined :spin="syncing" />
         </button>
-        <button class="rail-btn" title="刷新" @click="emit('reload')">
+        <button class="rail-btn" :title="t('common.refresh')" @click="emit('reload')">
           <ReloadOutlined />
         </button>
       </div>
@@ -52,14 +65,14 @@ const emit = defineEmits([
       <template v-for="pg in groupedRepos" :key="pg.platform">
         <div class="rail-group-head" @click="emit('toggle-platform', pg.platform)">
           <CaretRightFilled class="rail-caret" :class="{ open: expandedPlatforms.has(pg.platform) }" />
-          <span class="rail-group-label">{{ pg.platform }}</span>
+          <span class="rail-group-label">{{ platformLabel(pg.platform) }}</span>
           <span class="rail-group-count">{{ pg.namespaces.reduce((s, n) => s + n.repos.length, 0) }}</span>
         </div>
 
         <template v-if="expandedPlatforms.has(pg.platform)">
           <template v-for="ns in pg.namespaces" :key="pg.platform + '/' + ns.namespace">
             <div
-              v-if="pg.platform !== '本地知识库' && ns.namespace"
+              v-if="pg.platform !== LOCAL_PLATFORM_KEY && ns.namespace"
               class="rail-ns-head"
               @click="emit('toggle-namespace', pg.platform + '/' + ns.namespace)"
             >
@@ -67,7 +80,7 @@ const emit = defineEmits([
               <span class="rail-ns-label">{{ ns.namespace }}</span>
             </div>
 
-            <template v-if="pg.platform === '本地知识库' || !ns.namespace || expandedNamespaces.has(pg.platform + '/' + ns.namespace)">
+            <template v-if="pg.platform === LOCAL_PLATFORM_KEY || !ns.namespace || expandedNamespaces.has(pg.platform + '/' + ns.namespace)">
               <div
                 v-for="repo in ns.repos"
                 :key="pg.platform + '/' + ns.namespace + '/' + repo.repoName"
@@ -83,7 +96,7 @@ const emit = defineEmits([
                 <div class="rail-item-body">
                   <div class="rail-item-name">{{ repo.repoName }}</div>
                   <div class="rail-item-meta">
-                    <span>{{ repo.fileCount }} 个文件</span>
+                    <span>{{ t('wiki.fileCount', { n: repo.fileCount }) }}</span>
                   </div>
                 </div>
               </div>
@@ -94,7 +107,7 @@ const emit = defineEmits([
 
       <div v-if="!loading && !entries.length" class="rail-empty">
         <ReadOutlined class="rail-empty-icon" />
-        <span>暂无知识文件</span>
+        <span>{{ t('wiki.empty') }}</span>
       </div>
     </div>
   </aside>

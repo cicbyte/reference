@@ -10,6 +10,7 @@
  */
 import { ref, onMounted, computed, watch } from 'vue'
 import { message } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
 import {
   FolderOpenOutlined,
   FileOutlined,
@@ -22,6 +23,7 @@ import SccModal from '@/components/repo/SccModal.vue'
 import DiagnoseModal from '@/components/repo/DiagnoseModal.vue'
 import RepoRail from './components/RepoRail.vue'
 
+const { t } = useI18n()
 const project = useProjectStore()
 const app = window.go?.main?.ReferenceApp
 
@@ -73,8 +75,8 @@ async function updateRepo(name) {
   try {
     await app.UpdateRepo(name)
     repos.value = await app.ListRepos()
-    message.success('更新成功')
-  } catch (e) { message.error('更新失败: ' + e) }
+    message.success(t('repos.updateSuccess'))
+  } catch (e) { message.error(t('repos.updateFailed') + ': ' + e) }
 }
 
 async function removeRepo(name) {
@@ -85,20 +87,20 @@ async function removeRepo(name) {
       selectedRepo.value = ''
       browserRef.value?.clearSelection()
     }
-    message.success('已移除')
-  } catch (e) { message.error('移除失败: ' + e) }
+    message.success(t('repos.removed'))
+  } catch (e) { message.error(t('repos.removeFailed') + ': ' + e) }
 }
 
 async function recloneRepo(name) {
-  message.loading({ content: `正在重新克隆 ${name}...`, key: 'reclone', duration: 0 })
+  message.loading({ content: t('repos.recloneProgress', { name }), key: 'reclone', duration: 0 })
   try {
     const timeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('克隆超时')), 180000),
+      setTimeout(() => reject(new Error(t('repos.recloneTimeout'))), 180000),
     )
     await Promise.race([app.RecloneRepo(project.currentDir, name), timeout])
-    message.success({ content: `${name} 重新克隆成功`, key: 'reclone' })
+    message.success({ content: t('repos.recloneSuccess', { name }), key: 'reclone' })
     repos.value = await app.ListRepos()
-  } catch (e) { message.error({ content: '重新克隆失败: ' + e, key: 'reclone', duration: 5 }) }
+  } catch (e) { message.error({ content: t('repos.recloneFailed') + ': ' + e, key: 'reclone', duration: 5 }) }
 }
 </script>
 
@@ -120,16 +122,16 @@ async function recloneRepo(name) {
     <!-- placeholder: nothing selected -->
     <div v-if="!selectedRepo" class="repo-placeholder">
       <FolderOpenOutlined class="rp-icon" />
-      <div>从左侧选择仓库查看代码</div>
+      <div>{{ t('repos.selectToBrowse') }}</div>
     </div>
 
     <!-- selected repo's cache directory is missing -->
     <div v-else-if="selectedRepoData && selectedRepoData.cacheExists === false" class="repo-missing">
       <div class="rm-icon"><FileOutlined /></div>
       <div class="rm-title">{{ selectedRepo }}</div>
-      <div class="rm-hint">缓存目录不存在</div>
+      <div class="rm-hint">{{ t('repos.cacheMissing') }}</div>
       <a-button v-if="selectedRepoData.type === 'remote'" type="primary" @click="recloneRepo(selectedRepo)">
-        <CloudDownloadOutlined /> 重新克隆
+        <CloudDownloadOutlined /> {{ t('repos.reclone') }}
       </a-button>
     </div>
 

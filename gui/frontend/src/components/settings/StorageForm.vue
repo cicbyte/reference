@@ -5,8 +5,10 @@ import {
   DatabaseOutlined, FolderOpenOutlined, ReloadOutlined,
   CloudServerOutlined, BookOutlined,
 } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
 
 const app = window.go?.main?.ReferenceApp
+const { t } = useI18n()
 
 const loading = ref(true)
 const saving = ref(false)
@@ -28,9 +30,9 @@ function formatSize(bytes) {
 }
 
 const usageCards = computed(() => [
-  { key: 'repos', label: '仓库缓存', value: usage.value.repos, path: paths.value?.repos, icon: CloudServerOutlined },
-  { key: 'wiki', label: '知识库', value: usage.value.wiki, path: paths.value?.wiki, icon: BookOutlined },
-  { key: 'db', label: '数据库', value: usage.value.db, path: paths.value?.db, icon: DatabaseOutlined },
+  { key: 'repos', labelKey: 'settings.storage.reposCache', value: usage.value.repos, path: paths.value?.repos, icon: CloudServerOutlined },
+  { key: 'wiki', labelKey: 'settings.storage.wikiStore', value: usage.value.wiki, path: paths.value?.wiki, icon: BookOutlined },
+  { key: 'db', labelKey: 'settings.storage.database', value: usage.value.db, path: paths.value?.db, icon: DatabaseOutlined },
 ])
 
 onMounted(async () => {
@@ -91,20 +93,20 @@ async function handleSave() {
         form.value.wikiPath !== original.value.wikiPath
       original.value = { ...form.value }
       dirty.value = false
-      message.success('保存成功')
+      message.success(t('common.saved'))
       if (pathChanged) {
-        message.warning('存储路径已变更，重启应用后完全生效', 5)
+        message.warning(t('settings.storage.pathChangedHint'), 5)
       }
     }
   } catch (e) {
-    message.error('保存失败: ' + e)
+    message.error(t('common.saveFailed') + ': ' + e)
   } finally {
     saving.value = false
   }
 }
 
 function openDir(dir) {
-  app?.OpenInExplorer(dir)?.catch((e) => message.error('打开失败: ' + e))
+  app?.OpenInExplorer(dir)?.catch((e) => message.error(t('common.openFailed') + ': ' + e))
 }
 
 async function pickFolder(field, title) {
@@ -112,14 +114,14 @@ async function pickFolder(field, title) {
   try {
     // Prefer the titled PickFolder; fall back to PickProjectFolder for older backends.
     const pick = app.PickFolder || app.PickProjectFolder
-    if (!pick) { message.error('当前后端不支持目录选择'); return }
+    if (!pick) { message.error(t('settings.storage.backendUnsupported')); return }
     const dir = await (app.PickFolder ? app.PickFolder(title) : app.PickProjectFolder())
     if (dir) {
       form.value[field] = dir
       markDirty()
     }
   } catch (e) {
-    message.error('选择目录失败: ' + e)
+    message.error(t('settings.storage.pickFailed') + ': ' + e)
   }
 }
 </script>
@@ -127,48 +129,48 @@ async function pickFolder(field, title) {
 <template>
   <div class="settings-form">
     <div class="form-header">
-      <div class="form-title"><DatabaseOutlined /> 存储</div>
-      <div class="form-desc">管理仓库缓存与知识库的存储位置和磁盘占用。</div>
+      <div class="form-title"><DatabaseOutlined /> {{ t('settings.storage.title') }}</div>
+      <div class="form-desc">{{ t('settings.storage.desc') }}</div>
     </div>
 
     <a-spin :spinning="loading">
       <!-- usage cards -->
       <div class="setting-group">
         <div class="group-head">
-          <div class="group-title no-margin">磁盘占用</div>
+          <div class="group-title no-margin">{{ t('settings.storage.usage') }}</div>
           <a-button size="small" type="text" :loading="usageLoading" @click="loadUsage">
             <template #icon><ReloadOutlined /></template>
-            刷新
+            {{ t('common.refresh') }}
           </a-button>
         </div>
         <div class="usage-grid">
           <div v-for="u in usageCards" :key="u.key" class="usage-card">
             <div class="usage-icon"><component :is="u.icon" /></div>
             <div class="usage-body">
-              <div class="usage-label">{{ u.label }}</div>
+              <div class="usage-label">{{ t(u.labelKey) }}</div>
               <div class="usage-value">
                 <a-spin v-if="usageLoading" size="small" />
                 <span v-else>{{ formatSize(u.value) }}</span>
               </div>
             </div>
-            <a-button v-if="u.path" size="small" type="text" title="在文件管理器中打开" @click="openDir(u.path)">
+            <a-button v-if="u.path" size="small" type="text" :title="t('common.openInExplorer')" @click="openDir(u.path)">
               <FolderOpenOutlined />
             </a-button>
           </div>
         </div>
         <div class="usage-total">
-          合计：<strong>{{ formatSize(usage.total) }}</strong>
+          {{ t('settings.storage.total') }}：<strong>{{ formatSize(usage.total) }}</strong>
         </div>
       </div>
 
       <!-- storage paths -->
       <div class="setting-group">
-        <div class="group-title">存储路径</div>
+        <div class="group-title">{{ t('settings.storage.paths') }}</div>
 
         <div class="setting-row">
           <div class="row-label">
-            <div class="row-title">仓库缓存目录</div>
-            <div class="row-help">全局仓库克隆缓存位置，留空使用默认值</div>
+            <div class="row-title">{{ t('settings.storage.reposPath') }}</div>
+            <div class="row-help">{{ t('settings.storage.reposPathHelp') }}</div>
           </div>
           <a-input-group compact class="row-control">
             <a-input
@@ -177,7 +179,7 @@ async function pickFolder(field, title) {
               style="width: calc(100% - 36px)"
               allow-clear @change="markDirty"
             />
-            <a-button style="width: 36px" title="选择目录" @click="pickFolder('reposPath', '选择仓库缓存目录')">
+            <a-button style="width: 36px" :title="t('settings.storage.pickFolder')" @click="pickFolder('reposPath', t('settings.storage.pickRepos'))">
               <FolderOpenOutlined />
             </a-button>
           </a-input-group>
@@ -185,8 +187,8 @@ async function pickFolder(field, title) {
 
         <div class="setting-row">
           <div class="row-label">
-            <div class="row-title">知识库目录</div>
-            <div class="row-help">远程仓库知识文件存储位置，留空使用默认值</div>
+            <div class="row-title">{{ t('settings.storage.wikiPath') }}</div>
+            <div class="row-help">{{ t('settings.storage.wikiPathHelp') }}</div>
           </div>
           <a-input-group compact class="row-control">
             <a-input
@@ -195,20 +197,20 @@ async function pickFolder(field, title) {
               style="width: calc(100% - 36px)"
               allow-clear @change="markDirty"
             />
-            <a-button style="width: 36px" title="选择目录" @click="pickFolder('wikiPath', '选择知识库目录')">
+            <a-button style="width: 36px" :title="t('settings.storage.pickFolder')" @click="pickFolder('wikiPath', t('settings.storage.pickWiki'))">
               <FolderOpenOutlined />
             </a-button>
           </a-input-group>
         </div>
 
         <div class="group-actions">
-          <a-button type="primary" :loading="saving" :disabled="!dirty" @click="handleSave">保存</a-button>
+          <a-button type="primary" :loading="saving" :disabled="!dirty" @click="handleSave">{{ t('common.save') }}</a-button>
         </div>
       </div>
 
       <a-alert
         type="info" show-icon
-        message="修改存储路径后，需重启应用以触发数据迁移（已有缓存的路径记录会自动更新）。"
+        :message="t('settings.storage.pathChangedHint')"
       />
     </a-spin>
   </div>

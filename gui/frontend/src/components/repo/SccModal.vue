@@ -1,7 +1,10 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { message } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
 import { CodeOutlined, FireOutlined, FileTextOutlined } from '@ant-design/icons-vue'
+
+const { t } = useI18n()
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -55,7 +58,7 @@ async function runScc() {
       result.value = await window.go.main.ReferenceApp.RunSCC(props.repoName)
     }
   } catch (e) {
-    message.error('统计失败: ' + e)
+    message.error(t('scc.failed') + ': ' + e)
   } finally {
     loading.value = false
   }
@@ -89,7 +92,7 @@ function fmt(n) {
       <div class="scc-head">
         <div class="scc-head-icon"><CodeOutlined /></div>
         <div class="scc-head-text">
-          <span class="scc-head-title">代码统计</span>
+          <span class="scc-head-title">{{ t('scc.title') }}</span>
           <span class="scc-head-sub">{{ repoName }}</span>
         </div>
       </div>
@@ -102,24 +105,24 @@ function fmt(n) {
           <div class="sum-item">
             <CodeOutlined class="sum-icon" />
             <span class="sum-val">{{ fmt(totalCode) }}</span>
-            <span class="sum-lbl">代码行</span>
+            <span class="sum-lbl">{{ t('scc.totalCode') }}</span>
           </div>
           <div class="sum-sep"></div>
           <div class="sum-item">
             <FileTextOutlined class="sum-icon" />
             <span class="sum-val">{{ fmt(totalFiles) }}</span>
-            <span class="sum-lbl">文件</span>
+            <span class="sum-lbl">{{ t('scc.totalFiles') }}</span>
           </div>
           <div class="sum-sep"></div>
           <div class="sum-item">
             <span class="sum-val">{{ sortedLangs.length }}</span>
-            <span class="sum-lbl">语言</span>
+            <span class="sum-lbl">{{ t('scc.langs') }}</span>
           </div>
         </div>
 
         <!-- language bars -->
         <div v-if="sortedLangs.length" class="lang-section">
-          <div class="section-label">语言分布</div>
+          <div class="section-label">{{ t('scc.languages') }}</div>
           <div v-for="lang in sortedLangs" :key="lang.name" class="lang-bar-row">
             <div class="lang-info">
               <span class="lang-dot" :style="{ background: lang.color }"></span>
@@ -130,8 +133,8 @@ function fmt(n) {
               <div class="lang-fill" :style="{ width: lang.pct + '%', background: lang.color }"></div>
             </div>
             <div class="lang-stats">
-              <span>{{ fmt(lang.code) }} 行</span>
-              <span class="lang-files">{{ lang.count }} 文件</span>
+              <span>{{ fmt(lang.code) }} {{ t('scc.lines') }}</span>
+              <span class="lang-files">{{ lang.count }} {{ t('scc.files') }}</span>
             </div>
           </div>
         </div>
@@ -139,7 +142,7 @@ function fmt(n) {
         <!-- top files -->
         <div v-if="topFiles.length" class="files-section">
           <div class="section-label">
-            <FireOutlined /> 复杂度 Top {{ topFiles.length }}
+            <FireOutlined /> {{ t('scc.topComplexity', { n: topFiles.length }) }}
           </div>
           <div class="file-list">
             <div v-for="(f, i) in topFiles" :key="f.file" class="file-row">
@@ -148,7 +151,7 @@ function fmt(n) {
                 <div class="file-name" :title="f.file">{{ f.file }}</div>
                 <div class="file-meta">
                   <a-tag class="file-lang-tag">{{ f.language }}</a-tag>
-                  <span>{{ fmt(f.code) }} 行</span>
+                  <span>{{ fmt(f.code) }} {{ t('scc.lines') }}</span>
                 </div>
               </div>
               <div class="file-complexity">
@@ -164,7 +167,7 @@ function fmt(n) {
           </div>
         </div>
 
-        <a-empty v-if="!loading && !sortedLangs.length" description="无统计数据" />
+        <a-empty v-if="!loading && !sortedLangs.length" :description="t('scc.noData')" />
       </div>
     </a-spin>
   </a-modal>

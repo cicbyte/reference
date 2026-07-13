@@ -26,12 +26,15 @@ func main() {
 		Frameless: true,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
-			// Inject a Content-Security-Policy on every response. Wails IPC
-			// uses postMessage (not a network fetch), so connect-src 'self'
-			// suffices. Inline styles are needed for Ant Design Vue; img data:
-			// URIs for the mermaid PNG export. No inline scripts / remote origins.
+			// Inject a Content-Security-Policy on every response.
+			// - 'unsafe-eval': vue-i18n compiles message formats ({name} interpolation)
+			//   at runtime via new Function; this is safe (no external input reaches it,
+			//   DOMPurify handles untrusted HTML separately).
+			// - 'unsafe-inline' style-src: Ant Design Vue injects inline styles.
+			// - ws:/wails.localhost: dev-mode HMR websocket (harmless in production builds).
+			// - img data:/blob:: mermaid PNG export.
 			Middleware: func(next http.Handler) http.Handler {
-				const csp = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+				const csp = "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws://wails.localhost:* ws://localhost:*; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					w.Header().Set("Content-Security-Policy", csp)
 					next.ServeHTTP(w, r)

@@ -9,6 +9,9 @@ import {
   CheckCircleOutlined,
   ReloadOutlined,
 } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const app = window.go?.main?.ReferenceApp
 const loading = ref(false)
@@ -40,7 +43,7 @@ async function scan() {
       selectedOrphans.value = new Set(orphanedCaches.value.map((r) => r.path))
     }
   } catch (e) {
-    message.error('扫描失败: ' + e)
+    message.error(t('diagnose.diagnoseFailed') + ': ' + e)
   } finally {
     loading.value = false
   }
@@ -73,11 +76,11 @@ async function cleanSelected() {
       const res = await app.GlobalGC(false)
       const dbRemoved = res.db_removed || 0
       const cacheRemoved = res.cache_removed || 0
-      message.success(`已清理 ${dbRemoved} 条 DB 记录，${cacheRemoved} 个缓存目录`)
+      message.success(t('globalGc.cleanSuccess', { n: dbRemoved + cacheRemoved }))
       await scan()  // re-scan to show remaining
     }
   } catch (e) {
-    message.error('清理失败: ' + e)
+    message.error(t('globalGc.cleanFailed') + ': ' + e)
   } finally {
     cleaning.value = false
   }
@@ -87,10 +90,10 @@ async function cleanSelected() {
 <template>
   <div class="gc-view">
     <div class="page-header">
-      <h2>垃圾回收</h2>
+      <h2>{{ t('globalGc.title') }}</h2>
       <a-button v-if="hasScanned" @click="scan" :loading="loading">
         <template #icon><ReloadOutlined /></template>
-        重新扫描
+        {{ t('globalGc.scan') }}
       </a-button>
     </div>
 
@@ -98,19 +101,18 @@ async function cleanSelected() {
     <div v-if="!hasScanned && !loading" class="gc-intro">
       <div class="gc-intro-icon"><DeleteOutlined /></div>
       <div class="gc-intro-body">
-        <div class="gc-intro-title">扫描可清理项</div>
+        <div class="gc-intro-title">{{ t('globalGc.cleanable') }}</div>
         <div class="gc-intro-desc">
-          检测已删除项目目录的残留 DB 记录，以及无引用的孤立缓存目录。
-          不会立即删除，先扫描预览再决定。
+          {{ t('globalGc.intro') }}
         </div>
       </div>
       <a-button type="primary" size="large" @click="scan">
         <template #icon><SearchOutlined /></template>
-        开始扫描
+        {{ t('globalGc.scan') }}
       </a-button>
     </div>
 
-    <a-spin v-if="loading" tip="扫描中..." class="gc-spin" />
+    <a-spin v-if="loading" :tip="t('globalGc.rescanning')" class="gc-spin" />
 
     <!-- results -->
     <template v-if="hasScanned && !loading">
@@ -119,23 +121,23 @@ async function cleanSelected() {
         <div class="gs-item">
           <CheckCircleOutlined v-if="totalCleanable === 0" class="gs-ok-icon" />
           <span class="gs-num" :class="{ 'gs-zero': totalCleanable === 0 }">{{ totalCleanable }}</span>
-          <span class="gs-label">{{ totalCleanable === 0 ? '一切正常，无需清理' : '个可清理项' }}</span>
+          <span class="gs-label">{{ totalCleanable === 0 ? t('diagnose.noIssues') : t('globalGc.cleanable') }}</span>
         </div>
         <div class="gs-sep" v-if="totalCleanable > 0"></div>
         <div class="gs-breakdown" v-if="totalCleanable > 0">
-          <span class="gs-tag"><DatabaseOutlined /> {{ staleRecords.length }} 条 DB 记录</span>
-          <span class="gs-tag"><HddOutlined /> {{ orphanedCaches.length }} 个缓存目录</span>
+          <span class="gs-tag"><DatabaseOutlined /> {{ staleRecords.length }} {{ t('globalGc.staleRecords') }}</span>
+          <span class="gs-tag"><HddOutlined /> {{ orphanedCaches.length }} {{ t('globalGc.orphanedCaches') }}</span>
         </div>
       </div>
 
       <!-- stale DB records -->
       <div v-if="staleRecords.length > 0" class="gc-section">
         <div class="gc-sec-head">
-          <span class="gc-sec-title"><DatabaseOutlined /> 过期 DB 记录</span>
+          <span class="gc-sec-title"><DatabaseOutlined /> {{ t('globalGc.staleRecords') }}</span>
           <a-checkbox
             :checked="selectedStale.size === staleRecords.length"
             @change="(e) => selectAllStale(e.target.checked)"
-          >全选</a-checkbox>
+          >{{ t('globalGc.selectAll') }}</a-checkbox>
         </div>
         <div class="gc-item-list">
           <div
@@ -148,7 +150,7 @@ async function cleanSelected() {
             <a-checkbox :checked="selectedStale.has(r.project_dir)" @click.stop />
             <div class="gc-item-body">
               <div class="gc-item-path mono" :title="r.project_dir">{{ r.project_dir }}</div>
-              <div class="gc-item-meta">{{ r.repo_count }} 条引用记录</div>
+              <div class="gc-item-meta">{{ t('globalGc.repoCount', { n: r.repo_count }) }}</div>
             </div>
           </div>
         </div>
@@ -157,11 +159,11 @@ async function cleanSelected() {
       <!-- orphaned caches -->
       <div v-if="orphanedCaches.length > 0" class="gc-section">
         <div class="gc-sec-head">
-          <span class="gc-sec-title"><HddOutlined /> 孤立缓存目录</span>
+          <span class="gc-sec-title"><HddOutlined /> {{ t('globalGc.orphanedCaches') }}</span>
           <a-checkbox
             :checked="selectedOrphans.size === orphanedCaches.length"
             @change="(e) => selectAllOrphans(e.target.checked)"
-          >全选</a-checkbox>
+          >{{ t('globalGc.selectAll') }}</a-checkbox>
         </div>
         <div class="gc-item-list">
           <div
@@ -183,17 +185,17 @@ async function cleanSelected() {
       <!-- action bar -->
       <div v-if="totalCleanable > 0" class="gc-action-bar">
         <span class="gc-action-info">
-          即将清理 {{ staleRecords.length }} 条 DB 记录和 {{ orphanedCaches.length }} 个缓存目录
+          {{ t('globalGc.cleanConfirm', { n: totalCleanable }) }}
         </span>
         <div class="gc-action-spacer"></div>
         <a-popconfirm
-          title="确认执行清理？此操作不可撤销。"
-          ok-text="确认清理" ok-type="danger" cancel-text="取消"
+          :title="t('globalGc.cleanConfirm', { n: totalCleanable })"
+          :ok-text="t('globalGc.cleanSelected')" ok-type="danger" :cancel-text="t('common.cancelText')"
           @confirm="cleanSelected"
         >
           <a-button type="primary" danger :loading="cleaning" size="large">
             <template #icon><DeleteOutlined /></template>
-            执行清理
+            {{ t('globalGc.cleanSelected') }}
           </a-button>
         </a-popconfirm>
       </div>

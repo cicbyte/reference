@@ -10,6 +10,7 @@ import {
   ReadOutlined,
   FileMarkdownOutlined,
 } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
 
 defineProps({
   repos: { type: Array, default: () => [] },
@@ -19,13 +20,15 @@ defineProps({
 })
 
 const emit = defineEmits(['select-repo', 'reload'])
+
+const { t } = useI18n()
 </script>
 
 <template>
   <aside class="wiki-rail">
     <div class="rail-head">
-      <span>本地知识库</span>
-      <button class="rail-btn" title="刷新" @click="emit('reload')">
+      <span>{{ t('localWiki.title') }}</span>
+      <button class="rail-btn" :title="t('common.refresh')" @click="emit('reload')">
         <ReloadOutlined />
       </button>
     </div>
@@ -45,12 +48,12 @@ const emit = defineEmits(['select-repo', 'reload'])
         </div>
         <div class="rail-item-body">
           <div class="rail-item-name">{{ repo.repoName }}</div>
-          <div class="rail-item-meta">{{ repo.fileCount }} 个文件</div>
+          <div class="rail-item-meta">{{ t('localWiki.fileCount', { n: repo.fileCount }) }}</div>
         </div>
       </div>
       <div v-if="!loading && !entries.length" class="rail-empty">
         <ReadOutlined class="rail-empty-icon" />
-        <span>暂无本地知识文件</span>
+        <span>{{ t('localWiki.empty') }}</span>
       </div>
     </div>
   </aside>

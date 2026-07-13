@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useLayoutStore } from '@/stores/layout'
 import { useProjectStore } from '@/stores/project'
 import {
@@ -24,6 +25,7 @@ const route = useRoute()
 const router = useRouter()
 const layout = useLayoutStore()
 const project = useProjectStore()
+const { t } = useI18n()
 
 // project-scoped routes require a selected project; disable them otherwise.
 const PROJECT_SCOPED_KEYS = new Set(['/', '/repos'])
@@ -36,44 +38,44 @@ function isDisabled(key) {
   return false
 }
 
-const menuGroups = [
+const menuGroups = computed(() => [
   {
-    key: 'overview', label: '总览', icon: DashboardOutlined,
+    key: 'overview', label: t('sidebar.overview'), icon: DashboardOutlined,
     children: [
-      { key: '/', icon: DashboardOutlined, label: '仪表盘' },
+      { key: '/', icon: DashboardOutlined, label: t('sidebar.dashboard') },
     ],
   },
   {
-    key: 'repo', label: '引用管理', icon: CloudDownloadOutlined,
+    key: 'repo', label: t('sidebar.repoManage'), icon: CloudDownloadOutlined,
     children: [
-      { key: '/repos', icon: UnorderedListOutlined, label: '引用列表' },
+      { key: '/repos', icon: UnorderedListOutlined, label: t('sidebar.refList') },
     ],
   },
   {
-    key: 'global', label: '全局管理', icon: ApartmentOutlined,
+    key: 'global', label: t('sidebar.globalManage'), icon: ApartmentOutlined,
     children: [
-      { key: '/global', icon: DatabaseOutlined, label: '项目列表' },
-      { key: '/cache', icon: CloudServerOutlined, label: '仓库缓存' },
-      { key: '/global/stats', icon: PieChartOutlined, label: '全局统计' },
-      { key: '/global/gc', icon: DeleteOutlined, label: '垃圾回收' },
+      { key: '/global', icon: DatabaseOutlined, label: t('sidebar.projectList') },
+      { key: '/cache', icon: CloudServerOutlined, label: t('sidebar.cache') },
+      { key: '/global/stats', icon: PieChartOutlined, label: t('sidebar.stats') },
+      { key: '/global/gc', icon: DeleteOutlined, label: t('sidebar.gc') },
     ],
   },
   {
-    key: 'wiki', label: '知识库', icon: ReadOutlined,
+    key: 'wiki', label: t('sidebar.knowledge'), icon: ReadOutlined,
     children: [
-      { key: '/wiki', icon: ReadOutlined, label: '远程知识库' },
-      { key: '/local-wiki', icon: ReadOutlined, label: '本地知识库' },
+      { key: '/wiki', icon: ReadOutlined, label: t('sidebar.remoteWiki') },
+      { key: '/local-wiki', icon: ReadOutlined, label: t('sidebar.localWiki') },
     ],
   },
   {
-    key: 'config', label: '配置', icon: SettingOutlined,
+    key: 'config', label: t('sidebar.config'), icon: SettingOutlined,
     children: [
-      { key: '/settings', icon: SettingOutlined, label: '设置' },
+      { key: '/settings', icon: SettingOutlined, label: t('sidebar.settings') },
     ],
   },
-]
+])
 
-const visibleMenuGroups = computed(() => menuGroups)
+const visibleMenuGroups = computed(() => menuGroups.value)
 
 function groupOf(path) {
   for (const g of visibleMenuGroups.value) {

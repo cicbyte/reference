@@ -10,12 +10,15 @@
 import {
   ZoomInOutlined, ZoomOutOutlined, DownloadOutlined, FileImageOutlined,
 } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
   svg: { type: String, default: '' },
 })
 const emit = defineEmits(['update:open'])
+
+const { t } = useI18n()
 
 const zoom = defineModel('zoom', { type: Number, default: 1 })
 const panX = defineModel('panX', { type: Number, default: 0 })
@@ -113,7 +116,7 @@ function downloadPng() {
       <a-button size="small" @click="zoomOut"><ZoomOutOutlined /></a-button>
       <span class="zoom-level">{{ Math.round(zoom * 100) }}%</span>
       <a-button size="small" @click="zoomIn"><ZoomInOutlined /></a-button>
-      <a-button size="small" @click="zoomReset">重置</a-button>
+      <a-button size="small" @click="zoomReset">{{ t('mermaidModal.reset') }}</a-button>
       <span class="zoom-spacer"></span>
       <a-button @click="downloadSvg">
         <template #icon><DownloadOutlined /></template>

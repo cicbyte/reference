@@ -10,6 +10,7 @@
  */
 import { ref, computed, onMounted, watch } from 'vue'
 import { message } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
 import {
   CloudServerOutlined,
   WarningOutlined,
@@ -18,7 +19,12 @@ import { formatPath } from '@/utils/path'
 import CodeBrowser from '@/components/shared/CodeBrowser.vue'
 import CacheRail from './components/CacheRail.vue'
 
+const { t } = useI18n()
 const app = window.go?.main?.ReferenceApp
+
+// Stable sentinel key for the "local repos" platform group (kept stable
+// across language switches; only the display label is translated).
+const LOCAL_PLATFORM_KEY = '__local__'
 
 // ---- repo list ----
 const repos = ref([])
@@ -38,7 +44,7 @@ async function loadRepos() {
       repos.value.forEach((r) => { fetchSize(r) })
     }
   } catch (e) {
-    message.error('加载失败: ' + e)
+    message.error(t('cache.loadFailed') + ': ' + e)
   } finally {
     loading.value = false
   }
@@ -66,22 +72,27 @@ const groupedRepos = computed(() => {
   // { platform: { namespace: [repo, ...] } }
   const tree = {}
   for (const r of repos.value) {
-    const platform = r.type === 'local' ? '本地仓库' : (r.host || '未知平台')
-    const ns = r.type === 'local' ? '' : (r.namespace || '未知')
+    const platform = r.type === 'local' ? LOCAL_PLATFORM_KEY : (r.host || '')
+    const ns = r.type === 'local' ? '' : (r.namespace || '')
     if (!tree[platform]) tree[platform] = {}
     if (!tree[platform][ns]) tree[platform][ns] = []
     tree[platform][ns].push(r)
   }
-  // sort platforms (本地仓库 last), namespaces alpha, repos alpha
+  // sort platforms (local last), namespaces alpha, repos alpha
   const platforms = Object.keys(tree).sort((a, b) => {
-    if (a === '本地仓库') return 1
-    if (b === '本地仓库') return -1
+    if (a === LOCAL_PLATFORM_KEY) return 1
+    if (b === LOCAL_PLATFORM_KEY) return -1
     return a.localeCompare(b)
   })
   return platforms.map((p) => ({
     platform: p,
+    platformLabel: p === LOCAL_PLATFORM_KEY
+      ? t('cache.localRepos')
+      : (p || t('cache.unknownPlatform')),
+    isLocal: p === LOCAL_PLATFORM_KEY,
     namespaces: Object.keys(tree[p]).sort().map((ns) => ({
       namespace: ns,
+      namespaceLabel: ns || t('common.unknown'),
       repos: tree[p][ns].sort((a, b) => a.name.localeCompare(b.name)),
     })),
   }))
@@ -136,14 +147,14 @@ function selectRepo(repo) {
 async function purge(repo) {
   try {
     await app.PurgeCachedRepo(repo.cachePath)
-    message.success(`已清理 ${repo.name}`)
+    message.success(t('cache.purged', { name: repo.name }))
     if (selectedCachePath.value === repo.cachePath) {
       selectedCachePath.value = ''
       browserRef.value?.clearSelection()
     }
     await loadRepos()
   } catch (e) {
-    message.error('清理失败: ' + e)
+    message.error(t('cache.purgeFailed') + ': ' + e)
   }
 }
 </script>
@@ -167,19 +178,19 @@ async function purge(repo) {
     <!-- placeholder: nothing selected -->
     <div v-if="!selectedCachePath" class="cache-placeholder">
       <CloudServerOutlined class="cp-icon" />
-      <div>从左侧选择一个缓存仓库查看代码</div>
+      <div>{{ t('cache.selectToBrowse') }}</div>
     </div>
 
     <!-- selected repo path doesn't exist on disk -->
     <div v-else-if="selectedRepo && !selectedRepo.exists" class="cache-missing">
       <WarningOutlined class="cm-icon" />
-      <div class="cm-title">仓库路径不存在</div>
+      <div class="cm-title">{{ t('cache.pathNotExistTitle') }}</div>
       <div class="cm-path">{{ formatPath(selectedRepo.cachePath) }}</div>
       <div class="cm-hint" v-if="selectedRepo.type === 'local'">
-        本地仓库目录可能已被移动或删除。你可以从项目中重新添加，或移除该引用。
+        {{ t('cache.localHint') }}
       </div>
       <div class="cm-hint" v-else>
-        缓存目录可能已被手动删除。从左侧清理该缓存后重新添加仓库即可恢复。
+        {{ t('cache.cacheHint') }}
       </div>
     </div>
 

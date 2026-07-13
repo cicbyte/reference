@@ -2,6 +2,9 @@
 import { ref, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { FileTextOutlined } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const loading = ref(true)
 const saving = ref(false)
@@ -42,10 +45,10 @@ async function handleSave() {
     if (window.go?.main?.ReferenceApp) {
       await window.go.main.ReferenceApp.SaveAppConfig({ log: { ...form.value } })
       dirty.value = false
-      message.success('日志设置已保存，重启后完全生效')
+      message.success(t('settings.logging.saved'))
     }
   } catch (e) {
-    message.error('保存失败: ' + e)
+    message.error(t('common.saveFailed') + ': ' + e)
   } finally {
     saving.value = false
   }
@@ -60,17 +63,17 @@ async function handleReset() {
 <template>
   <div class="settings-form">
     <div class="form-header">
-      <div class="form-title"><FileTextOutlined /> 日志</div>
-      <div class="form-desc">控制日志级别与滚动归档策略，修改后重启应用完全生效。</div>
+      <div class="form-title"><FileTextOutlined /> {{ t('settings.logging.title') }}</div>
+      <div class="form-desc">{{ t('settings.logging.desc') }}</div>
     </div>
 
     <a-spin :spinning="loading">
       <div class="setting-group">
-        <div class="group-title">日志级别</div>
+        <div class="group-title">{{ t('settings.logging.level') }}</div>
         <div class="setting-row">
           <div class="row-label">
-            <div class="row-title">级别</div>
-            <div class="row-help">越高级别输出越少；Debug 适合排查问题</div>
+            <div class="row-title">{{ t('settings.logging.level') }}</div>
+            <div class="row-help">{{ t('settings.logging.levelHelp') }}</div>
           </div>
           <a-select
             v-model:value="form.level" style="width: 160px"
@@ -80,52 +83,52 @@ async function handleReset() {
       </div>
 
       <div class="setting-group">
-        <div class="group-title">滚动归档</div>
+        <div class="group-title">{{ t('settings.logging.rolling') }}</div>
 
         <div class="setting-row">
           <div class="row-label">
-            <div class="row-title">单文件上限</div>
-            <div class="row-help">单个日志文件达到此大小后触发滚动（MB）</div>
+            <div class="row-title">{{ t('settings.logging.maxSize') }}</div>
+            <div class="row-help">{{ t('settings.logging.maxSizeHelp') }}</div>
           </div>
           <a-input-number v-model:value="form.maxSize" :min="1" :max="500" :step="1"
             style="width: 140px" @change="markDirty">
-            <template #addonAfter>MB</template>
+            <template #addonAfter>{{ t('settings.logging.mb') }}</template>
           </a-input-number>
         </div>
 
         <div class="setting-row">
           <div class="row-label">
-            <div class="row-title">保留份数</div>
-            <div class="row-help">最多保留的归档文件数量</div>
+            <div class="row-title">{{ t('settings.logging.maxBackups') }}</div>
+            <div class="row-help">{{ t('settings.logging.maxBackupsHelp') }}</div>
           </div>
           <a-input-number v-model:value="form.maxBackups" :min="1" :max="365" :step="1"
             style="width: 140px" @change="markDirty">
-            <template #addonAfter>份</template>
+            <template #addonAfter>{{ t('settings.logging.copies') }}</template>
           </a-input-number>
         </div>
 
         <div class="setting-row">
           <div class="row-label">
-            <div class="row-title">保留天数</div>
-            <div class="row-help">超过此天数的归档自动删除</div>
+            <div class="row-title">{{ t('settings.logging.maxAge') }}</div>
+            <div class="row-help">{{ t('settings.logging.maxAgeHelp') }}</div>
           </div>
           <a-input-number v-model:value="form.maxAge" :min="1" :max="3650" :step="1"
             style="width: 140px" @change="markDirty">
-            <template #addonAfter>天</template>
+            <template #addonAfter>{{ t('settings.logging.days') }}</template>
           </a-input-number>
         </div>
 
         <div class="setting-row">
           <div class="row-label">
-            <div class="row-title">压缩归档</div>
-            <div class="row-help">对滚动产生的归档文件进行 gzip 压缩以节省空间</div>
+            <div class="row-title">{{ t('settings.logging.compress') }}</div>
+            <div class="row-help">{{ t('settings.logging.compressHelp') }}</div>
           </div>
           <a-switch v-model:checked="form.compress" @change="markDirty" />
         </div>
 
         <div class="group-actions">
-          <a-button type="primary" :loading="saving" :disabled="!dirty" @click="handleSave">保存</a-button>
-          <a-button :disabled="!dirty" @click="handleReset">恢复默认</a-button>
+          <a-button type="primary" :loading="saving" :disabled="!dirty" @click="handleSave">{{ t('common.save') }}</a-button>
+          <a-button :disabled="!dirty" @click="handleReset">{{ t('settings.logging.reset') }}</a-button>
         </div>
       </div>
     </a-spin>

@@ -15,6 +15,9 @@ import {
   CloudServerOutlined,
   FileOutlined,
 } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 defineProps({
   repos: { type: Array, default: () => [] },
@@ -28,12 +31,12 @@ const emit = defineEmits(['select', 'update', 'reclone', 'stats', 'remove', 'add
 <template>
   <aside class="repo-rail">
     <div class="rail-head">
-      <span>仓库列表</span>
+      <span>{{ t('repos.listTitle') }}</span>
       <div class="rail-actions">
-        <a-button size="small" type="text" @click="emit('diagnose')" title="诊断修复">
+        <a-button size="small" type="text" @click="emit('diagnose')" :title="t('repos.diagnose')">
           <MedicineBoxOutlined />
         </a-button>
-        <a-button size="small" type="primary" @click="emit('add')" title="添加仓库">
+        <a-button size="small" type="primary" @click="emit('add')" :title="t('repos.addRepo')">
           <PlusOutlined />
         </a-button>
       </div>
@@ -56,36 +59,36 @@ const emit = defineEmits(['select', 'update', 'reclone', 'stats', 'remove', 'add
         <div class="rail-item-body">
           <div class="rail-item-name">
             {{ r.name }}
-            <span v-if="r.cacheExists === false" class="missing-tag">缺失</span>
+            <span v-if="r.cacheExists === false" class="missing-tag">{{ t('repos.missing') }}</span>
           </div>
           <div class="rail-item-meta">
-            <span class="rail-type">{{ r.type === 'remote' ? '远程' : '本地' }}</span>
+            <span class="rail-type">{{ r.type === 'remote' ? t('repos.remote') : t('repos.local') }}</span>
             <span v-if="r.branch">{{ r.branch }}</span>
           </div>
         </div>
         <a-dropdown :trigger="['contextmenu']">
           <div class="rail-item-extra" @click.stop>
-            <a-button size="small" type="text" @click.stop="emit('stats', r.name)" title="统计">
+            <a-button size="small" type="text" @click.stop="emit('stats', r.name)" :title="t('repos.codeStats')">
               <BarChartOutlined />
             </a-button>
           </div>
           <template #overlay>
             <a-menu>
               <a-menu-item @click="emit('select', r)" :disabled="r.cacheExists === false">
-                <FolderOpenOutlined /> 浏览代码
+                <FolderOpenOutlined /> {{ t('repos.browseCode') }}
               </a-menu-item>
               <a-menu-item @click="emit('update', r.name)">
-                <SyncOutlined /> 更新仓库
+                <SyncOutlined /> {{ t('repos.updateRepo') }}
               </a-menu-item>
               <a-menu-item @click="emit('stats', r.name)" :disabled="r.cacheExists === false">
-                <BarChartOutlined /> 代码统计
+                <BarChartOutlined /> {{ t('repos.codeStats') }}
               </a-menu-item>
               <a-menu-item v-if="r.cacheExists === false && r.type === 'remote'" @click="emit('reclone', r.name)">
-                <CloudDownloadOutlined /> 重新克隆
+                <CloudDownloadOutlined /> {{ t('repos.reclone') }}
               </a-menu-item>
               <a-menu-divider />
               <a-menu-item danger @click="emit('remove', r.name)">
-                <DeleteOutlined /> 移除引用
+                <DeleteOutlined /> {{ t('repos.removeRef') }}
               </a-menu-item>
             </a-menu>
           </template>
@@ -93,7 +96,7 @@ const emit = defineEmits(['select', 'update', 'reclone', 'stats', 'remove', 'add
       </div>
       <div v-if="!loading && !repos.length" class="rail-empty">
         <CloudServerOutlined class="rail-empty-icon" />
-        <span>暂无仓库</span>
+        <span>{{ t('repos.empty') }}</span>
       </div>
     </div>
   </aside>

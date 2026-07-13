@@ -6,6 +6,7 @@
  */
 import { ref } from 'vue'
 import { AppstoreOutlined, FolderOutlined, WarningOutlined, PlusOutlined } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { formatPath } from '@/utils/path'
 
 defineProps({
@@ -16,6 +17,7 @@ defineProps({
 
 const emit = defineEmits(['switch', 'add'])
 const hover = ref(null)
+const { t } = useI18n()
 </script>
 
 <template>
@@ -23,7 +25,7 @@ const hover = ref(null)
     <div
       class="rail-icon-btn"
       :class="{ active: hasProject }"
-      title="项目"
+      :title="t('projectRail.title')"
       @mouseenter="hover = 'projects'"
       @mouseleave="hover = null"
     >
@@ -31,7 +33,7 @@ const hover = ref(null)
     </div>
     <transition name="flyout">
       <div v-if="hover === 'projects'" class="flyout">
-        <div class="flyout-title">项目</div>
+        <div class="flyout-title">{{ t('projectRail.title') }}</div>
         <div
           v-for="p in projects"
           :key="p.dir"
@@ -45,10 +47,10 @@ const hover = ref(null)
           <span class="flyout-name">{{ p.name }}</span>
           <span class="flyout-count">{{ p.repoCount }}</span>
         </div>
-        <div v-if="projects.length === 0" class="flyout-empty">暂无项目</div>
+        <div v-if="projects.length === 0" class="flyout-empty">{{ t('projectRail.empty') }}</div>
         <div class="flyout-add" @click="emit('add')">
           <PlusOutlined />
-          <span>添加项目</span>
+          <span>{{ t('projectRail.addProject') }}</span>
         </div>
       </div>
     </transition>

@@ -4,10 +4,12 @@ import { message } from 'ant-design-vue'
 import {
   CheckOutlined, FolderOpenOutlined, ExclamationCircleFilled,
 } from '@ant-design/icons-vue'
+import { useI18n } from 'vue-i18n'
 import AiSparkIcon from '@/components/common/AiSparkIcon.vue'
 import { useProjectStore } from '@/stores/project'
 import { formatPath, joinPath } from '@/utils/path'
 
+const { t } = useI18n()
 const project = useProjectStore()
 const app = window.go?.main?.ReferenceApp
 
@@ -84,7 +86,7 @@ watch(() => project.currentDir, loadCurrent)
 
 async function handleSave() {
   if (!hasProject.value) {
-    message.warning('请先在项目栏选择一个项目')
+    message.warning(t('common.selectProjectFirst'))
     return
   }
   saving.value = true
@@ -92,9 +94,9 @@ async function handleSave() {
     await app.InitProject(selected.value)
     initialAgents.value = [...selected.value]
     initialized.value = true
-    message.success(`已注入 ${selected.value.length} 个助手到「${project.currentName}」`)
+    message.success(t('settings.project.injected', { n: selected.value.length, name: project.currentName }))
   } catch (e) {
-    message.error('注入失败: ' + e)
+    message.error(t('settings.project.injectFailed') + ': ' + e)
   } finally {
     saving.value = false
   }
@@ -107,8 +109,8 @@ function clearAll() { selected.value = [] }
 <template>
   <div class="settings-form">
     <div class="form-header">
-      <div class="form-title"><AiSparkIcon :size="18" /> AI 助手</div>
-      <div class="form-desc">选择要注入到当前项目的 AI 编程助手，自动写入子代理与 Skill 配置。</div>
+      <div class="form-title"><AiSparkIcon :size="18" /> {{ t('settings.project.title') }}</div>
+      <div class="form-desc">{{ t('settings.project.desc') }}</div>
     </div>
 
     <a-spin :spinning="loading">
@@ -116,32 +118,32 @@ function clearAll() { selected.value = [] }
       <div class="ctx-banner" :class="{ 'no-project': !hasProject }">
         <div class="ctx-info">
           <div class="ctx-row">
-            <span class="ctx-label">目标项目</span>
+            <span class="ctx-label">{{ t('settings.project.targetProject') }}</span>
             <span class="ctx-value" :title="formatPath(project.currentDir)">
-              {{ project.currentName || '未选择项目' }}
+              {{ project.currentName || t('settings.project.noProject') }}
             </span>
           </div>
           <div class="ctx-row" v-if="hasProject">
-            <span class="ctx-label">写入位置</span>
+            <span class="ctx-label">{{ t('settings.project.writeLocation') }}</span>
             <span class="ctx-path mono">{{ joinPath(project.currentDir, '.reference/reference.settings.json') }}</span>
           </div>
         </div>
         <span class="ctx-state" :class="{ on: initialized }" v-if="hasProject">
           <CheckOutlined v-if="initialized" />
-          {{ initialized ? '已初始化' : '未初始化' }}
+          {{ initialized ? t('settings.project.initialized') : t('settings.project.uninitialized') }}
         </span>
         <span class="ctx-state warn" v-else>
-          <ExclamationCircleFilled /> 未选择
+          <ExclamationCircleFilled /> {{ t('settings.project.notSelected') }}
         </span>
       </div>
 
       <div class="setting-group">
         <div class="group-head">
-          <div class="group-title no-margin">可选助手</div>
+          <div class="group-title no-margin">{{ t('settings.project.availableAgents') }}</div>
           <div class="head-actions">
-            <span class="sel-count">已选 {{ selectedCount }} / {{ agents.length }}</span>
-            <a-button size="small" type="text" @click="selectAll" :disabled="!agents.length">全选</a-button>
-            <a-button size="small" type="text" @click="clearAll" :disabled="!selected.length">清空</a-button>
+            <span class="sel-count">{{ t('settings.project.selected', { selected: selectedCount, total: agents.length }) }}</span>
+            <a-button size="small" type="text" @click="selectAll" :disabled="!agents.length">{{ t('settings.project.selectAll') }}</a-button>
+            <a-button size="small" type="text" @click="clearAll" :disabled="!selected.length">{{ t('settings.project.clearAll') }}</a-button>
           </div>
         </div>
 
@@ -159,7 +161,7 @@ function clearAll() { selected.value = [] }
               <div class="agent-name">{{ agent.displayName }}</div>
               <div class="agent-meta">
                 <span class="meta-path mono">{{ agent.baseDir }}</span>
-                <span class="meta-files">{{ agent.fileCount }} 个文件</span>
+                <span class="meta-files">{{ t('settings.project.files', { n: agent.fileCount }) }}</span>
               </div>
             </div>
             <div class="agent-check" :class="{ checked: selected.includes(agent.id) }">
@@ -169,7 +171,7 @@ function clearAll() { selected.value = [] }
         </div>
 
         <div v-if="!agents.length && !loading" class="agent-empty">
-          暂无可用助手
+          {{ t('settings.project.noAgents') }}
         </div>
 
         <div class="group-actions">
@@ -179,13 +181,13 @@ function clearAll() { selected.value = [] }
             :disabled="!hasProject || !dirty"
             @click="handleSave"
           >
-            注入到当前项目
+            {{ t('settings.project.injectToProject') }}
           </a-button>
           <span v-if="hasProject && !dirty" class="saved-hint">
-            <CheckOutlined /> 已是最新配置
+            <CheckOutlined /> {{ t('settings.project.upToDate') }}
           </span>
           <span v-else-if="!hasProject" class="saved-hint warn">
-            请先选择项目
+            {{ t('common.selectProjectFirst') }}
           </span>
         </div>
       </div>
