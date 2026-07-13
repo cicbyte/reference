@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/cicbyte/reference/cmd/version"
@@ -108,6 +109,35 @@ func (a *ReferenceApp) PickProjectFolder() (string, error) {
 		Title: "选择项目目录",
 	})
 	if err != nil {
+		// On Windows the native dialog reports cancellation as an error
+		// ("shellItem is nil"); treat that as a normal empty selection.
+		if strings.Contains(err.Error(), "shellItem") {
+			return "", nil
+		}
+		return "", err
+	}
+	return dir, nil
+}
+
+// PickFolder opens a native directory picker with a caller-supplied dialog
+// title (empty string if cancelled). Generic folder picker for settings forms.
+func (a *ReferenceApp) PickFolder(title string) (string, error) {
+	a.appMu.RLock()
+	ctx := a.ctx
+	a.appMu.RUnlock()
+	if ctx == nil {
+		return "", nil
+	}
+	if title == "" {
+		title = "选择目录"
+	}
+	dir, err := wailsruntime.OpenDirectoryDialog(ctx, wailsruntime.OpenDialogOptions{
+		Title: title,
+	})
+	if err != nil {
+		if strings.Contains(err.Error(), "shellItem") {
+			return "", nil
+		}
 		return "", err
 	}
 	return dir, nil

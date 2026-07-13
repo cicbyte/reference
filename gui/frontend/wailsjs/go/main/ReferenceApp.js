@@ -126,6 +126,10 @@ export function OpenInExplorer(arg1) {
   return window['go']['main']['ReferenceApp']['OpenInExplorer'](arg1);
 }
 
+export function PickFolder(arg1) {
+  return window['go']['main']['ReferenceApp']['PickFolder'](arg1);
+}
+
 export function PickProjectFolder() {
   return window['go']['main']['ReferenceApp']['PickProjectFolder']();
 }

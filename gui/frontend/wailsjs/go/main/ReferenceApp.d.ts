@@ -64,6 +64,8 @@ export function ListWikiEntries(arg1:string):Promise<Array<main.WikiEntry>>;
 
 export function OpenInExplorer(arg1:string):Promise<void>;
 
+export function PickFolder(arg1:string):Promise<string>;
+
 export function PickProjectFolder():Promise<string>;
 
 export function PurgeCachedRepo(arg1:string):Promise<void>;

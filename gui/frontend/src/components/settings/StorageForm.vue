@@ -6,6 +6,8 @@ import {
   CloudServerOutlined, BookOutlined,
 } from '@ant-design/icons-vue'
 
+const app = window.go?.main?.ReferenceApp
+
 const loading = ref(true)
 const saving = ref(false)
 const dirty = ref(false)
@@ -104,6 +106,22 @@ async function handleSave() {
 function openDir(dir) {
   window.go.main.ReferenceApp.OpenInExplorer(dir).catch((e) => message.error('打开失败: ' + e))
 }
+
+async function pickFolder(field, title) {
+  if (!app) return
+  try {
+    // Prefer the titled PickFolder; fall back to PickProjectFolder for older backends.
+    const pick = app.PickFolder || app.PickProjectFolder
+    if (!pick) { message.error('当前后端不支持目录选择'); return }
+    const dir = await (app.PickFolder ? app.PickFolder(title) : app.PickProjectFolder())
+    if (dir) {
+      form.value[field] = dir
+      markDirty()
+    }
+  } catch (e) {
+    message.error('选择目录失败: ' + e)
+  }
+}
 </script>
 
 <template>
@@ -152,12 +170,17 @@ function openDir(dir) {
             <div class="row-title">仓库缓存目录</div>
             <div class="row-help">全局仓库克隆缓存位置，留空使用默认值</div>
           </div>
-          <a-input
-            v-model:value="form.reposPath"
-            placeholder="~/.cicbyte/reference/repos"
-            class="row-control" style="width: 340px"
-            allow-clear @change="markDirty"
-          />
+          <a-input-group compact class="row-control">
+            <a-input
+              v-model:value="form.reposPath"
+              placeholder="~/.cicbyte/reference/repos"
+              style="width: calc(100% - 36px)"
+              allow-clear @change="markDirty"
+            />
+            <a-button style="width: 36px" title="选择目录" @click="pickFolder('reposPath', '选择仓库缓存目录')">
+              <FolderOpenOutlined />
+            </a-button>
+          </a-input-group>
         </div>
 
         <div class="setting-row">
@@ -165,12 +188,17 @@ function openDir(dir) {
             <div class="row-title">知识库目录</div>
             <div class="row-help">远程仓库知识文件存储位置，留空使用默认值</div>
           </div>
-          <a-input
-            v-model:value="form.wikiPath"
-            placeholder="~/.cicbyte/reference/wiki"
-            class="row-control" style="width: 340px"
-            allow-clear @change="markDirty"
-          />
+          <a-input-group compact class="row-control">
+            <a-input
+              v-model:value="form.wikiPath"
+              placeholder="~/.cicbyte/reference/wiki"
+              style="width: calc(100% - 36px)"
+              allow-clear @change="markDirty"
+            />
+            <a-button style="width: 36px" title="选择目录" @click="pickFolder('wikiPath', '选择知识库目录')">
+              <FolderOpenOutlined />
+            </a-button>
+          </a-input-group>
         </div>
 
         <div class="group-actions">
@@ -217,4 +245,9 @@ function openDir(dir) {
   font-size: 13px; color: var(--color-text-secondary); text-align: right;
 }
 .usage-total strong { color: var(--color-text); font-size: 15px; }
+
+/* path picker: input + button group */
+.row-control { display: flex; width: 360px; }
+.row-control :deep(.ant-input) { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
+.row-control :deep(.ant-btn) { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; display: flex; align-items: center; justify-content: center; }
 </style>
