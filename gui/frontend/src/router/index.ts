@@ -5,7 +5,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 // projectScoped: false → global-level page (global stats / GC / wiki / settings),
 //                        rail hidden, two-column layout
 const routes = [
-  { path: '/', name: 'dashboard', component: () => import('@/views/dashboard/index.vue'), meta: { title: 'Dashboard', projectScoped: true } },
+  { path: '/', name: 'dashboard', component: () => import('@/views/dashboard/index.vue'), meta: { title: '仪表盘', projectScoped: true } },
   { path: '/repos', name: 'repos', component: () => import('@/views/repos/index.vue'), meta: { title: '仓库列表', projectScoped: true } },
   { path: '/global', name: 'global', component: () => import('@/views/global-list/index.vue'), meta: { title: '全局项目', projectScoped: false } },
   { path: '/cache', name: 'cache', component: () => import('@/views/cache/index.vue'), meta: { title: '仓库缓存', projectScoped: false } },

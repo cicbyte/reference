@@ -40,7 +40,7 @@ const menuGroups = [
   {
     key: 'overview', label: '总览', icon: DashboardOutlined,
     children: [
-      { key: '/', icon: DashboardOutlined, label: 'Dashboard' },
+      { key: '/', icon: DashboardOutlined, label: '仪表盘' },
     ],
   },
   {
