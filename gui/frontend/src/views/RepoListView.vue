@@ -107,6 +107,15 @@ const fileContent = ref('')
 const fileInfo = ref({ binary: false, notFound: false, lines: 0 })
 const fileLoading = ref(false)
 const mdViewMode = ref('render')
+
+watch(mdViewMode, (mode) => {
+  if (mode === 'source' && selectedFile.value) highlightCode()
+})
+
+const lineNumbers = computed(() => {
+  const n = (fileContent.value || '').split('\n').length
+  return Array.from({ length: n }, (_, i) => i + 1)
+})
 const codeRef = ref(null)
 
 const isMarkdown = computed(() => /\.md$/i.test(selectedFile.value))
@@ -168,9 +177,11 @@ async function openFile(node) {
     message.error('读取失败: ' + e)
   } finally {
     fileLoading.value = false
-    if (!fileInfo.value.binary && !fileInfo.value.notFound && !isMarkdown.value) {
+    if (!fileInfo.value.binary && !fileInfo.value.notFound) {
       await nextTick(); await nextTick()
-      highlightCode()
+      if (!isMarkdown.value || mdViewMode.value === 'source') {
+        highlightCode()
+      }
     }
   }
 }
@@ -412,7 +423,10 @@ const renderedMarkdown = computed(() => {
           <div v-else-if="fileInfo.binary" class="bc-state">二进制文件</div>
           <div v-else-if="isMarkdown && mdViewMode === 'render'" class="bc-md" v-html="renderedMarkdown"></div>
           <div v-else class="bc-code">
-            <pre class="hljs-code-block"><code ref="codeRef" class="hljs"></code></pre>
+            <div class="code-wrap">
+              <pre class="code-gutter"><span v-for="n in lineNumbers" :key="n">{{ n }}</span></pre>
+              <pre class="hljs-code-block"><code ref="codeRef" class="hljs"></code></pre>
+            </div>
           </div>
         </div>
       </div>
@@ -529,8 +543,17 @@ const renderedMarkdown = computed(() => {
 .bc-state { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--color-text-tertiary); font-size: 14px; }
 
 .bc-code { padding: 0; }
-.hljs-code-block { margin: 0; padding: 16px 0; font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
-.hljs-code-block code { display: block; padding: 0 20px; background: transparent !important; white-space: pre; }
+.code-wrap { display: flex; }
+.code-gutter {
+  margin: 0; padding: 16px 8px 16px 16px; flex-shrink: 0;
+  font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 13px; line-height: 1.6;
+  color: var(--color-text-tertiary); opacity: 0.5; text-align: right; user-select: none;
+  white-space: pre; background: var(--color-surface);
+  border-right: 1px solid var(--color-border-light);
+}
+.code-gutter span { display: block; }
+.hljs-code-block { margin: 0; padding: 16px 20px; flex: 1; font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
+.hljs-code-block code { background: transparent !important; white-space: pre; }
 
 .bc-md { padding: 24px 32px; font-size: 14px; line-height: 1.7; color: var(--color-text); }
 .bc-md :deep(h1) { font-size: 24px; font-weight: 700; margin: 24px 0 12px; }
