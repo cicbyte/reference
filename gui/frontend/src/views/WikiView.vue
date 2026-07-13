@@ -546,7 +546,8 @@ onMounted(loadEntries)
       v-model:open="mermaidModalOpen"
       :footer="null"
       :title="null"
-      width="90%"
+      width="80%"
+      centered
       wrap-class-name="mermaid-modal-wrap"
       destroy-on-close
     >
@@ -805,7 +806,7 @@ onMounted(loadEntries)
 .mermaid-rendered svg { max-width: 100%; height: auto; }
 
 .mermaid-modal-viewport {
-  max-height: 70vh; overflow: hidden; cursor: grab;
+  height: calc(80vh - 100px); overflow: hidden; cursor: grab;
   display: flex; align-items: center; justify-content: center;
   background: var(--color-background); border-radius: var(--radius-md);
 }
