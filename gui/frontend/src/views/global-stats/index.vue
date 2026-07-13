@@ -63,9 +63,11 @@ const topProjectMax = computed(() => Math.max(...topProjects.value.map((p) => p.
 const wikiStats = computed(() => {
   const remote = wikiEntries.value.filter((e) => e.source === 'remote')
   const local = wikiEntries.value.filter((e) => e.source === 'local')
+  // platforms / repo coverage only make sense for remote wiki (shared, multi-host);
+  // local wiki is a single private store with no platform concept.
   const platforms = new Set()
   const repoSet = new Set()
-  for (const e of wikiEntries.value) {
+  for (const e of remote) {
     if (e.platform) platforms.add(e.platform)
     if (e.repoName) repoSet.add(e.repoName)
   }
