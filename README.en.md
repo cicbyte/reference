@@ -181,6 +181,18 @@ Install:
 code --install-extension reference-vscode-plugin-0.1.0.vsix
 ```
 
+## Desktop GUI
+
+The `gui/` directory provides a full Wails v2 + Vue 3 desktop client with multi-project management, code browsing, knowledge base viewing, global statistics, visual diagnostics, and more — no terminal required.
+
+👉 **[View GUI docs & screenshots →](gui/README.en.md)**
+
+```bash
+cd gui
+wails build     # build the desktop app
+wails dev       # development mode
+```
+
 ## Usage
 
 ### Repository Management

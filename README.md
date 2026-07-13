@@ -181,6 +181,18 @@ flowchart LR
 code --install-extension reference-vscode-plugin-0.1.0.vsix
 ```
 
+## 桌面 GUI
+
+`gui/` 目录提供完整的 Wails v2 + Vue 3 桌面客户端，支持多项目管理、代码浏览、知识库查看、全局统计、可视化诊断等全部功能，无需终端命令。
+
+👉 **[查看 GUI 文档与界面预览 →](gui/README.md)**
+
+```bash
+cd gui
+wails build     # 构建桌面应用
+wails dev       # 开发模式
+```
+
 ## 使用方法
 
 ### 仓库管理
