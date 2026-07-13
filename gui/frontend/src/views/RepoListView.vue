@@ -17,39 +17,16 @@ import {
   EyeOutlined,
   ArrowLeftOutlined,
 } from '@ant-design/icons-vue'
-import hljs from 'highlight.js/lib/core'
-import hljsGo from 'highlight.js/lib/languages/go'
-import hljsJs from 'highlight.js/lib/languages/javascript'
-import hljsTs from 'highlight.js/lib/languages/typescript'
-import hljsXml from 'highlight.js/lib/languages/xml'
-import hljsCss from 'highlight.js/lib/languages/css'
-import hljsJson from 'highlight.js/lib/languages/json'
-import hljsYaml from 'highlight.js/lib/languages/yaml'
-import hljsMd from 'highlight.js/lib/languages/markdown'
-import hljsPy from 'highlight.js/lib/languages/python'
-import hljsBash from 'highlight.js/lib/languages/bash'
-import hljsSql from 'highlight.js/lib/languages/sql'
-import hljsRust from 'highlight.js/lib/languages/rust'
-import 'highlight.js/styles/github-dark.css'
+import hljs, { hljsLangForName } from '../utils/hljs-setup'
+// Importing the plugin after hljs-setup (which sets window.hljs) augments our
+// hljs instance with lineNumbersBlockSync / lineNumbersValue.
+import 'highlightjs-line-numbers.js/src/highlightjs-line-numbers.js'
 import { marked } from 'marked'
 import { useProjectStore } from '../stores/project'
 import FileTreeNode from '../components/repo/FileTreeNode.vue'
 import AddRepoModal from '../components/repo/AddRepoModal.vue'
 import SccModal from '../components/repo/SccModal.vue'
 import DiagnoseModal from '../components/repo/DiagnoseModal.vue'
-
-hljs.registerLanguage('go', hljsGo)
-hljs.registerLanguage('javascript', hljsJs)
-hljs.registerLanguage('typescript', hljsTs)
-hljs.registerLanguage('xml', hljsXml)
-hljs.registerLanguage('css', hljsCss)
-hljs.registerLanguage('json', hljsJson)
-hljs.registerLanguage('yaml', hljsYaml)
-hljs.registerLanguage('markdown', hljsMd)
-hljs.registerLanguage('python', hljsPy)
-hljs.registerLanguage('bash', hljsBash)
-hljs.registerLanguage('sql', hljsSql)
-hljs.registerLanguage('rust', hljsRust)
 
 const project = useProjectStore()
 const app = window.go?.main?.ReferenceApp
@@ -112,24 +89,11 @@ watch(mdViewMode, (mode) => {
   if (mode === 'source' && selectedFile.value) highlightCode()
 })
 
-const lineNumbers = computed(() => {
-  const n = (fileContent.value || '').split('\n').length
-  return Array.from({ length: n }, (_, i) => i + 1)
-})
 const codeRef = ref(null)
 
 const isMarkdown = computed(() => /\.md$/i.test(selectedFile.value))
 const filename = computed(() => selectedFile.value.split('/').pop() || '')
-
-function hljsLang(name) {
-  const ext = (name.split('.').pop() || '').toLowerCase()
-  const map = {
-    go: 'go', js: 'javascript', ts: 'typescript', html: 'xml', vue: 'xml',
-    css: 'css', json: 'json', yml: 'yaml', yaml: 'yaml', md: 'markdown',
-    py: 'python', sh: 'bash', sql: 'sql', rs: 'rust',
-  }
-  return map[ext] || ''
-}
+const hljsLang = hljsLangForName
 
 async function loadRoot(repoName) {
   if (!app) return
@@ -195,6 +159,9 @@ function highlightCode() {
     } else {
       codeRef.value.textContent = fileContent.value
     }
+    // Wrap each line in a <tr> with its own number cell — guaranteed vertical
+    // alignment because number and code share the same table row.
+    if (hljs.lineNumbersBlockSync) hljs.lineNumbersBlockSync(codeRef.value)
   } catch { codeRef.value.textContent = fileContent.value }
 }
 
@@ -423,10 +390,7 @@ const renderedMarkdown = computed(() => {
           <div v-else-if="fileInfo.binary" class="bc-state">二进制文件</div>
           <div v-else-if="isMarkdown && mdViewMode === 'render'" class="bc-md" v-html="renderedMarkdown"></div>
           <div v-else class="bc-code">
-            <div class="code-wrap">
-              <pre class="code-gutter"><span v-for="n in lineNumbers" :key="n">{{ n }}</span></pre>
-              <pre class="hljs-code-block"><code ref="codeRef" class="hljs"></code></pre>
-            </div>
+            <pre class="hljs-code-block"><code ref="codeRef" class="hljs"></code></pre>
           </div>
         </div>
       </div>
@@ -543,17 +507,23 @@ const renderedMarkdown = computed(() => {
 .bc-state { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--color-text-tertiary); font-size: 14px; }
 
 .bc-code { padding: 0; }
-.code-wrap { display: flex; }
-.code-gutter {
-  margin: 0; padding: 16px 8px 16px 16px; flex-shrink: 0;
+.hljs-code-block {
+  margin: 0; padding: 12px 16px;
   font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 13px; line-height: 1.6;
-  color: var(--color-text-tertiary); opacity: 0.5; text-align: right; user-select: none;
-  white-space: pre; background: var(--color-surface);
-  border-right: 1px solid var(--color-border-light);
+  overflow-x: auto; min-height: 100%;
 }
-.code-gutter span { display: block; }
-.hljs-code-block { margin: 0; padding: 16px 20px; flex: 1; font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; }
-.hljs-code-block code { background: transparent !important; white-space: pre; }
+.hljs-code-block code { background: transparent !important; display: block; }
+
+/* highlightjs-line-numbers.js emits a <table.hljs-ln> with one <tr> per line;
+   each row holds the number cell (.hljs-ln-n) and the code cell (.hljs-ln-code).
+   Because they share a row, vertical alignment is guaranteed. */
+.bc-code :deep(table.hljs-ln) { border-collapse: collapse; }
+.bc-code :deep(td) { padding: 0; vertical-align: top; }
+.bc-code :deep(td.hljs-ln-n) {
+  width: 1px; white-space: nowrap; text-align: right; user-select: none;
+  padding-right: 16px !important; opacity: 0.4; color: var(--color-text-tertiary);
+}
+.bc-code :deep(td.hljs-ln-code) { padding-left: 16px !important; white-space: pre; }
 
 .bc-md { padding: 24px 32px; font-size: 14px; line-height: 1.7; color: var(--color-text); }
 .bc-md :deep(h1) { font-size: 24px; font-weight: 700; margin: 24px 0 12px; }

@@ -15,8 +15,8 @@ import {
   CaretRightFilled,
   WarningOutlined,
 } from '@ant-design/icons-vue'
-import hljs from 'highlight.js/lib/core'
-import 'highlight.js/styles/github-dark.css'
+import hljs, { hljsLangForName } from '../utils/hljs-setup'
+import 'highlightjs-line-numbers.js/src/highlightjs-line-numbers.js'
 import { marked } from 'marked'
 import FileTreeNode from '../components/repo/FileTreeNode.vue'
 
@@ -61,16 +61,7 @@ const selectedRepo = computed(() =>
 
 const isMarkdown = computed(() => /\.md$/i.test(selectedFile.value))
 const filename = computed(() => selectedFile.value.split('/').pop() || '')
-
-function hljsLang(name) {
-  const ext = (name.split('.').pop() || '').toLowerCase()
-  const map = {
-    go: 'go', js: 'javascript', ts: 'typescript', html: 'xml', vue: 'xml',
-    css: 'css', json: 'json', yml: 'yaml', yaml: 'yaml', md: 'markdown',
-    py: 'python', sh: 'bash', sql: 'sql', rs: 'rust',
-  }
-  return map[ext] || ''
-}
+const hljsLang = hljsLangForName
 
 // ---- load repo list (instant — no sizes) ----
 async function loadRepos() {
@@ -236,6 +227,7 @@ function highlightCode() {
     } else {
       codeRef.value.textContent = fileContent.value
     }
+    if (hljs.lineNumbersBlockSync) hljs.lineNumbersBlockSync(codeRef.value)
   } catch { codeRef.value.textContent = fileContent.value }
 }
 
@@ -730,11 +722,21 @@ const renderedMarkdown = computed(() => {
 
 .bc-code { padding: 0; }
 .hljs-code-block {
-  margin: 0; padding: 16px 0;
+  margin: 0; padding: 12px 0;
   font-family: 'Cascadia Code', 'Fira Code', monospace;
   font-size: 13px; line-height: 1.6; overflow-x: auto;
 }
-.hljs-code-block code { display: block; padding: 0 20px; background: transparent !important; white-space: pre; }
+.hljs-code-block code { display: block; background: transparent !important; }
+
+/* highlightjs-line-numbers.js emits <table.hljs-ln>; one <tr> per line. */
+.bc-code :deep(table.hljs-ln) { border-collapse: collapse; }
+.bc-code :deep(td) { padding: 0; vertical-align: top; }
+.bc-code :deep(td.hljs-ln-n) {
+  width: 1px; white-space: nowrap; text-align: right; user-select: none;
+  padding-right: 16px !important; padding-left: 16px !important;
+  opacity: 0.4; color: var(--color-text-tertiary);
+}
+.bc-code :deep(td.hljs-ln-code) { padding-right: 20px !important; white-space: pre; }
 
 /* markdown */
 .bc-md {
