@@ -1,12 +1,25 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
-import { InfoCircleOutlined, FolderOpenOutlined, CopyOutlined } from '@ant-design/icons-vue'
+import {
+  InfoCircleOutlined, FolderOpenOutlined, CopyOutlined,
+  SettingOutlined, DatabaseOutlined, CloudServerOutlined,
+  BookOutlined, FileTextOutlined, GithubOutlined,
+} from '@ant-design/icons-vue'
 import AiSparkIcon from '../common/AiSparkIcon.vue'
 
 const loading = ref(true)
 const version = ref(null)
 const paths = ref(null)
+
+// icon component refs (avoid emoji)
+const pathItems = ref([
+  { label: '配置文件', key: 'config', icon: SettingOutlined },
+  { label: '数据库', key: 'db', icon: DatabaseOutlined },
+  { label: '仓库缓存', key: 'repos', icon: CloudServerOutlined },
+  { label: '知识库', key: 'wiki', icon: BookOutlined },
+  { label: '日志目录', key: 'logDir', icon: FileTextOutlined },
+])
 
 onMounted(async () => {
   try {
@@ -61,22 +74,16 @@ function openDir(dir) {
       <div class="setting-group">
         <div class="group-title">系统路径</div>
         <div class="path-grid">
-          <div v-for="p in [
-            { label: '配置文件', value: paths?.config, icon: '⚙' },
-            { label: '数据库', value: paths?.db, icon: '🗄' },
-            { label: '仓库缓存', value: paths?.repos, icon: '📦' },
-            { label: '知识库', value: paths?.wiki, icon: '📚' },
-            { label: '日志目录', value: paths?.logDir, icon: '📝' },
-          ]" :key="p.label" class="path-cell">
+          <div v-for="p in pathItems" :key="p.key" class="path-cell">
             <div class="path-cell-head">
-              <span class="path-icon">{{ p.icon }}</span>
+              <span class="path-icon"><component :is="p.icon" /></span>
               <span class="path-label">{{ p.label }}</span>
-              <div class="path-actions" v-if="p.value">
-                <a-button size="small" type="text" title="复制" @click="copyText(p.value)"><CopyOutlined /></a-button>
-                <a-button size="small" type="text" title="在文件管理器中打开" @click="openDir(p.value)"><FolderOpenOutlined /></a-button>
+              <div class="path-actions" v-if="paths?.[p.key]">
+                <a-button size="small" type="text" title="复制" @click="copyText(paths[p.key])"><CopyOutlined /></a-button>
+                <a-button size="small" type="text" title="在文件管理器中打开" @click="openDir(paths[p.key])"><FolderOpenOutlined /></a-button>
               </div>
             </div>
-            <div class="path-value mono" :title="p.value">{{ p.value || '—' }}</div>
+            <div class="path-value mono" :title="paths?.[p.key]">{{ paths?.[p.key] || '—' }}</div>
           </div>
         </div>
       </div>
@@ -86,7 +93,7 @@ function openDir(dir) {
         <div class="group-title">资源</div>
         <div class="link-list">
           <a href="https://github.com/cicbyte/reference" target="_blank" class="link-item">
-            <span class="link-ico">⌥</span>
+            <span class="link-ico"><GithubOutlined /></span>
             <div>
               <div class="link-title">GitHub 仓库</div>
               <div class="link-desc">源码、Issue 与发布</div>
@@ -110,8 +117,9 @@ function openDir(dir) {
 }
 .hero-logo {
   display: flex; align-items: center; justify-content: center;
-  width: 64px; height: 64px; flex-shrink: 0;
-  border-radius: var(--radius-md); background: var(--color-primary-bg);
+  width: 56px; height: 56px; flex-shrink: 0;
+  border-radius: var(--radius-md); border: 1px solid var(--color-border);
+  background: var(--color-background);
 }
 .hero-name { font-size: 20px; font-weight: 700; color: var(--color-text); }
 .hero-tagline { font-size: 13px; color: var(--color-text-tertiary); margin-top: 2px; }
@@ -131,7 +139,11 @@ function openDir(dir) {
   background: var(--color-background); border: 1px solid var(--color-border-light);
 }
 .path-cell-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-.path-icon { font-size: 13px; }
+.path-icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; font-size: 13px;
+  color: var(--color-text-tertiary);
+}
 .path-label { font-size: 12px; font-weight: 600; color: var(--color-text-secondary); flex: 1; }
 .path-actions { display: flex; gap: 2px; opacity: 0; transition: opacity var(--transition-fast); }
 .path-cell:hover .path-actions { opacity: 0.7; }
@@ -152,7 +164,7 @@ function openDir(dir) {
 .link-ico {
   display: flex; align-items: center; justify-content: center;
   width: 32px; height: 32px; border-radius: var(--radius-sm);
-  background: var(--color-surface-raised); color: var(--color-primary); font-size: 16px;
+  background: var(--color-surface-raised); color: var(--color-primary); font-size: 18px;
 }
 .link-title { font-size: 13px; font-weight: 500; color: var(--color-text); }
 .link-desc { font-size: 11px; color: var(--color-text-tertiary); }

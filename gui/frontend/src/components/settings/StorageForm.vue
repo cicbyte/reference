@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { message } from 'ant-design-vue'
 import {
   DatabaseOutlined, FolderOpenOutlined, ReloadOutlined,
+  CloudServerOutlined, BookOutlined,
 } from '@ant-design/icons-vue'
 
 const loading = ref(true)
@@ -25,9 +26,9 @@ function formatSize(bytes) {
 }
 
 const usageCards = computed(() => [
-  { key: 'repos', label: '仓库缓存', value: usage.value.repos, path: paths.value?.repos, icon: '📦' },
-  { key: 'wiki', label: '知识库', value: usage.value.wiki, path: paths.value?.wiki, icon: '📚' },
-  { key: 'db', label: '数据库', value: usage.value.db, path: paths.value?.db, icon: '🗄' },
+  { key: 'repos', label: '仓库缓存', value: usage.value.repos, path: paths.value?.repos, icon: CloudServerOutlined },
+  { key: 'wiki', label: '知识库', value: usage.value.wiki, path: paths.value?.wiki, icon: BookOutlined },
+  { key: 'db', label: '数据库', value: usage.value.db, path: paths.value?.db, icon: DatabaseOutlined },
 ])
 
 onMounted(async () => {
@@ -124,7 +125,7 @@ function openDir(dir) {
         </div>
         <div class="usage-grid">
           <div v-for="u in usageCards" :key="u.key" class="usage-card">
-            <div class="usage-icon">{{ u.icon }}</div>
+            <div class="usage-icon"><component :is="u.icon" /></div>
             <div class="usage-body">
               <div class="usage-label">{{ u.label }}</div>
               <div class="usage-value">
@@ -202,7 +203,12 @@ function openDir(dir) {
   padding: 12px; border-radius: var(--radius-sm);
   background: var(--color-background); border: 1px solid var(--color-border-light);
 }
-.usage-icon { font-size: 22px; flex-shrink: 0; }
+.usage-icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: var(--radius-sm);
+  background: var(--color-primary-bg); color: var(--color-primary);
+  font-size: 18px; flex-shrink: 0;
+}
 .usage-body { flex: 1; min-width: 0; }
 .usage-label { font-size: 11px; color: var(--color-text-tertiary); }
 .usage-value { font-size: 16px; font-weight: 600; color: var(--color-text); margin-top: 2px; }
