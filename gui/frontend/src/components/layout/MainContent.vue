@@ -1,6 +1,6 @@
 <script setup>
 import { BranchesOutlined } from '@ant-design/icons-vue'
-import { useLayoutStore } from '../../stores/layout'
+import { useLayoutStore } from '@/stores/layout'
 
 const layout = useLayoutStore()
 </script>

@@ -12,7 +12,7 @@ import {
   CaretRightFilled,
   WarningOutlined,
 } from '@ant-design/icons-vue'
-import { fmtSize } from '../../../utils/format'
+import { fmtSize } from '@/utils/format'
 
 const props = defineProps({
   groupedRepos: { type: Array, default: () => [] },

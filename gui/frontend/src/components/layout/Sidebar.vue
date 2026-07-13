@@ -1,8 +1,8 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useLayoutStore } from '../../stores/layout'
-import { useProjectStore } from '../../stores/project'
+import { useLayoutStore } from '@/stores/layout'
+import { useProjectStore } from '@/stores/project'
 import {
   DashboardOutlined,
   CloudDownloadOutlined,
@@ -17,8 +17,8 @@ import {
   CaretRightFilled,
   BranchesOutlined,
 } from '@ant-design/icons-vue'
-import logoUrl from '../../assets/logo.svg'
-import { formatPath } from '../../utils/path'
+import logoUrl from '@/assets/logo.svg'
+import { formatPath } from '@/utils/path'
 
 const route = useRoute()
 const router = useRouter()

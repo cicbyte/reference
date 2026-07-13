@@ -1,8 +1,8 @@
 <script setup>
 import { computed } from 'vue'
 import { ApiOutlined, DatabaseOutlined } from '@ant-design/icons-vue'
-import { agentDisplayName } from '../../../utils/agents'
-import { useProjectStore } from '../../../stores/project'
+import { agentDisplayName } from '@/utils/agents'
+import { useProjectStore } from '@/stores/project'
 
 const props = defineProps({
   agents: { type: Array, default: () => [] },

@@ -11,7 +11,7 @@ import {
   ReloadOutlined,
   DeleteOutlined,
 } from '@ant-design/icons-vue'
-import { formatPath } from '../../utils/path'
+import { formatPath } from '@/utils/path'
 
 const props = defineProps({
   open: { type: Boolean, default: false },

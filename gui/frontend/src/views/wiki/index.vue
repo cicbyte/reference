@@ -9,11 +9,11 @@ import {
   EyeOutlined,
   CodeOutlined,
 } from '@ant-design/icons-vue'
-import { useLayoutStore } from '../../stores/layout'
-import { formatPath } from '../../utils/path'
-import { renderMarkdown } from '../../utils/markdown'
-import { useMermaid } from '../../composables/useMermaid'
-import MermaidModal from '../../components/shared/MermaidModal.vue'
+import { useLayoutStore } from '@/stores/layout'
+import { formatPath } from '@/utils/path'
+import { renderMarkdown } from '@/utils/markdown'
+import { useMermaid } from '@/composables/useMermaid'
+import MermaidModal from '@/components/shared/MermaidModal.vue'
 import WikiRail from './components/WikiRail.vue'
 
 const app = window.go?.main?.ReferenceApp

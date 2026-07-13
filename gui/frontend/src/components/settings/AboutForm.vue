@@ -6,8 +6,8 @@ import {
   SettingOutlined, DatabaseOutlined, CloudServerOutlined,
   BookOutlined, FileTextOutlined, GithubOutlined,
 } from '@ant-design/icons-vue'
-import AiSparkIcon from '../common/AiSparkIcon.vue'
-import { formatPath } from '../../utils/path'
+import AiSparkIcon from '@/components/common/AiSparkIcon.vue'
+import { formatPath } from '@/utils/path'
 
 const loading = ref(true)
 const version = ref(null)

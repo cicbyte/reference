@@ -2,8 +2,8 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { MinusOutlined, BorderOutlined, CloseOutlined, MenuFoldOutlined, MenuUnfoldOutlined, AppstoreOutlined, SettingOutlined } from '@ant-design/icons-vue'
-import { useLayoutStore } from '../../stores/layout'
-import { useThemeStore } from '../../stores/theme'
+import { useLayoutStore } from '@/stores/layout'
+import { useThemeStore } from '@/stores/theme'
 import { useRouter } from 'vue-router'
 
 const route = useRoute()

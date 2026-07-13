@@ -13,11 +13,11 @@ import {
   MedicineBoxOutlined,
   CopyOutlined,
 } from '@ant-design/icons-vue'
-import { useProjectStore } from '../../stores/project'
-import DiagnoseModal from '../../components/repo/DiagnoseModal.vue'
-import { formatPath } from '../../utils/path'
-import { agentDisplayName } from '../../utils/agents'
-import { useProjectActions } from '../../composables/useProjectActions'
+import { useProjectStore } from '@/stores/project'
+import DiagnoseModal from '@/components/repo/DiagnoseModal.vue'
+import { formatPath } from '@/utils/path'
+import { agentDisplayName } from '@/utils/agents'
+import { useProjectActions } from '@/composables/useProjectActions'
 
 const router = useRouter()
 const project = useProjectStore()

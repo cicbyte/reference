@@ -15,11 +15,11 @@ import {
   FileOutlined,
   CloudDownloadOutlined,
 } from '@ant-design/icons-vue'
-import { useProjectStore } from '../../stores/project'
-import CodeBrowser from '../../components/shared/CodeBrowser.vue'
-import AddRepoModal from '../../components/repo/AddRepoModal.vue'
-import SccModal from '../../components/repo/SccModal.vue'
-import DiagnoseModal from '../../components/repo/DiagnoseModal.vue'
+import { useProjectStore } from '@/stores/project'
+import CodeBrowser from '@/components/shared/CodeBrowser.vue'
+import AddRepoModal from '@/components/repo/AddRepoModal.vue'
+import SccModal from '@/components/repo/SccModal.vue'
+import DiagnoseModal from '@/components/repo/DiagnoseModal.vue'
 import RepoRail from './components/RepoRail.vue'
 
 const project = useProjectStore()

@@ -4,9 +4,9 @@ import { message } from 'ant-design-vue'
 import {
   CheckOutlined, FolderOpenOutlined, ExclamationCircleFilled,
 } from '@ant-design/icons-vue'
-import AiSparkIcon from '../common/AiSparkIcon.vue'
-import { useProjectStore } from '../../stores/project'
-import { formatPath, joinPath } from '../../utils/path'
+import AiSparkIcon from '@/components/common/AiSparkIcon.vue'
+import { useProjectStore } from '@/stores/project'
+import { formatPath, joinPath } from '@/utils/path'
 
 const project = useProjectStore()
 const app = window.go?.main?.ReferenceApp

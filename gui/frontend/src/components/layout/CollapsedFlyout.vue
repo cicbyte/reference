@@ -6,7 +6,7 @@
  */
 import { ref } from 'vue'
 import { AppstoreOutlined, FolderOutlined, WarningOutlined, PlusOutlined } from '@ant-design/icons-vue'
-import { formatPath } from '../../utils/path'
+import { formatPath } from '@/utils/path'
 
 defineProps({
   projects: { type: Array, default: () => [] },

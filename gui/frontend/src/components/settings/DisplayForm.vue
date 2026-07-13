@@ -2,8 +2,8 @@
 import { computed } from 'vue'
 import { message } from 'ant-design-vue'
 import { BgColorsOutlined } from '@ant-design/icons-vue'
-import { useThemeStore } from '../../stores/theme'
-import { useLayoutStore } from '../../stores/layout'
+import { useThemeStore } from '@/stores/theme'
+import { useLayoutStore } from '@/stores/layout'
 
 const theme = useThemeStore()
 const layout = useLayoutStore()

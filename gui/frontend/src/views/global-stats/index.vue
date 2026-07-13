@@ -4,9 +4,9 @@ import {
   FolderOutlined, DatabaseOutlined, CloudServerOutlined,
   ReadOutlined, HddOutlined, WarningOutlined,
 } from '@ant-design/icons-vue'
-import AiSparkIcon from '../../components/common/AiSparkIcon.vue'
-import { fmtSize } from '../../utils/format'
-import { agentNameMap } from '../../utils/agents'
+import AiSparkIcon from '@/components/common/AiSparkIcon.vue'
+import { fmtSize } from '@/utils/format'
+import { agentNameMap } from '@/utils/agents'
 
 const app = window.go?.main?.ReferenceApp
 

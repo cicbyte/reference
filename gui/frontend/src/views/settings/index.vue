@@ -7,13 +7,13 @@ import {
   FileTextOutlined,
   InfoCircleOutlined,
 } from '@ant-design/icons-vue'
-import AiSparkIcon from '../../components/common/AiSparkIcon.vue'
-import DisplayForm from '../../components/settings/DisplayForm.vue'
-import StorageForm from '../../components/settings/StorageForm.vue'
-import NetworkForm from '../../components/settings/NetworkForm.vue'
-import LoggingForm from '../../components/settings/LoggingForm.vue'
-import ProjectForm from '../../components/settings/ProjectForm.vue'
-import AboutForm from '../../components/settings/AboutForm.vue'
+import AiSparkIcon from '@/components/common/AiSparkIcon.vue'
+import DisplayForm from '@/components/settings/DisplayForm.vue'
+import StorageForm from '@/components/settings/StorageForm.vue'
+import NetworkForm from '@/components/settings/NetworkForm.vue'
+import LoggingForm from '@/components/settings/LoggingForm.vue'
+import ProjectForm from '@/components/settings/ProjectForm.vue'
+import AboutForm from '@/components/settings/AboutForm.vue'
 
 const tabs = [
   { key: 'display', icon: BgColorsOutlined, label: '显示' },

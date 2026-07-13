@@ -14,8 +14,8 @@ import {
   CloudServerOutlined,
   WarningOutlined,
 } from '@ant-design/icons-vue'
-import { formatPath } from '../../utils/path'
-import CodeBrowser from '../../components/shared/CodeBrowser.vue'
+import { formatPath } from '@/utils/path'
+import CodeBrowser from '@/components/shared/CodeBrowser.vue'
 import CacheRail from './components/CacheRail.vue'
 
 const app = window.go?.main?.ReferenceApp

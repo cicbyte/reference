@@ -23,10 +23,10 @@ import {
   SearchOutlined, FileOutlined, FileTextOutlined,
   CodeOutlined, EyeOutlined, ArrowLeftOutlined,
 } from '@ant-design/icons-vue'
-import hljs, { hljsLangForName } from '../../utils/hljs-setup'
+import hljs, { hljsLangForName } from '@/utils/hljs-setup'
 import 'highlightjs-line-numbers.js/src/highlightjs-line-numbers.js'
-import { renderMarkdown } from '../../utils/markdown'
-import FileTreeNode from '../repo/FileTreeNode.vue'
+import { renderMarkdown } from '@/utils/markdown'
+import FileTreeNode from '@/components/repo/FileTreeNode.vue'
 
 const props = defineProps({
   api: { type: Object, required: true },

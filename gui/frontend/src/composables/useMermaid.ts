@@ -15,7 +15,7 @@
  */
 import { ref, watch } from 'vue'
 import mermaid from 'mermaid'
-import { useThemeStore } from '../stores/theme'
+import { useThemeStore } from '@/stores/theme'
 
 export function useMermaid(contentSelector = '.wc-md .language-mermaid') {
   const themeStore = useThemeStore()

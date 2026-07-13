@@ -1,7 +1,7 @@
 <script setup>
 import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { useLayoutStore } from '../../stores/layout'
+import { useLayoutStore } from '@/stores/layout'
 import ProjectRail from './ProjectRail.vue'
 import Sidebar from './Sidebar.vue'
 import Navbar from './Navbar.vue'

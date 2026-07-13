@@ -6,9 +6,9 @@ import {
   MedicineBoxOutlined,
   CloudDownloadOutlined,
 } from '@ant-design/icons-vue'
-import { useProjectStore } from '../../stores/project'
-import { formatPath } from '../../utils/path'
-import DiagnoseModal from '../../components/repo/DiagnoseModal.vue'
+import { useProjectStore } from '@/stores/project'
+import { formatPath } from '@/utils/path'
+import DiagnoseModal from '@/components/repo/DiagnoseModal.vue'
 import StatCards from './components/StatCards.vue'
 import InfoCards from './components/InfoCards.vue'
 import RepoGrid from './components/RepoGrid.vue'

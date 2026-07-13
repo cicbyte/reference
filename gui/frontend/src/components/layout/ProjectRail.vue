@@ -9,12 +9,12 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from '@ant-design/icons-vue'
-import { useProjectStore } from '../../stores/project'
-import { useLayoutStore } from '../../stores/layout'
-import { formatPath } from '../../utils/path'
-import { useProjectActions } from '../../composables/useProjectActions'
-import DiagnoseModal from '../repo/DiagnoseModal.vue'
-import ProjectContextMenu from '../shared/ProjectContextMenu.vue'
+import { useProjectStore } from '@/stores/project'
+import { useLayoutStore } from '@/stores/layout'
+import { formatPath } from '@/utils/path'
+import { useProjectActions } from '@/composables/useProjectActions'
+import DiagnoseModal from '@/components/repo/DiagnoseModal.vue'
+import ProjectContextMenu from '@/components/shared/ProjectContextMenu.vue'
 import CollapsedFlyout from './CollapsedFlyout.vue'
 
 const props = defineProps({

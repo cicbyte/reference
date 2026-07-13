@@ -10,7 +10,7 @@
  */
 import { ref } from 'vue'
 import { message, Modal } from 'ant-design-vue'
-import { useProjectStore } from '../stores/project'
+import { useProjectStore } from '@/stores/project'
 
 interface ProjectLike {
   dir: string

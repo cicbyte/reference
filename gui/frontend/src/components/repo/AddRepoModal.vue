@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { message } from 'ant-design-vue'
-import { useProjectStore } from '../../stores/project'
+import { useProjectStore } from '@/stores/project'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
