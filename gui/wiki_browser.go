@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -30,6 +31,7 @@ type WikiEntry struct {
 	Status      string `json:"status"`      // "ok" | "empty" | "no-fm" (fetched async)
 	ExploredAt  string `json:"exploredAt"`  // from frontmatter
 	ModifiedAt  string `json:"modifiedAt"`  // file mtime (RFC3339)
+	GitStatus   string `json:"gitStatus"`   // "committed" | "modified" | "untracked" | ""
 }
 
 // resolveWikiRoot returns the on-disk directory for the given source.
@@ -42,6 +44,42 @@ func resolveWikiRoot(source string) (string, error) {
 	default:
 		return "", fmt.Errorf("未知 source: %s", source)
 	}
+}
+
+// wikiGitStatusMap runs `git status --porcelain` once for the given wiki root
+// and returns a map of slash-joined relative path → short git status code.
+// Possible codes: "M" (modified), "A" (staged-new), "??" (untracked), "D" (deleted).
+// Files NOT in the map are clean (committed, no changes).
+func wikiGitStatusMap(wikiRoot string) map[string]string {
+	out, err := exec.Command("git", "-C", wikiRoot, "status", "--porcelain").CombinedOutput()
+	if err != nil {
+		return nil // not a git repo or git unavailable — leave all as committed
+	}
+	m := make(map[string]string)
+	for _, line := range strings.Split(string(out), "\n") {
+		if len(line) < 3 {
+			continue
+		}
+		// porcelain format: "XY path" where XY are 2 status chars
+		code := strings.TrimSpace(line[:2])
+		path := strings.TrimSpace(line[3:])
+		// strip surrounding quotes (git quotes paths with special chars)
+		if len(path) >= 2 && path[0] == '"' && path[len(path)-1] == '"' {
+			path = path[1 : len(path)-1]
+		}
+		path = filepath.ToSlash(path)
+		switch {
+		case strings.Contains(code, "?"):
+			m[path] = "untracked"
+		case strings.Contains(code, "D"):
+			m[path] = "deleted"
+		case code == "A" || code == "AM":
+			m[path] = "modified" // newly added (staged) — show as not-yet-pushed
+		default:
+			m[path] = "modified"
+		}
+	}
+	return m
 }
 
 // ListWikiEntries walks the wiki (source="remote") or localwiki (source="local")
@@ -61,6 +99,9 @@ func (a *ReferenceApp) ListWikiEntries(source string) ([]WikiEntry, error) {
 		if err != nil {
 			continue
 		}
+		// Build a git status map once per wiki root so each entry can show
+		// whether it's committed / modified / untracked.
+		statusMap := wikiGitStatusMap(root)
 		walkErr := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 			if err != nil {
 				return nil
@@ -85,6 +126,12 @@ func (a *ReferenceApp) ListWikiEntries(source string) ([]WikiEntry, error) {
 			// file mtime
 			if info, ierr := d.Info(); ierr == nil {
 				entry.ModifiedAt = info.ModTime().Format("2006-01-02")
+			}
+			// git tracking status (committed if not in the dirty map)
+			if gs, ok := statusMap[rel]; ok {
+				entry.GitStatus = gs
+			} else {
+				entry.GitStatus = "committed"
 			}
 			entries = append(entries, entry)
 			return nil

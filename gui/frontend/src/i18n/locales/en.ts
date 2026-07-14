@@ -288,6 +288,9 @@ export default {
     statusNoFm: 'No frontmatter',
     commit: 'Commit',
     exploredAt: 'Explored',
+    gitCommitted: 'Committed',
+    gitModified: 'Modified',
+    gitUntracked: 'Untracked',
   },
 
   localWiki: {
@@ -310,6 +313,9 @@ export default {
     statusNoFm: 'No frontmatter',
     commit: 'Commit',
     exploredAt: 'Explored',
+    gitCommitted: 'Committed',
+    gitModified: 'Modified',
+    gitUntracked: 'Untracked',
   },
 
   globalList: {

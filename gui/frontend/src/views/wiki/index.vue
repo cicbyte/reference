@@ -308,6 +308,9 @@ onMounted(loadEntries)
               </div>
               <div class="wf-item-meta">
                 <span v-if="file.fileName !== 'reference.md'" class="wf-topic-tag">{{ t('wiki.topic') }}</span>
+                <span v-if="file.gitStatus && file.gitStatus !== 'committed'" class="wf-git-tag" :class="'git-' + file.gitStatus">
+                  {{ file.gitStatus === 'modified' ? t('wiki.gitModified') : t('wiki.gitUntracked') }}
+                </span>
                 <span v-if="file.status && file.status !== 'ok'" class="wf-status-tag" :class="'st-' + file.status">
                   {{ statusLabel(file.status) }}
                 </span>
@@ -359,6 +362,10 @@ onMounted(loadEntries)
         <div class="wc-meta">
           <span v-if="selectedEntry.namespace">{{ selectedEntry.namespace }}/</span>
           <span class="wc-platform">{{ selectedEntry.platform }}</span>
+          <span v-if="selectedEntry.gitStatus && selectedEntry.gitStatus !== 'committed'" class="wc-git-badge" :class="'git-' + selectedEntry.gitStatus">
+            {{ selectedEntry.gitStatus === 'modified' ? t('wiki.gitModified') : t('wiki.gitUntracked') }}
+          </span>
+          <span v-if="selectedEntry.gitStatus === 'committed'" class="wc-git-badge git-committed">{{ t('wiki.gitCommitted') }}</span>
           <span v-if="selectedEntry.commit" class="wc-commit">{{ selectedEntry.commit }}</span>
           <span v-if="selectedEntry.exploredAt" class="wc-date">{{ selectedEntry.exploredAt }}</span>
         </div>
@@ -436,6 +443,10 @@ onMounted(loadEntries)
   border-radius: 3px; background: var(--color-primary-bg); color: var(--color-primary);
 }
 .wf-problem { border-left: 2px solid var(--color-warning); }
+.wf-git-tag { font-size: 9px; font-weight: 600; padding: 0 4px; border-radius: 3px; }
+.wf-git-tag.git-modified { background: var(--color-warning-bg); color: var(--color-warning); }
+.wf-git-tag.git-untracked { background: var(--color-error-bg); color: var(--color-error); }
+.wf-git-tag.git-committed { background: var(--color-success-bg); color: var(--color-success); }
 .wf-status-tag {
   font-size: 9px; font-weight: 600; padding: 0 4px; border-radius: 3px;
 }
@@ -472,6 +483,10 @@ onMounted(loadEntries)
 .wc-platform { color: var(--color-text-secondary); }
 .wc-commit { font-family: 'Cascadia Code', monospace; }
 .wc-date { font-family: 'Cascadia Code', monospace; }
+.wc-git-badge { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 3px; }
+.wc-git-badge.git-committed { background: var(--color-success-bg); color: var(--color-success); }
+.wc-git-badge.git-modified { background: var(--color-warning-bg); color: var(--color-warning); }
+.wc-git-badge.git-untracked { background: var(--color-error-bg); color: var(--color-error); }
 
 .wc-body { flex: 1; overflow-y: auto; min-height: 0; }
 .wc-body::-webkit-scrollbar { width: 8px; }

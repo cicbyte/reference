@@ -289,6 +289,9 @@ export default {
     statusNoFm: '无元数据',
     commit: '提交',
     exploredAt: '探索时间',
+    gitCommitted: '已提交',
+    gitModified: '已修改',
+    gitUntracked: '未跟踪',
   },
 
   localWiki: {
@@ -311,6 +314,9 @@ export default {
     statusNoFm: '无元数据',
     commit: '提交',
     exploredAt: '探索时间',
+    gitCommitted: '已提交',
+    gitModified: '已修改',
+    gitUntracked: '未跟踪',
   },
 
   globalList: {

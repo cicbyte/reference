@@ -379,6 +379,7 @@ export namespace main {
 	    status: string;
 	    exploredAt: string;
 	    modifiedAt: string;
+	    gitStatus: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new WikiEntry(source);
@@ -399,6 +400,7 @@ export namespace main {
 	        this.status = source["status"];
 	        this.exploredAt = source["exploredAt"];
 	        this.modifiedAt = source["modifiedAt"];
+	        this.gitStatus = source["gitStatus"];
 	    }
 	}
 
