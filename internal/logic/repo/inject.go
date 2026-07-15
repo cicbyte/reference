@@ -136,7 +136,7 @@ func (p *InjectProcessor) Execute(ctx context.Context) (string, error) {
 			continue
 		}
 		baseDir := filepath.Join(p.config.ProjectDir, cfg.BaseDir)
-		files := p.injectAgentFiles(baseDir, cfg.Files)
+		files := p.injectAgentFiles(agentID, baseDir, cfg.Files)
 		injectedFiles = append(injectedFiles, files...)
 	}
 
@@ -188,7 +188,7 @@ func (p *InjectProcessor) repairSymlinks(reposDir string, repos []models.Repo) i
 	return fixed
 }
 
-func (p *InjectProcessor) injectAgentFiles(baseDir string, files []AgentFile) []string {
+func (p *InjectProcessor) injectAgentFiles(agentID, baseDir string, files []AgentFile) []string {
 	var updated []string
 	for _, f := range files {
 		dst := filepath.Join(baseDir, f.DestPath)
@@ -196,13 +196,97 @@ func (p *InjectProcessor) injectAgentFiles(baseDir string, files []AgentFile) []
 			log.Warn("创建目录失败", zap.String("path", filepath.Dir(dst)), zap.Error(err))
 			continue
 		}
-		if err := extractEmbedded(f.EmbedPath, dst); err != nil {
+		data, err := readEmbedded(f.EmbedPath)
+		if err != nil {
+			log.Warn("读取嵌入资源失败", zap.String("file", f.EmbedPath), zap.Error(err))
+			continue
+		}
+		// Transform frontmatter for platforms whose agent format differs from
+		// the canonical Claude Code template.
+		if agentID == "mimocode" {
+			data = transformMimocodeFrontmatter(data)
+		}
+		if err := os.WriteFile(dst, data, 0644); err != nil {
 			log.Warn("注入文件失败", zap.String("file", f.DestPath), zap.Error(err))
 		} else {
 			updated = append(updated, filepath.Base(f.DestPath))
 		}
 	}
 	return updated
+}
+
+// transformMimocodeFrontmatter rewrites the agent frontmatter from the
+// canonical "tools: Read, Grep, Glob, Bash, Write" (a comma-separated tool
+// whitelist, as used by Claude Code / ZCode / OpenCode) into MiMo Code's
+// boolean permission flags:
+//
+//   tools:
+//     read: true
+//     grep: true
+//     glob: true
+//     bash: true
+//     write: true
+//     edit: false
+//
+// Also adds `mode: subagent` so the agent runs in an isolated context (MiMo
+// Code supports this natively; other platforms ignore the field).
+func transformMimocodeFrontmatter(data []byte) []byte {
+	content := string(data)
+	// find the closing frontmatter delimiter
+	end := strings.Index(content[3:], "\n---")
+	if !strings.HasPrefix(content, "---") || end < 0 {
+		return data // no valid frontmatter — return as-is
+	}
+	fmEnd := 3 + end + 4 // position after closing "---\n"
+	fm := content[:fmEnd]
+	body := content[fmEnd:]
+
+	// Extract the tools line and convert
+	toolsLine := ""
+	for _, line := range strings.Split(fm, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "tools:") {
+			toolsLine = strings.TrimSpace(line)
+			break
+		}
+	}
+
+	// Parse comma-separated tool names into a set
+	toolSet := map[string]bool{}
+	if toolsLine != "" {
+		parts := strings.Split(strings.TrimPrefix(toolsLine, "tools:"), ",")
+		for _, p := range parts {
+			toolSet[strings.ToLower(strings.TrimSpace(p))] = true
+		}
+	}
+
+	// Build MiMo Code boolean permission block.
+	// The canonical template grants: Read, Grep, Glob, Bash, Write
+	// Map each to MiMo's permission keys; default unlisted tools to false.
+	mimoTools := "\ntools:\n" +
+		fmt.Sprintf("  read: %v\n", toolSet["read"]) +
+		fmt.Sprintf("  grep: %v\n", toolSet["grep"]) +
+		fmt.Sprintf("  glob: %v\n", toolSet["glob"]) +
+		fmt.Sprintf("  bash: %v\n", toolSet["bash"]) +
+		fmt.Sprintf("  write: %v\n", toolSet["write"]) +
+		fmt.Sprintf("  edit: %v\n", toolSet["edit"])
+
+	// Replace the old "tools: ..." line with the new block
+	var newFm []string
+	for _, line := range strings.Split(fm, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "tools:") {
+			newFm = append(newFm, strings.TrimSuffix(mimoTools, "\n"))
+		} else {
+			newFm = append(newFm, line)
+		}
+	}
+	result := strings.Join(newFm, "\n")
+
+	// Add mode: subagent before the closing --- (if not already present)
+	if !strings.Contains(result, "mode:") {
+		result = strings.TrimSuffix(result, "---") + "mode: subagent\n---"
+	}
+
+	return []byte(result + body)
 }
 
 func (p *InjectProcessor) injectWikiJunctions(wikiJunctionDir string, repos []repoData) []string {

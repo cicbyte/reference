@@ -1,14 +1,14 @@
 # AI 编程 Agent 平台适配调研报告
 
-> **实现状态（2026-04）**：本报告是历史调研文档。当前 `reference` 已实现完整子代理 + Skill 注入的平台有 5 个，按 `reference init --agent <name>` 选择：
+> **实现状态（2026-07）**：本报告是历史调研文档。当前 `reference` 已实现完整子代理 + Skill 注入的平台有 5 个，按 `reference init --agent <name>` 选择：
 >
 > | 助手 | 配置值 | agents 目录 | skills 目录 | agent 格式 |
 > |:---|:---|:---|:---|:---|
-> | Claude Code | `claude` | `.claude/agents/` | `.claude/skills/` | Markdown |
+> | Claude Code | `claude` | `.claude/agents/` | `.claude/skills/` | Markdown（YAML frontmatter） |
 > | Codex | `codex` | `.codex/agents/` | `.codex/skills/` | TOML |
 > | OpenCode | `opencode` | `.opencode/agents/` | `.opencode/skills/` | Markdown |
 > | ZCode | `zcode` | `.zcode/cli/agents/` | `.zcode/skills/` | Markdown |
-> | MiMo Code | `mimocode` | `.mimocode/agents/` | `.mimocode/skills/` | Markdown |
+> | MiMo Code | `mimocode` | `.mimocode/agents/` | `.mimocode/skills/` | Markdown（YAML frontmatter） |
 >
 > 其他平台（Cursor / Windsurf / Cline / Continue / Roo / Copilot 等）目前未做自动注入，可通过引导 AI 查看 `.reference/` 目录使用。下文为调研分析，仅供后续扩展参考。
 
@@ -18,11 +18,11 @@
 
 ## 调研范围
 
-共调研 **16 个平台**，按类型分为三组：
+共调研 **17 个平台**，按类型分为三组：
 
 | 类型         | 平台                                                                   |
 | :--------- | :------------------------------------------------------------------- |
-| CLI 工具     | Claude Code、OpenAI Codex CLI、Aider、Amp、OpenCode、Goose                |
+| CLI 工具     | Claude Code、OpenAI Codex CLI、Aider、Amp、OpenCode、Goose、MiMo Code      |
 | VS Code 扩展 | Cursor、Windsurf、Cline、Continue、Roo Code、Copilot、Kodu AI、Augment Code |
 | IDE        | Trae                                                                 |
 
@@ -388,6 +388,79 @@
 
 ***
 
+### 17. MiMo Code（小米）
+
+> **reference 已适配** — 配置值 `mimocode`，注入 `.mimocode/agents/` + `.mimocode/skills/`
+
+**官方文档**: [mimo.xiaomi.com/zh/mimocode/agents](https://mimo.xiaomi.com/zh/mimocode/agents)
+
+**指令文件**: `MIMOCODE.md`（项目根目录，零配置自动发现）
+
+**代理系统**: `.mimocode/agents/*.md`（YAML frontmatter 定义 `name`、`description`、`tools`、`mode`）
+
+**代理类型**:
+
+| 类型 | 说明 | 调用方式 |
+|:--|:--|:--|
+| **项目代理** | 存放在 `.mimocode/agents/`，随项目分发 | 会话中 `@代理名` 或界面切换 |
+| **用户代理** | 存放在 `~/.mimocode/agents/`，全局可用 | 同上 |
+
+**代理 frontmatter 格式**（MiMo Code 使用**布尔权限开关**，而非逗号分隔的工具列表）:
+
+```yaml
+---
+name: reference-explorer
+description: 探索特定仓库源码，沉淀为 Markdown 知识文件
+tools:                    # 布尔权限，true=允许 / false=禁止
+  read: true
+  grep: true
+  glob: true
+  bash: true
+  write: true
+  edit: false
+mode: subagent            # 可选：subagent / primary
+---
+
+<Markdown 正文：系统提示词>
+```
+
+> **与 Claude Code 的格式差异**: Claude Code 使用 `tools: Read, Grep, Glob, Bash, Write`（逗号分隔的工具名列表），MiMo Code 使用嵌套的布尔权限块。`reference` 在注入时自动转换此格式（见 `inject.go` 的 `transformMimocodeFrontmatter`）。
+
+- `mode: subagent` — 在隔离子代理中运行（不污染主对话上下文），reference 的双子代理架构依赖此特性
+- `mode: primary` — 作为主代理替换默认行为
+- 不指定 `mode` — 默认行为
+- `tools` 权限可精确控制每个工具类别的访问
+
+**Skill 系统**: `.mimocode/skills/<name>/SKILL.md`（YAML frontmatter `name` + `description` + Markdown 正文）
+
+**MCP 配置**: `.mimocode/mcp.json`（项目级）
+
+**关键特性**:
+
+- 会话中 `@代理名` 提及调用代理，或通过界面切换
+- 代理支持工具白名单限制（`tools:` 字段），可精确控制权限
+- `mode: subagent` 提供上下文隔离，探索任务在子代理中完成
+- 兼容 Markdown + YAML frontmatter 格式，与 Claude Code 格式高度相似
+- 内置 Plan 代理（分析代码、审查建议，不做代码更改）
+
+**适配实现**:
+
+```
+.mimocode/
+├── agents/
+│   ├── reference-explorer.md     # 探索子代理（mode: subagent）
+│   └── reference-analyzer.md     # 分析子代理（mode: subagent）
+└── skills/
+    └── reference/
+        └── SKILL.md              # reference Skill
+```
+
+reference 注入的 agent 文件使用标准 YAML frontmatter，MiMo Code 会自动发现并通过 `@` 提及调用。`mode: subagent` 确保探索在隔离子代理中运行，主对话不受源码污染。
+
+**适配难度**: ★☆☆☆☆（格式与 Claude Code 高度相似，已原生支持）
+
+***
+
 ## 二、跨平台兼容标准
 
 ### AGENTS.md 标准
@@ -459,6 +532,10 @@ reference 的价值在于让 AI Agent 零延迟查阅本地仓库源码。适配
 | 优先级          | 平台               | 理由                                                   |
 | :----------- | :--------------- | :--------------------------------------------------- |
 | **P0 — 已适配** | Claude Code      | 原生支持，Skill + Agent + MCP 完整实现                        |
+| **P0 — 已适配** | MiMo Code       | Agent frontmatter + Skill 格式与 Claude Code 高度相似，`mode: subagent` 原生支持上下文隔离 |
+| **P0 — 已适配** | ZCode           | `.zcode/cli/agents/` + `.zcode/skills/`，Markdown 格式       |
+| **P0 — 已适配** | Codex           | AGENTS.md + Skill + 子代理体系，TOML 格式                     |
+| **P0 — 已适配** | OpenCode        | 天然兼容 CLAUDE.md，`.opencode/agents/` + `.opencode/skills/`  |
 | **P1 — 高价值** | OpenAI Codex CLI | AGENTS.md + Skill + 子代理 + MCP 完整体系，与 Claude Code 最相似 |
 | **P1 — 高价值** | Cursor           | 市占率高，有规则 + MCP，但无子代理/Skill                           |
 | **P1 — 高价值** | Roo Code         | 开源，有自定义模式 + MCP，社区活跃                                 |
@@ -697,10 +774,11 @@ func InjectForPlatform(projectDir string, platform string) error
 
 | 维度        | 结论                                                                        |
 | :-------- | :------------------------------------------------------------------------ |
-| **最容易适配** | Claude Code（已适配）、OpenCode（天然兼容 CLAUDE.md）、Amp（Skill 系统相似）、Cline（兼容多格式）    |
-| **最值得适配** | OpenAI Codex CLI（体系最相似）、Cursor（市占率）、Roo Code（自定义模式）、Windsurf（Workflows）   |
+| **已适配平台** | Claude Code、MiMo Code、ZCode、Codex、OpenCode — 共 5 个平台已实现完整子代理 + Skill 注入        |
+| **最容易适配** | Claude Code（已适配）、MiMo Code（已适配，frontmatter 格式相似）、OpenCode（天然兼容 CLAUDE.md）、Amp（Skill 系统相似）、Cline（兼容多格式） |
+| **最值得适配** | Cursor（市占率）、Roo Code（自定义模式）、Windsurf（Workflows）、Continue（config.ts 可编程化）      |
 | **最难适配**  | Aider（无 MCP/Skill/规则）、Kodu AI（极简）                                         |
-| **最大挑战**  | 子代理隔离 — 仅 Claude Code、Codex CLI 和 Amp 支持真正的上下文隔离                          |
+| **最大挑战**  | 子代理隔离 — Claude Code、MiMo Code（`mode: subagent`）、Codex CLI、Amp 和 ZCode 支持真正的上下文隔离 |
 | **通用方案**  | AGENTS.md + CLAUDE.md + MCP 配置是跨平台兼容性最好的组合                                |
-| **推荐策略**  | Phase 1 指令注入覆盖 16 个平台 → Phase 2 规则转换覆盖 10 个平台 → Phase 3 MCP 服务器实现跨平台上下文隔离 |
+| **推荐策略**  | Phase 1 指令注入覆盖 17 个平台 → Phase 2 规则转换覆盖 10 个平台 → Phase 3 MCP 服务器实现跨平台上下文隔离 |
 
