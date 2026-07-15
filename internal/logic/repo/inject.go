@@ -203,8 +203,11 @@ func (p *InjectProcessor) injectAgentFiles(agentID, baseDir string, files []Agen
 		}
 		// Transform frontmatter for platforms whose agent format differs from
 		// the canonical Claude Code template.
-		if agentID == "mimocode" {
+		switch agentID {
+		case "mimocode":
 			data = transformMimocodeFrontmatter(data)
+		case "opencode":
+			data = transformOpencodeFrontmatter(data)
 		}
 		if err := os.WriteFile(dst, data, 0644); err != nil {
 			log.Warn("注入文件失败", zap.String("file", f.DestPath), zap.Error(err))
@@ -287,6 +290,77 @@ func transformMimocodeFrontmatter(data []byte) []byte {
 	}
 
 	return []byte(result + body)
+}
+
+// transformOpencodeFrontmatter rewrites the agent frontmatter from the
+// canonical Claude Code format into OpenCode's native format.
+//
+// Key differences from the template:
+//   - OpenCode has NO `name` field (the filename is the agent name).
+//   - `tools: Read, Grep, ...` (comma list) → `permission:` block with
+//     allow/deny tri-state values (OpenCode's `tools` field is deprecated).
+//   - `mode: subagent` is required for context isolation.
+//
+// Example output:
+//
+//   ---
+//   description: ...
+//   mode: subagent
+//   permission:
+//     read: allow
+//     grep: allow
+//     glob: allow
+//     bash: allow
+//     write: allow
+//     edit: deny
+//   ---
+func transformOpencodeFrontmatter(data []byte) []byte {
+	content := string(data)
+	end := strings.Index(content[3:], "\n---")
+	if !strings.HasPrefix(content, "---") || end < 0 {
+		return data
+	}
+	fmEnd := 3 + end + 4
+	fm := content[:fmEnd]
+	body := content[fmEnd:]
+
+	// Parse the tools list into a set (same logic as MiMo transform)
+	toolSet := map[string]bool{}
+	var descLine string
+	for _, line := range strings.Split(fm, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "tools:") {
+			parts := strings.Split(strings.TrimPrefix(trimmed, "tools:"), ",")
+			for _, p := range parts {
+				toolSet[strings.ToLower(strings.TrimSpace(p))] = true
+			}
+		}
+		if strings.HasPrefix(trimmed, "description:") {
+			descLine = line
+		}
+	}
+
+	// Build the OpenCode frontmatter: drop `name` and `tools`, keep `description`,
+	// add `mode: subagent` + `permission:` block.
+	var b strings.Builder
+	b.WriteString("---\n")
+	if descLine != "" {
+		b.WriteString(descLine + "\n")
+	}
+	b.WriteString("mode: subagent\n")
+	b.WriteString("permission:\n")
+	// OpenCode permission keys mapped from our tool names.
+	// Tools in the set get "allow", everything else gets "deny".
+	for _, key := range []string{"read", "grep", "glob", "bash", "write", "edit"} {
+		val := "deny"
+		if toolSet[key] {
+			val = "allow"
+		}
+		b.WriteString(fmt.Sprintf("  %s: %s\n", key, val))
+	}
+	b.WriteString("---\n")
+
+	return []byte(b.String() + body)
 }
 
 func (p *InjectProcessor) injectWikiJunctions(wikiJunctionDir string, repos []repoData) []string {

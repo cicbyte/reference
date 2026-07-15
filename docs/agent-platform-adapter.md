@@ -368,11 +368,53 @@
 
 ### 16. OpenCode (opencode-ai)
 
+> **reference 已适配** — 配置值 `opencode`，注入 `.opencode/agents/` + `.opencode/skills/`
+
+**官方文档**: [opencode.ai/docs/agents](https://opencode.ai/docs/agents)
+
 **指令文件**: `opencode.md`（同时兼容 `CLAUDE.md`、`.cursorrules`、`.cursor/rules/`、`.github/copilot-instructions.md`）
 
 **MCP 配置**: `.opencode.json` 的 `mcpServers` 节（支持 stdio + SSE）
 
 **配置格式**: JSON（`.opencode.json`）
+
+**代理系统**: `.opencode/agents/*.md`（YAML frontmatter）
+
+**代理 frontmatter 格式**（OpenCode 使用 `permission` 三态权限块，**无 `name` 字段**——文件名即 agent 名）:
+
+```yaml
+---
+description: 探索特定仓库源码，沉淀为 Markdown 知识文件
+mode: subagent                       # primary / subagent / all
+permission:                          # 三态权限：allow / ask / deny
+  read: allow
+  grep: allow
+  glob: allow
+  bash: allow
+  write: allow
+  edit: deny
+---
+```
+
+> **与 Claude Code 的格式差异**:
+> - 无 `name` 字段（文件名即 agent 名）
+> - `tools` 字段已废弃，推荐用 `permission:` 块（allow/ask/deny 三态，非布尔）
+> - 需要显式 `mode: subagent` 实现上下文隔离
+>
+> reference 在注入时自动转换此格式（见 `inject.go` 的 `transformOpencodeFrontmatter`）。
+
+**permission 权限键**:
+
+| Key | 控制的工具 |
+|:--|:--|
+| `read` | read |
+| `edit` | write / edit / apply_patch |
+| `glob` | glob |
+| `grep` | grep |
+| `bash` | bash |
+| `task` | 子代理调用 |
+| `webfetch` / `websearch` | 网络访问 |
+| `lsp` | LSP 诊断 |
 
 **关键特性**:
 
@@ -382,9 +424,8 @@
 - LSP 集成（多语言 diagnostics）
 - 自定义命令（Markdown 文件，支持 `$PARAM` 参数）
 - 多模型支持（OpenAI/Anthropic/Gemini/Groq/Azure/Bedrock 等 10+ 提供商）
-- **项目已归档**，迁移至 [charmbracelet/crush](https://github.com/charmbracelet/crush)
 
-**适配难度**: ★☆☆☆☆（天然兼容 CLAUDE.md 和 .cursorrules 等多种格式）
+**适配难度**: ★☆☆☆☆（frontmatter 自动转换，天然兼容 CLAUDE.md）
 
 ***
 
