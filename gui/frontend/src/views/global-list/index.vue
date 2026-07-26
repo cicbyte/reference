@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { message, Modal } from 'ant-design-vue'
+import { message } from 'ant-design-vue'
 import {
   FolderOutlined,
   FolderOpenOutlined,
@@ -89,28 +89,28 @@ const brokenProjects = computed(() =>
 
 onMounted(loadProjects)
 
-function cleanupMissing() {
-  const missing = missingProjects.value
-  if (!missing.length) return
-  Modal.confirm({
-    title: t('globalList.cleanupMissing'),
-    content: t('globalList.cleanupConfirm', { n: missing.length }),
-    okText: t('common.confirm'),
-    okType: 'danger',
-    cancelText: t('common.cancelText'),
-    async onOk() {
-      let ok = 0
-      for (const p of missing) {
-        try {
-          await app.RemoveProject(p.dir, false)
-          ok++
-        } catch { /* skip */ }
-      }
-      message.success(t('globalList.cleanupSuccess', { n: ok }))
-      await loadProjects()
-      await project.loadProjects()
-    },
-  })
+// 清理弹窗：勾选要清理的失效项目（目录已不存在的引用记录）
+const cleanupOpen = ref(false)
+const cleanupSelected = ref([])
+
+function openCleanup() {
+  cleanupSelected.value = missingProjects.value.map((p) => p.dir)
+  cleanupOpen.value = true
+}
+async function doCleanup() {
+  const dirs = cleanupSelected.value
+  if (!dirs.length) return
+  let ok = 0
+  for (const dir of dirs) {
+    try {
+      await app.RemoveProject(dir, false)
+      ok++
+    } catch { /* skip */ }
+  }
+  cleanupOpen.value = false
+  message.success(t('globalList.cleanupSuccess', { n: ok }))
+  await loadProjects()
+  await project.loadProjects()
 }
 
 function switchTo(p) {
@@ -126,9 +126,9 @@ function switchTo(p) {
     <div class="page-header">
       <h2>{{ t('sidebar.projectList') }}</h2>
       <div class="header-actions">
-        <a-button v-if="missingProjects.length > 0" danger @click="cleanupMissing">
+        <a-button danger @click="openCleanup">
           <template #icon><DeleteOutlined /></template>
-          {{ t('globalList.cleanupMissing') }} ({{ missingProjects.length }})
+          {{ t('globalList.cleanup') }}
         </a-button>
         <a-button @click="loadProjects" :loading="loading">
           <template #icon><ReloadOutlined /></template>
@@ -246,6 +246,31 @@ function switchTo(p) {
         <template #image><FolderOutlined style="font-size: 48px; color: var(--color-text-tertiary); opacity: 0.3;" /></template>
       </a-empty>
     </a-spin>
+
+    <a-modal
+      v-model:open="cleanupOpen"
+      :title="t('globalList.cleanup')"
+      :ok-text="t('globalList.cleanupSelected', { n: cleanupSelected.length })"
+      ok-type="danger"
+      :cancel-text="t('common.cancelText')"
+      :ok-button-props="{ disabled: cleanupSelected.length === 0 }"
+      @ok="doCleanup"
+    >
+      <div v-if="missingProjects.length === 0" class="cleanup-empty">
+        {{ t('globalList.noMissing') }}
+      </div>
+      <template v-else>
+        <p class="cleanup-hint">{{ t('globalList.cleanupHint') }}</p>
+        <a-checkbox-group v-model:value="cleanupSelected" class="cleanup-list">
+          <div v-for="p in missingProjects" :key="p.dir" class="cleanup-item">
+            <a-checkbox :value="p.dir">
+              <span class="cleanup-name">{{ p.name }}</span>
+              <span class="cleanup-dir">{{ formatPath(p.dir) }}</span>
+            </a-checkbox>
+          </div>
+        </a-checkbox-group>
+      </template>
+    </a-modal>
 
     <DiagnoseModal v-model:open="diagnoseOpen" :project-dir="diagnoseDir" @update:open="diagnoseOpen = $event; loadProjects()" />
   </div>
@@ -378,4 +403,13 @@ function switchTo(p) {
   border-radius: var(--radius-xs); transition: all var(--transition-fast);
 }
 .card-btn:hover { background: var(--color-hover); color: var(--color-primary); }
+
+/* cleanup modal */
+.cleanup-hint { margin: 0 0 12px; color: var(--color-text-secondary); font-size: 13px; }
+.cleanup-list { display: flex; flex-direction: column; gap: 2px; width: 100%; }
+.cleanup-item { padding: 6px 8px; border-radius: var(--radius-sm); }
+.cleanup-item:hover { background: var(--color-hover); }
+.cleanup-name { font-weight: 600; color: var(--color-text); margin-right: 8px; }
+.cleanup-dir { font-size: 11px; color: var(--color-text-tertiary); font-family: 'Cascadia Code', monospace; }
+.cleanup-empty { text-align: center; color: var(--color-text-tertiary); padding: 24px; }
 </style>

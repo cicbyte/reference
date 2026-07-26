@@ -92,7 +92,7 @@ async function onSwitch(p) {
         >
           <div class="rail-item-icon">
             <WarningOutlined v-if="!p.exists" class="warn" />
-            <FolderOutlined v-else />
+            <span v-else class="rail-item-letter">{{ (p.name || '?').charAt(0).toUpperCase() }}</span>
           </div>
           <div class="rail-item-body">
             <div class="rail-item-name">{{ p.name }}</div>
@@ -268,16 +268,20 @@ async function onSwitch(p) {
   width: 28px;
   height: 28px;
   border-radius: var(--radius-sm);
-  background: var(--color-background);
+  background: transparent;
   color: var(--color-text-tertiary);
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 600;
   flex-shrink: 0;
-  transition: all var(--transition-fast);
+  transition: color var(--transition-fast);
+}
+.rail-item-letter {
+  line-height: 1;
+  user-select: none;
 }
 .rail-item:hover .rail-item-icon,
 .rail-item.active .rail-item-icon {
-  background: var(--color-primary);
-  color: #fff;
+  color: var(--color-primary);
 }
 .rail-item-icon .warn {
   color: var(--color-warning);
