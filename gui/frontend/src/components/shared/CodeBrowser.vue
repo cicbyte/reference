@@ -17,7 +17,7 @@
  * The parent must call `loadRoot()` (exposed via defineExpose) whenever the
  * underlying key changes (e.g. user selects another repo).
  */
-import { ref, computed, watch, nextTick, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { message } from 'ant-design-vue'
 import {
   SearchOutlined, FileOutlined, FileTextOutlined,
@@ -70,14 +70,28 @@ const renderedMarkdown = computed(() => {
   return renderMarkdown(fileContent.value)
 })
 
+// 加载序号：连续切换仓库时丢弃过期请求的结果，避免旧响应覆盖新树（竞态）
+let loadSeq = 0
 async function loadRoot() {
+  const my = ++loadSeq
   try {
     const nodes = await props.api.listDir('')
+    if (my !== loadSeq) return
     tree.value = { __root__: nodes }
   } catch (e) {
+    if (my !== loadSeq) return
     message.error(t('codeBrowser.loadTreeFailed') + ': ' + e)
   }
 }
+
+// 挂载即加载根；api 变化（父组件切换仓库/缓存路径）时清空旧树并重新加载。
+// 让组件自行响应数据源变化，避免父组件在 v-else 首次挂载时同步调 loadRoot
+// 撞上 browserRef 仍为 null 的时机竞态（表现为首次点击文件树为空）。
+onMounted(loadRoot)
+watch(
+  () => props.api,
+  () => { clearSelection(); loadRoot() },
+)
 
 async function toggleDir(node) {
   const next = new Set(expandedDirs.value)

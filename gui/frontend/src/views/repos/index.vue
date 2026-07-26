@@ -66,8 +66,7 @@ const browserApi = computed(() => ({
 
 function selectRepo(r) {
   selectedRepo.value = r.name
-  // The underlying repo key changed; reload the file tree root for it.
-  browserRef.value?.loadRoot()
+  // CodeBrowser 自行 watch(api) 响应 selectedRepo 变化并重新加载根，无需手动调用
 }
 
 // ---- actions ----

@@ -19,9 +19,8 @@ const antTheme = computed(() => themeStore.antdTheme)
 
 onMounted(() => {
   themeStore.initializeTheme()
-  // apply saved default for sidebar collapse
-  const savedSidebar = localStorage.getItem('reference-sidebar-collapsed')
-  if (savedSidebar === 'true') layoutStore.sidebarCollapsed = true
+  // apply saved default for sidebar collapse (preference lives in the layout store)
+  if (layoutStore.sidebarDefaultCollapsed) layoutStore.sidebarCollapsed = true
   window.addEventListener('resize', layoutStore.handleResize)
 })
 

@@ -25,10 +25,10 @@ const railVisible = computed({
   set: (v) => { layout.projectRailVisible = v },
 })
 const sidebarDefaultCollapsed = computed({
-  get: () => localStorage.getItem('reference-sidebar-collapsed') === 'true',
+  get: () => layout.sidebarDefaultCollapsed,
   set: (v) => {
-    localStorage.setItem('reference-sidebar-collapsed', String(v))
-    layout.sidebarCollapsed = v
+    // 仅改启动偏好（响应式 + 持久化），不碰当前运行时折叠状态——运行态由导航栏按钮控制
+    layout.setSidebarDefaultCollapsed(v)
     message.success(v ? t('settings.display.collapsed') : t('settings.display.expanded'))
   },
 })

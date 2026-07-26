@@ -10,7 +10,12 @@ interface FooterItem {
   tone?: 'ok' | 'warn' | 'bad' | 'default'
 }
 
+const SIDEBAR_DEFAULT_KEY = 'reference-sidebar-collapsed'
+
 export const useLayoutStore = defineStore('layout', () => {
+  /** 启动偏好：下次启动时侧边栏是否默认折叠（独立于运行时 sidebarCollapsed） */
+  const sidebarDefaultCollapsed = ref(localStorage.getItem(SIDEBAR_DEFAULT_KEY) === 'true')
+  /** 运行时折叠状态：启动按偏好初始化，之后由导航栏按钮实时切换，不回写偏好 */
   const sidebarCollapsed = ref(false)
   const projectRailCollapsed = ref(false)
   const projectRailVisible = ref(true)  // fully user-controlled
@@ -42,6 +47,12 @@ export const useLayoutStore = defineStore('layout', () => {
     sidebarCollapsed.value = !sidebarCollapsed.value
   }
 
+  /** 设置启动偏好（仅持久化 + 响应式更新，不改当前运行时折叠状态） */
+  function setSidebarDefaultCollapsed(v: boolean) {
+    sidebarDefaultCollapsed.value = v
+    localStorage.setItem(SIDEBAR_DEFAULT_KEY, String(v))
+  }
+
   function toggleProjectRail() {
     projectRailCollapsed.value = !projectRailCollapsed.value
   }
@@ -60,6 +71,7 @@ export const useLayoutStore = defineStore('layout', () => {
 
   return {
     sidebarCollapsed,
+    sidebarDefaultCollapsed,
     projectRailCollapsed,
     projectRailVisible,
     windowWidth,
@@ -67,6 +79,7 @@ export const useLayoutStore = defineStore('layout', () => {
     isMobile,
     isTablet,
     toggleSidebar,
+    setSidebarDefaultCollapsed,
     toggleProjectRail,
     toggleProjectRailVisible,
     handleResize,
