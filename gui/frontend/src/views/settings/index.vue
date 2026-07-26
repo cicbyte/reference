@@ -63,9 +63,11 @@ const activeTab = ref('display')
 <style scoped>
 .settings-view {
   display: flex;
-  height: 100%;
+  height: calc(100% + 2 * var(--spacing-lg));
   overflow: hidden;
   background: var(--color-background);
+  /* 穿透 .content-wrapper 的 padding，让左侧设置列紧贴 header / 菜单栏 / footer */
+  margin: calc(-1 * var(--spacing-lg));
 }
 
 /* Left group menu */
