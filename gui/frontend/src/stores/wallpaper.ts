@@ -2,7 +2,7 @@
  * 壁纸 store（移植自 byte-stash，适配 Wails base64 data URL）
  *
  * 分工：
- * - 壁纸【文件】由 Go 后端管（~/.cicbyte/reference/wallpapers/，见 wallpaper.go）
+ * - 壁纸【文件】由 Go 后端管（~/.cicbyte/apps/reference/wallpapers/，见 wallpaper.go）
  * - 壁纸【设置】（开关/选中/模糊/遮罩/面板透明度/面板毛玻璃）持久化在 localStorage
  *   `reference-wallpaper`，纯 UI 偏好，不碰 config——避免死字段。
  *

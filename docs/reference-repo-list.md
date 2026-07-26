@@ -33,7 +33,7 @@ reference repo list -f jsonl
 +------+-----------+--------------------------------------+---------------------------------------------------------------------+------------+--------+
 | 类型 | 名称      | 来源                                 | 源路径                                                              | 更新时间   | 分支   |
 +------+-----------+--------------------------------------+---------------------------------------------------------------------+------------+--------+
-| 远程 | memos-cli | https://github.com/cicbyte/memos-cli | C:\Users\zhyj\.cicbyte\reference\repos\github.com\cicbyte\memos-cli | 2026-04-22 | master |
+| 远程 | memos-cli | https://github.com/cicbyte/memos-cli | C:\Users\zhyj\.cicbyte\apps\reference\repos\github.com\cicbyte\memos-cli | 2026-04-22 | master |
 +------+-----------+--------------------------------------+---------------------------------------------------------------------+------------+--------+
 ```
 
@@ -46,7 +46,7 @@ reference repo list -f jsonl
       "type": "remote",
       "name": "memos-cli",
       "source": "https://github.com/cicbyte/memos-cli",
-      "cache_path": "C:\\Users\\zhyj\\.cicbyte\\reference\\repos\\github.com\\cicbyte\\memos-cli",
+      "cache_path": "C:\\Users\\zhyj\\.cicbyte\\apps\\reference\\repos\\github.com\\cicbyte\\memos-cli",
       "commit_at": "2026-04-22",
       "branch": "master"
     }

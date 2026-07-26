@@ -129,7 +129,7 @@ reference global gc --cache -y
 | 类型     | 路径                                          | 详情 |
 +----------+-----------------------------------------------+------+
 | DB记录   | D:\old-project                                | 3 条引用记录 |
-| 孤立缓存 | C:\Users\x\.cicbyte\reference\repos\github     |      |
+| 孤立缓存 | C:\Users\x\.cicbyte\apps\reference\repos\github     |      |
 +----------+-----------------------------------------------+------+
 
   确认执行清理? [y/N]:

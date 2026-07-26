@@ -49,7 +49,7 @@ reference repo add spf13/cobra --update
 ### 远程模式执行流程
 
 1. 解析 URL，识别平台和命名空间
-2. **完整克隆**（非浅克隆，保证 commit 历史完整）到全局缓存 `~/.cicbyte/reference/repos/<platform>/<namespace>/<repo>`
+2. **完整克隆**（非浅克隆，保证 commit 历史完整）到全局缓存 `~/.cicbyte/apps/reference/repos/<platform>/<namespace>/<repo>`
 3. 在 `.reference/` 下创建 Junction/Symlink 链接
 4. 确保 `.reference/` 在 `.gitignore` 中
 5. 写入数据库索引

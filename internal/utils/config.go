@@ -57,7 +57,7 @@ func (c *Config) GetAppDir() string {
 	if c.AppDir != "" {
 		return c.AppDir
 	}
-	c.AppDir = filepath.Join(c.GetAppSeriesDir(), "reference")
+	c.AppDir = filepath.Join(c.GetAppSeriesDir(), "apps", "reference")
 	return c.AppDir
 }
 
@@ -151,7 +151,7 @@ func (c *Config) LoadConfig() *models.AppConfig {
 	if _, err := os.Stat(config_path); os.IsNotExist(err) {
 		defaultConfig := GetDefaultConfig()
 		// 将默认配置写入文件
-		header := "# reference 配置文件\n# repos_path: 全局仓库缓存目录，默认 ~/.cicbyte/reference/repos\n# wiki_path: 全局知识库目录，默认 ~/.cicbyte/reference/wiki\n\n"
+		header := "# reference 配置文件\n# repos_path: 全局仓库缓存目录，默认 ~/.cicbyte/apps/reference/repos\n# wiki_path: 全局知识库目录，默认 ~/.cicbyte/apps/reference/wiki\n\n"
 		data, err := yaml.Marshal(defaultConfig)
 		if err == nil {
 			_ = os.WriteFile(config_path, []byte(header+string(data)), 0644)

@@ -175,7 +175,7 @@ async function pickFolder(field, title) {
           <a-input-group compact class="row-control">
             <a-input
               v-model:value="form.reposPath"
-              placeholder="~/.cicbyte/reference/repos"
+              placeholder="~/.cicbyte/apps/reference/repos"
               style="width: calc(100% - 36px)"
               allow-clear @change="markDirty"
             />
@@ -193,7 +193,7 @@ async function pickFolder(field, title) {
           <a-input-group compact class="row-control">
             <a-input
               v-model:value="form.wikiPath"
-              placeholder="~/.cicbyte/reference/wiki"
+              placeholder="~/.cicbyte/apps/reference/wiki"
               style="width: calc(100% - 36px)"
               allow-clear @change="markDirty"
             />

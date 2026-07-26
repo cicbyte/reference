@@ -132,7 +132,7 @@ reference wiki restore <path>         # 从 Git 历史恢复文件
 
 ### 用户数据目录
 
-`~/.cicbyte/reference/` 下：
+`~/.cicbyte/apps/reference/` 下：
 - `config/config.yaml` — 配置文件
 - `db/app.db` — SQLite 数据库（纯 Go，无 CGO）
 - `repos/` — 全局缓存（可通过 config.yaml 中 repos_path 覆盖）
@@ -148,7 +148,7 @@ reference wiki restore <path>         # 从 Git 历史恢复文件
 - `internal/logic/repo/agent_registry.go` — Agent 配置注册表（`AgentRegistry`），定义所有支持的助手及其文件映射
 - 支持多助手同时注入：`ProjectSettings.Agents` 数组，`reference init --agent claude,codex`
 - `reference` 命令（无参数）和 `doctor` 命令都会将上述文件注入到已配置的助手目录
-- 远程仓库知识文件写入 `~/.cicbyte/reference/wiki/`，本地仓库写入 `~/.cicbyte/reference/localwiki/`，通过 Junction 链接到 `.reference/wiki/<refName>/`
+- 远程仓库知识文件写入 `~/.cicbyte/apps/reference/wiki/`，本地仓库写入 `~/.cicbyte/apps/reference/localwiki/`，通过 Junction 链接到 `.reference/wiki/<refName>/`
 
 ### 应用初始化流程（cmd/root.go init()）
 

@@ -68,7 +68,7 @@ func (e *Engine) initAppDirs() error {
 		if err != nil {
 			return fmt.Errorf("get home dir: %w", err)
 		}
-		e.opts.AppDir = filepath.Join(homeDir, ".cicbyte", "reference")
+		e.opts.AppDir = filepath.Join(homeDir, ".cicbyte", "apps", "reference")
 	}
 
 	dirs := []string{

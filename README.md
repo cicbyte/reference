@@ -246,7 +246,7 @@ reference proxy clear                 # 清除代理
 
 ## 配置
 
-配置文件位于 `~/.cicbyte/reference/config/config.yaml`：
+配置文件位于 `~/.cicbyte/apps/reference/config/config.yaml`：
 
 ```yaml
 # 自定义存储路径（可选，修改后自动迁移数据库记录）

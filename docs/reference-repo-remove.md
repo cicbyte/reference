@@ -44,7 +44,7 @@ reference repo remove --all --clean
 **默认模式**（不加 `--purge`）：
 - 删除 `.reference/<链接名>` 软链接
 - 删除数据库索引记录
-- 全局缓存 `~/.cicbyte/reference/repos/...` 保留，其他项目仍可使用
+- 全局缓存 `~/.cicbyte/apps/reference/repos/...` 保留，其他项目仍可使用
 
 **清除模式**（`--purge`）：
 - 在默认模式基础上，额外删除全局缓存目录

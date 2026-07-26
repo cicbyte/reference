@@ -28,7 +28,7 @@ reference 当前以「**项目为中心**」运作 —— 所有写操作（`rep
 
 ### 直读 SQLite 不是解法
 
-DB 路径 `~/.cicbyte/reference/db/app.db`（GORM 管理的单表 `repos`）虽然 schema 简单，但**写操作绕过 CLI 极其危险**：
+DB 路径 `~/.cicbyte/apps/reference/db/app.db`（GORM 管理的单表 `repos`）虽然 schema 简单，但**写操作绕过 CLI 极其危险**：
 
 - 删一个引用需要同步删除 `.reference/repos/<name>` 链接、`.reference/wiki/<name>` junction、`reference.map.jsonl`、缓存引用计数 —— 这些副作用全封装在 CLI 内
 - GORM 自动迁移，schema 随版本演进，直读直写会随 reference 升级而失效
@@ -226,7 +226,7 @@ if p, _ := cmd.Flags().GetString("project"); p != "" {
 
 需要先确认：`reference proxy` 设置的代理是**全局生效**（影响所有项目的克隆）还是**项目级**？
 
-- 如果是全局（当前实现推测是全局，因为只有一个 `~/.cicbyte/reference/config/`）：`proxy set` 不需要 `--project` flag，本身就是全局操作
+- 如果是全局（当前实现推测是全局，因为只有一个 `~/.cicbyte/apps/reference/config/`）：`proxy set` 不需要 `--project` flag，本身就是全局操作
 - 如果是项目级：加 `--project` flag
 
 **建议**：保持 proxy 全局语义不变，**不加** `--project` flag，避免语义混淆。
@@ -282,7 +282,7 @@ reference global doctor --fix --only links,agents
 
 ### DB schema（仅用于理解，**不直读**）
 
-`~/.cicbyte/reference/db/app.db` 单表 `repos`：
+`~/.cicbyte/apps/reference/db/app.db` 单表 `repos`：
 
 ```sql
 CREATE TABLE `repos` (

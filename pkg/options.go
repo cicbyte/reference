@@ -9,7 +9,7 @@ import (
 
 // Options Engine 配置选项
 type Options struct {
-	// AppDir 应用数据目录，默认 ~/.cicbyte/reference
+	// AppDir 应用数据目录，默认 ~/.cicbyte/apps/reference
 	AppDir string
 
 	// DB 数据库连接，可选。为 nil 时内部自动创建 SQLite 连接

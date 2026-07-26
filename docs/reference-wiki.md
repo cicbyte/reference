@@ -6,8 +6,8 @@
 
 知识库分为两个独立的 Git 仓库：
 
-- **公共知识库** `~/.cicbyte/reference/wiki/` — 远程仓库的知识文件，可推送到公共 Git 仓库
-- **本地知识库** `~/.cicbyte/reference/localwiki/` — 本地仓库的知识文件，独立管理（如推送到 Gitea）
+- **公共知识库** `~/.cicbyte/apps/reference/wiki/` — 远程仓库的知识文件，可推送到公共 Git 仓库
+- **本地知识库** `~/.cicbyte/apps/reference/localwiki/` — 本地仓库的知识文件，独立管理（如推送到 Gitea）
 
 两者均自动初始化为 Git 仓库，提供版本控制、自动提交和文件恢复能力。
 
@@ -24,7 +24,7 @@
 ## 目录结构
 
 ```
-~/.cicbyte/reference/
+~/.cicbyte/apps/reference/
 ├── wiki/                              # 公共知识库（远程仓库）
 │   ├── .git/
 │   ├── github/

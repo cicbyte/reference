@@ -246,7 +246,7 @@ See the [docs/](docs/) directory for detailed documentation.
 
 ## Configuration
 
-Configuration file located at `~/.cicbyte/reference/config/config.yaml`:
+Configuration file located at `~/.cicbyte/apps/reference/config/config.yaml`:
 
 ```yaml
 # Custom storage paths (optional, DB records auto-migrate on change)

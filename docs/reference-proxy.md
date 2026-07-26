@@ -76,7 +76,7 @@ git_proxy > proxy > 环境变量 HTTPS_PROXY > 无代理
 
 ## 配置存储
 
-代理配置保存在 `~/.cicbyte/reference/config/config.yaml`：
+代理配置保存在 `~/.cicbyte/apps/reference/config/config.yaml`：
 
 ```yaml
 network:

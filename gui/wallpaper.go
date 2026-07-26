@@ -2,7 +2,7 @@ package main
 
 // 壁纸后端（对齐 byte-stash commands/wallpaper.rs，Tauri→Wails/Go 改写）
 //
-// 壁纸【文件】由后端管（~/.cicbyte/reference/wallpapers/）；壁纸【设置】
+// 壁纸【文件】由后端管（~/.cicbyte/apps/reference/wallpapers/）；壁纸【设置】
 // （开关/选中/模糊/遮罩/面板透明度/毛玻璃）纯前端 localStorage 持久化。
 // 前端用 WallpaperDataURL 拿 base64 data URL 渲染（Wails 无 Tauri asset:
 // 对等协议，决策 1：base64 data URL）。
@@ -37,7 +37,7 @@ var wallpaperExts = map[string]string{
 // wallpaperMaxSize 单张壁纸大小硬上限（30MB）。
 const wallpaperMaxSize = 30 * 1024 * 1024
 
-// wallpapersDir 返回壁纸存储目录：~/.cicbyte/reference/wallpapers/
+// wallpapersDir 返回壁纸存储目录：~/.cicbyte/apps/reference/wallpapers/
 func wallpapersDir() string {
 	return filepath.Join(utils.ConfigInstance.GetAppDir(), "wallpapers")
 }

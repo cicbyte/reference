@@ -62,7 +62,7 @@ Tests use in-memory SQLite (`file::memory:?cache=shared`) — no external deps. 
 
 - **Cross-platform links**: Unix uses Symlink; Windows uses PowerShell `New-Item -ItemType Junction` (no admin rights needed). See `internal/logic/repo/linker.go`.
 - **Project data lives in `.reference/`** (Junctions to global cache + wiki). `.reference/`, `.zcode/`, `.claude/`, etc. are gitignored — they are per-project generated state, do not commit them.
-- **User data lives in `~/.cicbyte/reference/`**: `config/config.yaml`, `db/app.db`, `repos/`, `wiki/` (remote, nested `<platform>/<namespace>/<repo>/`), `localwiki/` (local repos), `logs/`.
+- **User data lives in `~/.cicbyte/apps/reference/`**: `config/config.yaml`, `db/app.db`, `repos/`, `wiki/` (remote, nested `<platform>/<namespace>/<repo>/`), `localwiki/` (local repos), `logs/`.
 - **`repo add` default changed**: cached repos are NOT auto-updated; require explicit `--update`/`-u`.
 - **Remote vs local wiki are separate Git repos** (`wiki/` and `localwiki/`); switch target with `--local`/`-l`.
 - **`ProjectSettings.Agent` (single) is deprecated** → migrated automatically to `Agents` array. Always write the array form.
