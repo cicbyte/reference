@@ -14,6 +14,7 @@ import { useLayoutStore } from '@/stores/layout'
 import { formatPath } from '@/utils/path'
 import { renderMarkdown } from '@/utils/markdown'
 import { useMermaid } from '@/composables/useMermaid'
+import { revealOnChange } from '@/composables/useMotion'
 import MermaidModal from '@/components/shared/MermaidModal.vue'
 import WikiRail from './components/WikiRail.vue'
 
@@ -34,6 +35,9 @@ const loading = ref(true)
 const syncing = ref(false)
 const selectedRepoKey = ref('')   // source + '|' + platform + '/' + namespace + '/' + repoName
 const selectedFileKey = ref('')   // source + '|' + relPath
+// 详情容器 ref：切换文件时 revealOnChange 淡入（仅动外层 opacity+y，不卸载子组件）
+const wikiContentRef = ref(null)
+revealOnChange(() => wikiContentRef.value, () => selectedFileKey.value)
 const content = ref('')
 const rawContent = ref('')       // full raw markdown (with frontmatter)
 const contentLoading = ref(false)
@@ -350,7 +354,7 @@ onMounted(loadEntries)
       <div>{{ t('wiki.selectFile') }}</div>
     </div>
 
-    <div v-else class="wiki-content">
+    <div v-else ref="wikiContentRef" class="wiki-content">
       <div class="wc-bar">
         <div class="wc-title">
           <ReadOutlined class="wc-icon" />

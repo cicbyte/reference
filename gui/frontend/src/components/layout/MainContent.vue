@@ -1,17 +1,21 @@
 <script setup>
 import { BranchesOutlined } from '@ant-design/icons-vue'
+import { useRoute } from 'vue-router'
 import { useLayoutStore } from '@/stores/layout'
+import { useRouteTransition } from '@/composables/useMotion'
 
 const layout = useLayoutStore()
+const route = useRoute()
+const { onEnter, onLeave } = useRouteTransition()
 </script>
 
 <template>
   <div class="main-content">
     <div class="content-wrapper">
       <router-view v-slot="{ Component }">
-        <transition mode="out-in">
-          <component :is="Component" />
-        </transition>
+        <Transition mode="out-in" :css="false" @enter="onEnter" @leave="onLeave">
+          <component :is="Component" :key="route.path" />
+        </Transition>
       </router-view>
     </div>
 

@@ -8,12 +8,14 @@ import {
   InfoCircleOutlined,
   PictureOutlined,
   SettingOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons-vue'
 import { useI18n } from 'vue-i18n'
 import AiSparkIcon from '@/components/common/AiSparkIcon.vue'
 import GeneralForm from '@/components/settings/GeneralForm.vue'
 import AppearanceForm from '@/components/settings/AppearanceForm.vue'
 import WallpaperSection from '@/components/settings/WallpaperSection.vue'
+import AnimationForm from '@/components/settings/AnimationForm.vue'
 import StorageForm from '@/components/settings/StorageForm.vue'
 import NetworkForm from '@/components/settings/NetworkForm.vue'
 import LoggingForm from '@/components/settings/LoggingForm.vue'
@@ -33,6 +35,7 @@ const tabs = computed(() => [
       { key: 'general', icon: SettingOutlined, label: t('settings.subTabs.general') },
       { key: 'theme', icon: BgColorsOutlined, label: t('settings.subTabs.theme') },
       { key: 'wallpaper', icon: PictureOutlined, label: t('settings.subTabs.wallpaper') },
+      { key: 'animation', icon: ThunderboltOutlined, label: t('settings.subTabs.animation') },
     ],
   },
   { key: 'storage', icon: DatabaseOutlined, label: t('settings.storage.title') },
@@ -60,6 +63,7 @@ const contentComponent = computed(() => {
   if (activeTab.value === 'display') {
     if (activeSub.value === 'theme') return AppearanceForm
     if (activeSub.value === 'wallpaper') return WallpaperSection
+    if (activeSub.value === 'animation') return AnimationForm
     return GeneralForm
   }
   return FORM_MAP[activeTab.value] || GeneralForm

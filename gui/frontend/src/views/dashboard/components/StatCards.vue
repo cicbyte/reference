@@ -1,4 +1,5 @@
 <script setup>
+import { ref, watch, nextTick } from 'vue'
 import {
   DatabaseOutlined,
   CloudServerOutlined,
@@ -7,10 +8,11 @@ import {
   ApiOutlined,
 } from '@ant-design/icons-vue'
 import { useI18n } from 'vue-i18n'
+import { countUp } from '@/composables/useMotion'
 
 const { t } = useI18n()
 
-defineProps({
+const props = defineProps({
   repos: { type: Array, default: () => [] },
   remoteCount: { type: Number, default: 0 },
   localCount: { type: Number, default: 0 },
@@ -19,22 +21,45 @@ defineProps({
 })
 
 const emit = defineEmits(['navigate', 'diagnose'])
+
+// 统计数字 ref：数据就绪后 countUp 从 0 滚到真值
+const reposValueRef = ref(null)
+const remoteValueRef = ref(null)
+const brokenValueRef = ref(null)
+const agentValueRef = ref(null)
+
+function rollNumbers() {
+  nextTick(() => {
+    if (reposValueRef.value) countUp(reposValueRef.value, props.repos.length)
+    // 远程/本地复合卡：只滚动远程数（独立 span），本地数在另一 span 静态保留 .stat-sub 样式
+    if (remoteValueRef.value) countUp(remoteValueRef.value, props.remoteCount)
+    if (brokenValueRef.value) countUp(brokenValueRef.value, props.brokenCount)
+    if (agentValueRef.value) countUp(agentValueRef.value, props.agentCount)
+  })
+}
+
+// 数据就绪或刷新时滚动（countUp 在动画禁用/关闭时直接落终值，开销极小）
+watch(
+  () => [props.repos.length, props.remoteCount, props.brokenCount, props.agentCount],
+  () => rollNumbers(),
+  { immediate: true },
+)
 </script>
 
 <template>
-  <!-- stat cards row -->
-  <div class="stat-row">
+  <!-- stat cards row：v-reveal-group 让 4 张卡错峰入场 -->
+  <div v-reveal-group class="stat-row">
     <div class="stat-card" @click="emit('navigate', '/repos')">
       <div class="stat-icon stat-blue"><DatabaseOutlined /></div>
       <div class="stat-body">
-        <div class="stat-value">{{ repos.length }}</div>
+        <div ref="reposValueRef" class="stat-value">{{ repos.length }}</div>
         <div class="stat-label">{{ t('dashboard.statRepos') }}</div>
       </div>
     </div>
     <div class="stat-card">
       <div class="stat-icon stat-cyan"><CloudServerOutlined /></div>
       <div class="stat-body">
-        <div class="stat-value">{{ remoteCount }} <span class="stat-sub">/ {{ localCount }}</span></div>
+        <div class="stat-value"><span ref="remoteValueRef">{{ remoteCount }}</span> <span class="stat-sub">/ {{ localCount }}</span></div>
         <div class="stat-label">{{ t('dashboard.statRemoteLocal') }}</div>
       </div>
     </div>
@@ -44,14 +69,14 @@ const emit = defineEmits(['navigate', 'diagnose'])
         <LinkOutlined v-else />
       </div>
       <div class="stat-body">
-        <div class="stat-value">{{ brokenCount }}</div>
+        <div ref="brokenValueRef" class="stat-value">{{ brokenCount }}</div>
         <div class="stat-label">{{ brokenCount > 0 ? t('dashboard.statBroken') : t('dashboard.healthHealthy') }}</div>
       </div>
     </div>
     <div class="stat-card">
       <div class="stat-icon stat-purple"><ApiOutlined /></div>
       <div class="stat-body">
-        <div class="stat-value">{{ agentCount }}</div>
+        <div ref="agentValueRef" class="stat-value">{{ agentCount }}</div>
         <div class="stat-label">{{ t('dashboard.statAgents') }}</div>
       </div>
     </div>
