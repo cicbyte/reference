@@ -172,3 +172,16 @@
 [data-theme='light'] .hljs-name {
   color: var(--color-danger);
 }
+
+/* ===== 壁纸层叠与面板毛玻璃（wallpaper store apply 设 data-wallpaper / data-wp-glass）=====
+   壁纸激活时，把 .app-layout 的面板子元素提到壁纸层(wp-layer z:0)/遮罩层(wp-mask z:1)
+   之上；开启面板毛玻璃(data-wp-glass)时再叠加 backdrop-filter（真毛玻璃，默认关，大窗口有性能成本）。
+   全局规则（非 scoped）以便选中子组件根元素（project-rail/sidebar/app-right）。 */
+[data-wallpaper='on'] .app-layout > *:not(.wp-layer):not(.wp-mask) {
+  position: relative;
+  z-index: 2;
+}
+[data-wallpaper='on'][data-wp-glass='on'] .app-layout > *:not(.wp-layer):not(.wp-mask) {
+  backdrop-filter: blur(var(--wp-blur));
+  -webkit-backdrop-filter: blur(var(--wp-blur));
+}

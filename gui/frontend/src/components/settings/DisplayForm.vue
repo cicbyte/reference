@@ -4,6 +4,7 @@ import { message } from 'ant-design-vue'
 import { BgColorsOutlined, GlobalOutlined } from '@ant-design/icons-vue'
 import { useI18n } from 'vue-i18n'
 import AppearanceForm from '@/components/settings/AppearanceForm.vue'
+import WallpaperSection from '@/components/settings/WallpaperSection.vue'
 import { useLayoutStore } from '@/stores/layout'
 import { useLocaleStore } from '@/stores/locale'
 
@@ -41,6 +42,11 @@ const currentLocale = computed({
     <div class="setting-group">
       <div class="group-title">{{ t('settings.display.appearance') }}</div>
       <AppearanceForm />
+    </div>
+
+    <div class="setting-group">
+      <div class="group-title">{{ t('wallpaper.title') }}</div>
+      <WallpaperSection />
     </div>
 
     <div class="setting-group">
