@@ -37,7 +37,7 @@ const layout = useLayoutStore()
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: var(--color-background);
+  background: var(--bg-content);
 }
 
 .content-wrapper {
@@ -53,7 +53,7 @@ const layout = useLayoutStore()
   padding: 0 var(--spacing-lg);
   height: var(--footer-height);
   border-top: 1px solid var(--color-border);
-  background: var(--color-surface);
+  background: var(--bg-footer);
   flex-shrink: 0;
   overflow: hidden;
 }

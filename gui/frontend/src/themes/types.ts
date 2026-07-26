@@ -28,8 +28,8 @@ export type PresetKey = 'dracula' | 'blue' | 'emerald' | 'violet' | 'amber' | 'r
 export type BuiltinPreset = Exclude<PresetKey, 'custom'>
 
 // ===== 区域语义层 =====
-/** 5 个 UI 区域（byte-stash 命名：header/sider/footer/content/card） */
-export type RegionKey = 'header' | 'sider' | 'footer' | 'content' | 'card'
+/** 6 个 UI 区域（reference 布局：顶栏/菜单栏/轨道栏/底栏/内容区/卡片） */
+export type RegionKey = 'header' | 'sider' | 'rail' | 'footer' | 'content' | 'card'
 /** 区域属性：背景 / 主文字 / 次要文字 */
 export type RegionProp = 'bg' | 'text' | 'textSub'
 /** 覆盖表键，如 "header.bg" */

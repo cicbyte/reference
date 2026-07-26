@@ -142,7 +142,7 @@ const activeTab = ref('display')
   min-height: 0;
   overflow-y: auto;
   padding: 24px 32px;
-  background: var(--color-background);
+  background: var(--bg-content);
 }
 .settings-content::-webkit-scrollbar { width: 8px; }
 .settings-content::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }

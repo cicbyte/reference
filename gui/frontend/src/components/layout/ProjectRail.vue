@@ -142,7 +142,7 @@ async function onSwitch(p) {
   width: 200px;
   min-width: 0;
   border-right: 1px solid var(--color-border);
-  background: var(--color-surface);
+  background: var(--bg-rail);
   flex-shrink: 0;
   overflow: hidden;
   /* width animates across all three states: expanded(200) → collapsed(60) → hidden(0) */

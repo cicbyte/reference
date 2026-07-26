@@ -204,7 +204,7 @@ const expandedWidth = 200
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: var(--color-surface);
+  background-color: var(--bg-sider);
   border-right: 1px solid var(--color-border);
   transition: width var(--transition-normal);
   overflow: hidden;

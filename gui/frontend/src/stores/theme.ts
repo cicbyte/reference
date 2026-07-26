@@ -101,12 +101,19 @@ export const useThemeStore = defineStore('theme', () => {
   }
   const palette = computed<ThemeColors>(() => currentColors())
 
-  /** antd ConfigProvider token */
-  const antdTheme = computed(() => buildAntdToken(palette.value, resolvedMode.value))
+  /** antd ConfigProvider token（仅 custom 预设下 Card/Modal 背景跟随 card 区域覆盖） */
+  const antdTheme = computed(() => {
+    const cardBg = preset.value === 'custom' ? regionValue(resolvedMode.value, 'card', 'bg') : undefined
+    return buildAntdToken(palette.value, resolvedMode.value, cardBg)
+  })
 
   // ===== actions =====
   function apply() {
-    applyColorsToDOM(palette.value, resolvedMode.value, regions.value[resolvedMode.value])
+    // 区域覆盖仅在 custom 预设下生效；内置预设完全使用预设默认色板（含默认区域），
+    // 避免用户在 custom 微调的区域覆盖污染内置主题（applyColorsToDOM 收到 undefined 时
+    // 回退 defaultRegions 并 removeProperty 清除文字覆盖）。
+    const regs = preset.value === 'custom' ? regions.value[resolvedMode.value] : undefined
+    applyColorsToDOM(palette.value, resolvedMode.value, regs)
     // highlight.js 主题跟随纯 CSS（derivation.css 基于 [data-theme] 切换），无需 JS
   }
 

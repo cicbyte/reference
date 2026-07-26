@@ -102,6 +102,9 @@
             'sider.bg': '--bg-sider-orig',
             'sider.text': '--text-sider',
             'sider.textSub': '--text-sider-sub',
+            'rail.bg': '--bg-rail-orig',
+            'rail.text': '--text-rail',
+            'rail.textSub': '--text-rail-sub',
             'footer.bg': '--bg-footer-orig',
             'footer.text': '--text-footer',
             'footer.textSub': '--text-footer-sub',
@@ -112,7 +115,8 @@
             'card.text': '--text-card',
             'card.textSub': '--text-card-sub',
           };
-          if (s.regions && s.regions[mode]) {
+          // 区域覆盖仅在 custom 预设下注入（内置预设完全用默认色板，避免污染）
+          if (s.preset === 'custom' && s.regions && s.regions[mode]) {
             Object.keys(s.regions[mode]).forEach(function (k) {
               if (rmap[k]) root.style.setProperty(rmap[k], s.regions[mode][k]);
             });

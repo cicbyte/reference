@@ -66,9 +66,11 @@ export function applyColorsToDOM(colors: ThemeColors, appearance: Appearance, re
   root.setAttribute('data-theme', appearance)
 }
 
-/** antd 轨：生成 ConfigProvider token，直接读 ThemeColors，不让 antd algorithm 自派生 */
-export function buildAntdToken(colors: ThemeColors, appearance: Appearance) {
+/** antd 轨：生成 ConfigProvider token，直接读 ThemeColors，不让 antd algorithm 自派生。
+ *  cardBg 可选：Card/Modal 背景跟随 card 区域覆盖（未传则用 bgSurface）。 */
+export function buildAntdToken(colors: ThemeColors, appearance: Appearance, cardBg?: string) {
   const isDark = appearance === 'dark'
+  const cBg = cardBg ?? colors.bgSurface
   return {
     algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
     token: {
@@ -104,12 +106,12 @@ export function buildAntdToken(colors: ThemeColors, appearance: Appearance) {
         itemSelectedColor: colors.primary,
       },
       Card: {
-        colorBgContainer: colors.bgSurface,
+        colorBgContainer: cBg,
         borderRadiusLG: 8,
       },
       Modal: {
-        contentBg: colors.bgSurface,
-        headerBg: colors.bgSurface,
+        contentBg: cBg,
+        headerBg: cBg,
         titleColor: colors.textPrimary,
       },
       Dropdown: {

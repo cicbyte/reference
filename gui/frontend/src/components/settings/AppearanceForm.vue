@@ -17,7 +17,17 @@ import { useThemeStore } from '@/stores/theme'
 import ThemePreviewCard from '@/components/settings/ThemePreviewCard.vue'
 import { PRESET_LIST, REGION_DEFS, buildPresetColors, deriveBaseLayer } from '@/themes/presets'
 import { applyColorsToDOM } from '@/themes/token'
-import type { ThemeColors, BuiltinPreset, PresetKey, ResolvedMode, RegionKey, RegionProp, Mode } from '@/themes/types'
+import type {
+  ThemeColors,
+  BuiltinPreset,
+  PresetKey,
+  ResolvedMode,
+  RegionKey,
+  RegionProp,
+  RegionOverrides,
+  RegionOverrideKey,
+  Mode,
+} from '@/themes/types'
 
 const { t } = useI18n()
 const themeStore = useThemeStore()
@@ -82,6 +92,10 @@ function resetVariant() {
   editDark.value = buildPresetColors('dracula', 'dark')
   editLight.value = buildPresetColors('dracula', 'light')
   applyCustom()
+  // 区域覆盖是 custom 的子功能，重置时一并清空（两个变体 + 本地草稿），避免残留
+  themeStore.resetRegions('light')
+  themeStore.resetRegions('dark')
+  regionDraft.value = {}
   message.success(t('settings.display.theme.resetDone'))
 }
 /** 基于当前编辑变体的页面底色自动派生协调色板（保留主色 + 状态色扩展） */
@@ -101,10 +115,29 @@ const REGION_PROPS: { prop: RegionProp; label: string }[] = [
   { prop: 'text', label: t('settings.display.theme.regionText') },
   { prop: 'textSub', label: t('settings.display.theme.regionTextSub') },
 ]
+// 区域覆盖本地草稿：拖动时只更 CSS 变量（轻量），松开才写 store。
+// card 区域接入 antdTheme，高频写 store 会触发 antd 全量重渲染导致卡顿，故分离 live/commit。
+const regionDraft = ref<RegionOverrides>({ ...themeStore.regions[editTab.value] })
+watch([() => themeStore.preset, editTab], () => {
+  regionDraft.value = { ...themeStore.regions[editTab.value] }
+})
+function editTabColors(): ThemeColors {
+  return themeStore.preset === 'custom'
+    ? { ...themeStore.custom[editTab.value] }
+    : buildPresetColors(themeStore.preset as BuiltinPreset, editTab.value)
+}
 function regionVal(key: RegionKey, prop: RegionProp): string {
-  return themeStore.regionValue(editTab.value, key, prop)
+  const k = `${key}.${prop}` as RegionOverrideKey
+  return regionDraft.value[k] ?? themeStore.regionValue(editTab.value, key, prop)
+}
+function applyRegionLive() {
+  applyColorsToDOM(editTabColors(), editTab.value, regionDraft.value)
 }
 function onRegionInput(key: RegionKey, prop: RegionProp, val: string) {
+  ;(regionDraft.value as Record<string, string>)[`${key}.${prop}`] = val
+  applyRegionLive()
+}
+function onRegionCommit(key: RegionKey, prop: RegionProp, val: string) {
   themeStore.setRegionToken(editTab.value, key, prop, val)
 }
 
@@ -333,6 +366,7 @@ function onImportFile(e: Event) {
                   :value="regionVal(reg.key, rp.prop) || '#000000'"
                   class="color-picker"
                   @input="onRegionInput(reg.key, rp.prop, ($event.target as HTMLInputElement).value)"
+                  @change="onRegionCommit(reg.key, rp.prop, ($event.target as HTMLInputElement).value)"
                 />
                 <span class="color-label">{{ rp.label }}</span>
                 <input type="text" :value="regionVal(reg.key, rp.prop) || ''" class="color-hex" disabled />

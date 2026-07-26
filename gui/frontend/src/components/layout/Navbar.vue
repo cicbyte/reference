@@ -106,7 +106,7 @@ function close() { app?.WindowClose() }
   height: var(--navbar-height);
   padding: 0 var(--spacing-md);
   border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
+  background: var(--bg-header);
   flex-shrink: 0;
   --wails-draggable: drag;
 }

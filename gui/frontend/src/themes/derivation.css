@@ -49,6 +49,7 @@
   /* ===== 区域 bg 原始值默认回指（token apply 注入覆盖值/默认值到此）===== */
   --bg-header-orig: var(--bg-surface-orig);
   --bg-sider-orig: var(--bg-surface-orig);
+  --bg-rail-orig: var(--bg-surface-orig);
   --bg-footer-orig: var(--bg-surface-orig);
   --bg-content-orig: var(--bg-base-orig);
   --bg-card-orig: var(--bg-surface-orig);
@@ -60,6 +61,7 @@
   --bg-input: color-mix(in srgb, var(--bg-input-orig), transparent var(--wp-panel-alpha, 0%));
   --bg-header: color-mix(in srgb, var(--bg-header-orig), transparent var(--wp-panel-alpha, 0%));
   --bg-sider: color-mix(in srgb, var(--bg-sider-orig), transparent var(--wp-panel-alpha, 0%));
+  --bg-rail: color-mix(in srgb, var(--bg-rail-orig), transparent var(--wp-panel-alpha, 0%));
   --bg-footer: color-mix(in srgb, var(--bg-footer-orig), transparent var(--wp-panel-alpha, 0%));
   --bg-content: color-mix(in srgb, var(--bg-content-orig), transparent var(--wp-panel-alpha, 0%));
   --bg-card: color-mix(in srgb, var(--bg-card-orig), transparent var(--wp-panel-alpha, 0%));
@@ -69,6 +71,8 @@
   --text-header-sub: var(--text-secondary);
   --text-sider: var(--text-primary);
   --text-sider-sub: var(--text-secondary);
+  --text-rail: var(--text-primary);
+  --text-rail-sub: var(--text-secondary);
   --text-footer: var(--text-primary);
   --text-footer-sub: var(--text-secondary);
   --text-content: var(--text-primary);

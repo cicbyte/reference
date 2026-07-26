@@ -352,7 +352,8 @@ export const REGION_DEFS: {
   vars: { bg: string; text: string; textSub: string }
 }[] = [
   { key: 'header', label: '顶部栏', vars: { bg: '--bg-header', text: '--text-header', textSub: '--text-header-sub' } },
-  { key: 'sider', label: '侧边栏', vars: { bg: '--bg-sider', text: '--text-sider', textSub: '--text-sider-sub' } },
+  { key: 'sider', label: '菜单栏', vars: { bg: '--bg-sider', text: '--text-sider', textSub: '--text-sider-sub' } },
+  { key: 'rail', label: '项目轨道栏', vars: { bg: '--bg-rail', text: '--text-rail', textSub: '--text-rail-sub' } },
   { key: 'footer', label: '底部栏', vars: { bg: '--bg-footer', text: '--text-footer', textSub: '--text-footer-sub' } },
   { key: 'content', label: '内容区', vars: { bg: '--bg-content', text: '--text-content', textSub: '--text-content-sub' } },
   { key: 'card', label: '卡片/面板', vars: { bg: '--bg-card', text: '--text-card', textSub: '--text-card-sub' } },
@@ -364,6 +365,7 @@ export function defaultRegions(c: ThemeColors): RegionPalette {
   return {
     header: { ...chrome },
     sider: { ...chrome },
+    rail: { ...chrome },
     footer: { ...chrome },
     content: { bg: c.bgBase, text: c.textPrimary, textSub: c.textSecondary },
     card: { ...chrome },
