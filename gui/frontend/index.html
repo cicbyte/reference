@@ -1,14 +1,130 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <link href="/icon.png" rel="icon" type="image/png"/>
-    <title>git-mate-gui</title>
-</head>
-<body>
-<div id="app"></div>
-<script src="./src/main.ts" type="module"></script>
-</body>
-</html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="/icon.png" rel="icon" type="image/png" />
+    <title>reference</title>
+    <script>
+      // 主题预热：同步、在 CSS 解析前执行，消除首帧 FOUC。
+      // 读 localStorage → 迁移 reference 旧 plain string 'dark'/'light' → 解析 mode
+      // → 注入基础层 CSS 变量 + 区域覆盖；custom 预设首帧用 dracula 兜底，main.ts 接管后修正。
+      (function () {
+        try {
+          var DRACULA = {
+            dark: {
+              primary: '#BD93F9',
+              primaryBg: 'rgba(189,147,249,0.15)',
+              colorHover: 'rgba(189,147,249,0.08)',
+              primaryBorder: 'rgba(189,147,249,0.4)',
+              bgBase: '#0f172a',
+              bgSurface: '#1e293b',
+              bgInput: '#334155',
+              bgElevated: '#3d4d63',
+              textPrimary: '#f1f5f9',
+              textSecondary: '#94a3b8',
+              textTertiary: '#64748b',
+              borderBase: '#3d4d63',
+              borderLight: '#2d3e50',
+            },
+            light: {
+              primary: '#BD93F9',
+              primaryBg: 'rgba(189,147,249,0.15)',
+              colorHover: 'rgba(189,147,249,0.12)',
+              primaryBorder: 'rgba(189,147,249,0.4)',
+              bgBase: '#ffffff',
+              bgSurface: '#f8fafc',
+              bgInput: '#f1f5f9',
+              bgElevated: '#f1f5f9',
+              textPrimary: '#0f172a',
+              textSecondary: '#64748b',
+              textTertiary: '#94a3b8',
+              borderBase: '#e2e8f0',
+              borderLight: '#f1f5f9',
+            },
+          };
+          var raw = localStorage.getItem('reference-theme');
+          var s = null;
+          if (raw) {
+            try {
+              s = JSON.parse(raw);
+            } catch (e) {
+              // reference 旧值是 plain string 'dark'/'light'（无 JSON 包装）
+              if (raw === 'dark' || raw === 'light') s = { preset: 'dracula', mode: raw };
+            }
+          }
+          if (!s || typeof s !== 'object') s = { preset: 'dracula', mode: 'auto' };
+          if (!s.preset) s.preset = 'dracula';
+          if (!s.mode) s.mode = 'auto';
 
+          var prefMode = s.mode;
+          var mode =
+            prefMode === 'light' || prefMode === 'dark'
+              ? prefMode
+              : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light';
+
+          var p = s.preset === 'custom' && s.custom && s.custom[mode] ? s.custom[mode] : DRACULA[mode];
+          var root = document.documentElement;
+          root.setAttribute('data-theme', mode);
+          var map = {
+            primary: '--color-primary',
+            primaryBg: '--color-primary-bg',
+            colorHover: '--color-hover',
+            primaryBorder: '--color-primary-border',
+            bgBase: '--bg-base-orig',
+            bgSurface: '--bg-surface-orig',
+            bgInput: '--bg-input-orig',
+            bgElevated: '--bg-elevated-orig',
+            textPrimary: '--text-primary',
+            textSecondary: '--text-secondary',
+            textTertiary: '--text-tertiary',
+            borderBase: '--border-base',
+            borderLight: '--border-light',
+          };
+          Object.keys(map).forEach(function (k) {
+            root.style.setProperty(map[k], p[k]);
+          });
+          root.style.setProperty('--accent', p.primary);
+
+          // 别名层关键变量：reference 老消费方用 --color-background/--color-text 等
+          root.style.setProperty('--color-background', 'var(--bg-base)');
+          root.style.setProperty('--color-surface', 'var(--bg-surface)');
+          root.style.setProperty('--color-surface-raised', 'var(--bg-elevated)');
+          root.style.setProperty('--color-text', 'var(--text-primary)');
+
+          // 区域语义层：仅注入用户覆盖项；未覆盖的由 :root var() 自动跟随基础层
+          var rmap = {
+            'header.bg': '--bg-header-orig',
+            'header.text': '--text-header',
+            'header.textSub': '--text-header-sub',
+            'sider.bg': '--bg-sider-orig',
+            'sider.text': '--text-sider',
+            'sider.textSub': '--text-sider-sub',
+            'footer.bg': '--bg-footer-orig',
+            'footer.text': '--text-footer',
+            'footer.textSub': '--text-footer-sub',
+            'content.bg': '--bg-content-orig',
+            'content.text': '--text-content',
+            'content.textSub': '--text-content-sub',
+            'card.bg': '--bg-card-orig',
+            'card.text': '--text-card',
+            'card.textSub': '--text-card-sub',
+          };
+          if (s.regions && s.regions[mode]) {
+            Object.keys(s.regions[mode]).forEach(function (k) {
+              if (rmap[k]) root.style.setProperty(rmap[k], s.regions[mode][k]);
+            });
+          }
+        } catch (e) {
+          /* 静默，derivation.css + main.ts 兜底 */
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

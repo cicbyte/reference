@@ -3,19 +3,13 @@ import { computed } from 'vue'
 import { message } from 'ant-design-vue'
 import { BgColorsOutlined, GlobalOutlined } from '@ant-design/icons-vue'
 import { useI18n } from 'vue-i18n'
-import { useThemeStore } from '@/stores/theme'
+import AppearanceForm from '@/components/settings/AppearanceForm.vue'
 import { useLayoutStore } from '@/stores/layout'
 import { useLocaleStore } from '@/stores/locale'
 
 const { t } = useI18n()
-const theme = useThemeStore()
 const layout = useLayoutStore()
 const locale = useLocaleStore()
-
-const themeMode = computed({
-  get: () => theme.currentTheme,
-  set: (v) => theme.setTheme(v),
-})
 
 const railVisible = computed({
   get: () => layout.projectRailVisible,
@@ -46,34 +40,7 @@ const currentLocale = computed({
 
     <div class="setting-group">
       <div class="group-title">{{ t('settings.display.appearance') }}</div>
-
-      <!-- visual theme picker -->
-      <div class="theme-picker">
-        <div
-          class="theme-card"
-          :class="{ active: themeMode === 'dark' }"
-          @click="themeMode = 'dark'"
-        >
-          <div class="theme-preview theme-preview-dark">
-            <div class="tp-bar tp-bar-rail"></div>
-            <div class="tp-bar tp-bar-side"></div>
-            <div class="tp-bar tp-bar-main"></div>
-          </div>
-          <div class="theme-card-label">{{ t('settings.display.dark') }}</div>
-        </div>
-        <div
-          class="theme-card"
-          :class="{ active: themeMode === 'light' }"
-          @click="themeMode = 'light'"
-        >
-          <div class="theme-preview theme-preview-light">
-            <div class="tp-bar tp-bar-rail"></div>
-            <div class="tp-bar tp-bar-side"></div>
-            <div class="tp-bar tp-bar-main"></div>
-          </div>
-          <div class="theme-card-label">{{ t('settings.display.light') }}</div>
-        </div>
-      </div>
+      <AppearanceForm />
     </div>
 
     <div class="setting-group">
@@ -115,36 +82,4 @@ const currentLocale = computed({
 
 <style scoped>
 @import './settings-shared.css';
-
-.theme-picker {
-  display: flex; gap: 14px; flex-wrap: wrap;
-}
-.theme-card {
-  cursor: pointer; border: 2px solid var(--color-border-light);
-  border-radius: var(--radius-md); padding: 8px;
-  transition: all var(--transition-fast);
-}
-.theme-card:hover { border-color: var(--color-primary); }
-.theme-card.active {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-bg);
-}
-.theme-preview {
-  width: 150px; height: 92px; border-radius: var(--radius-sm);
-  display: flex; overflow: hidden; padding: 8px; gap: 4px;
-}
-.theme-preview-dark { background: #1e1f2c; }
-.theme-preview-light { background: #f5f5f7; }
-.tp-bar { border-radius: 2px; height: 100%; }
-.tp-bar-rail { width: 20px; }
-.tp-bar-side { width: 30px; }
-.tp-bar-main { flex: 1; }
-.theme-preview-dark .tp-bar { background: #313344; }
-.theme-preview-dark .tp-bar-main { background: #262737; }
-.theme-preview-light .tp-bar { background: #e4e4e8; }
-.theme-preview-light .tp-bar-main { background: #ffffff; border: 1px solid #e4e4e8; }
-.theme-card-label {
-  text-align: center; font-size: 13px; font-weight: 500;
-  color: var(--color-text); margin-top: 8px;
-}
 </style>

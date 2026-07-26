@@ -1,6 +1,5 @@
 <script setup>
 import { computed, onMounted, onBeforeUnmount } from 'vue'
-import { theme } from 'ant-design-vue'
 import zhCN from 'ant-design-vue/es/locale/zh_CN'
 import enUS from 'ant-design-vue/es/locale/en_US'
 import { useThemeStore } from './stores/theme'
@@ -15,19 +14,8 @@ const localeStore = useLocaleStore()
 // Ant Design component locale follows the app language.
 const antLocale = computed(() => localeStore.isEn ? enUS : zhCN)
 
-const antTheme = computed(() => ({
-  algorithm: themeStore.isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
-  token: {
-    colorPrimary: '#BD93F9',
-    borderRadius: 8,
-    colorBgContainer: themeStore.isDark ? '#1e293b' : '#ffffff',
-    colorBgLayout: themeStore.isDark ? '#0f172a' : '#f8fafc',
-    colorBorder: themeStore.isDark ? '#334155' : '#e2e8f0',
-    colorText: themeStore.isDark ? '#f1f5f9' : '#0f172a',
-    colorTextSecondary: themeStore.isDark ? '#94a3b8' : '#64748b',
-    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif',
-  }
-}))
+// antd 主题 token 完全委托给 theme store（跟随预设/自定义/明暗）
+const antTheme = computed(() => themeStore.antdTheme)
 
 onMounted(() => {
   themeStore.initializeTheme()

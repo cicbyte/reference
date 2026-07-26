@@ -131,3 +131,6 @@ typings/
 
 *.syso
 *.md5
+.agents/
+.codex/
+.scratch/

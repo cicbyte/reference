@@ -1,0 +1,170 @@
+/* derivation.css — 首屏兜底 + 变量层半透明派生 + 区域默认回指 + 壁纸变量 + 老变量别名层
+ *
+ * 三道防线消除 FOUC：
+ *  1) index.html 的 inline FOUC 脚本在 CSS 解析前先注入 --bg-*-orig 等用户主题变量；
+ *  2) 本文件 :root 提供 dracula/dark 兜底值（脚本失败/首次访问时）；
+ *  3) themeStore.apply() 运行时注入实际主题（inline 优先级最高，覆盖兜底）。
+ *
+ * 壁纸机制（变量层，全覆盖）：所有 --bg-* 由 `--bg-*-orig` 经
+ *   color-mix(in srgb, var(--bg-*-orig), transparent var(--wp-panel-alpha, 0%))
+ * 派生。--wp-panel-alpha=0%（无壁纸）时等价纯色；壁纸启用时 wallpaper store
+ * 注入 panelAlpha%，所有用 var(--bg-*) 的容器自动半透明透出壁纸层——无需逐组件改。
+ *
+ * reference 专属「别名层」：原 variables.css 用 --color-background/--color-surface 等
+ * 命名（541 处消费方），新体系用 --bg-*、--text-*。为避免全量重命名，在此把老变量名
+ * 别名到新变量——老消费方零改动继续工作。
+ */
+:root {
+  /* ===== 基础 bg 原始值兜底（dracula/dark；token apply 注入实际值到此） ===== */
+  --bg-base-orig: #0f172a;
+  --bg-surface-orig: #1e293b;
+  --bg-elevated-orig: #3d4d63;
+  --bg-input-orig: #334155;
+
+  /* ===== 基础非 bg 兜底（dracula/dark） ===== */
+  --color-primary: #bd93f9;
+  --color-primary-bg: rgba(189, 147, 249, 0.15);
+  --color-hover: rgba(189, 147, 249, 0.08);
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-tertiary: #64748b;
+  --border-base: #3d4d63;
+  --border-light: #2d3e50;
+
+  /* ===== 扩展层兜底（状态色等，不参与预设色调） ===== */
+  --text-disabled: #475569;
+  --color-primary-hover: #c4a0fa;
+  --color-primary-active: #a681db;
+  --color-primary-border: rgba(189, 147, 249, 0.4);
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-info: #06b6d4;
+  --success-bg: rgba(34, 197, 94, 0.14);
+  --warning-bg: rgba(245, 158, 11, 0.14);
+  --danger-bg: rgba(239, 68, 68, 0.14);
+  --info-bg: rgba(6, 182, 212, 0.14);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+
+  /* ===== 区域 bg 原始值默认回指（token apply 注入覆盖值/默认值到此）===== */
+  --bg-header-orig: var(--bg-surface-orig);
+  --bg-sider-orig: var(--bg-surface-orig);
+  --bg-footer-orig: var(--bg-surface-orig);
+  --bg-content-orig: var(--bg-base-orig);
+  --bg-card-orig: var(--bg-surface-orig);
+
+  /* ===== bg 半透明派生（壁纸时 --wp-panel-alpha>0 透出壁纸；0%=纯色）===== */
+  --bg-base: color-mix(in srgb, var(--bg-base-orig), transparent var(--wp-panel-alpha, 0%));
+  --bg-surface: color-mix(in srgb, var(--bg-surface-orig), transparent var(--wp-panel-alpha, 0%));
+  --bg-elevated: color-mix(in srgb, var(--bg-elevated-orig), transparent var(--wp-panel-alpha, 0%));
+  --bg-input: color-mix(in srgb, var(--bg-input-orig), transparent var(--wp-panel-alpha, 0%));
+  --bg-header: color-mix(in srgb, var(--bg-header-orig), transparent var(--wp-panel-alpha, 0%));
+  --bg-sider: color-mix(in srgb, var(--bg-sider-orig), transparent var(--wp-panel-alpha, 0%));
+  --bg-footer: color-mix(in srgb, var(--bg-footer-orig), transparent var(--wp-panel-alpha, 0%));
+  --bg-content: color-mix(in srgb, var(--bg-content-orig), transparent var(--wp-panel-alpha, 0%));
+  --bg-card: color-mix(in srgb, var(--bg-card-orig), transparent var(--wp-panel-alpha, 0%));
+
+  /* ===== 区域文字默认回指（用户未覆盖时跟随基础层）===== */
+  --text-header: var(--text-primary);
+  --text-header-sub: var(--text-secondary);
+  --text-sider: var(--text-primary);
+  --text-sider-sub: var(--text-secondary);
+  --text-footer: var(--text-primary);
+  --text-footer-sub: var(--text-secondary);
+  --text-content: var(--text-primary);
+  --text-content-sub: var(--text-secondary);
+  --text-card: var(--text-primary);
+  --text-card-sub: var(--text-secondary);
+
+  /* ===== 壁纸系统变量（wallpaper store apply 注入；默认 0 = 无壁纸态）===== */
+  --wp-blur: 0px;
+  --wp-panel-alpha: 0%;
+
+  /* ===== 别名层：映射 reference 原 variables.css 命名（541 处消费方零改动）=====
+     同名变量（--color-primary / -primary-hover / -primary-bg / -success / -warning /
+     -info / -hover）由 token apply 直接注入，无需别名；此处只列「改名」或「语义迁移」项。 */
+  --accent: var(--color-primary);
+  /* active 跟随主色（reference 原 --color-active 是主色 alpha，此处派生以跟随预设） */
+  --color-active: color-mix(in srgb, var(--color-primary), transparent 84%);
+  --color-background: var(--bg-base);
+  --color-surface: var(--bg-surface);
+  --color-surface-raised: var(--bg-elevated);
+  --color-text: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-border: var(--border-base);
+  --color-border-light: var(--border-light);
+  /* reference 用 error，新体系用 danger —— 别名跟随 */
+  --color-error: var(--color-danger);
+  --color-error-bg: var(--danger-bg);
+  /* -bg 后缀变量名不一致（reference 带 color- 前缀，新体系不带）—— 别名跟随 */
+  --color-success-bg: var(--success-bg);
+  --color-warning-bg: var(--warning-bg);
+  --color-info-bg: var(--info-bg);
+}
+
+/* ===== highlight.js 主题跟随（基于 <html data-theme>，纯 CSS 切换）=====
+   背景跟随浮层色、前景跟随主文字、关键字跟随主题色，保证代码块与主题协调。
+   注：commit type / 日志的 Dracula 语法色（--color-hash/feat/...）是业务语义色，
+   与此处的代码高亮职责不同，互不干扰。 */
+[data-theme='dark'] .hljs {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+[data-theme='dark'] .hljs-comment,
+[data-theme='dark'] .hljs-quote {
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+[data-theme='dark'] .hljs-keyword,
+[data-theme='dark'] .hljs-selector-tag,
+[data-theme='dark'] .hljs-built_in {
+  color: var(--color-primary);
+}
+[data-theme='dark'] .hljs-string,
+[data-theme='dark'] .hljs-attr {
+  color: var(--color-success);
+}
+[data-theme='dark'] .hljs-number,
+[data-theme='dark'] .hljs-literal {
+  color: var(--color-warning);
+}
+[data-theme='dark'] .hljs-title,
+[data-theme='dark'] .hljs-function .hljs-title {
+  color: var(--color-info);
+}
+[data-theme='dark'] .hljs-tag,
+[data-theme='dark'] .hljs-name {
+  color: var(--color-danger);
+}
+
+[data-theme='light'] .hljs {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+[data-theme='light'] .hljs-comment,
+[data-theme='light'] .hljs-quote {
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+[data-theme='light'] .hljs-keyword,
+[data-theme='light'] .hljs-selector-tag,
+[data-theme='light'] .hljs-built_in {
+  color: var(--color-primary);
+}
+[data-theme='light'] .hljs-string,
+[data-theme='light'] .hljs-attr {
+  color: var(--color-success);
+}
+[data-theme='light'] .hljs-number,
+[data-theme='light'] .hljs-literal {
+  color: var(--color-warning);
+}
+[data-theme='light'] .hljs-title,
+[data-theme='light'] .hljs-function .hljs-title {
+  color: var(--color-info);
+}
+[data-theme='light'] .hljs-tag,
+[data-theme='light'] .hljs-name {
+  color: var(--color-danger);
+}
