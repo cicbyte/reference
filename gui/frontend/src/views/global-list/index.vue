@@ -184,38 +184,35 @@ function switchTo(p) {
     <!-- right main: fixed header + scrollable project cards -->
     <section class="list-main">
       <div class="list-main-head">
-        <div class="page-header">
-          <h2>{{ t('sidebar.projectList') }}</h2>
-          <div class="header-actions">
-            <a-button danger @click="openCleanup">
-              <template #icon><DeleteOutlined /></template>
-              {{ t('globalList.cleanup') }}
-            </a-button>
-            <a-button @click="loadProjects" :loading="loading">
-              <template #icon><ReloadOutlined /></template>
-              {{ t('common.refresh') }}
-            </a-button>
+        <div class="head-stats">
+          <div class="stat-item">
+            <FolderOutlined class="stat-icon" />
+            <span class="stat-num">{{ projects.length }}</span>
+            <span class="stat-label">{{ t('globalList.summaryProjects') }}</span>
           </div>
+          <div class="stat-sep"></div>
+          <div class="stat-item">
+            <span class="stat-num">{{ totalRepos }}</span>
+            <span class="stat-label">{{ t('globalList.summaryRepos') }}</span>
+          </div>
+          <template v-if="brokenProjects > 0">
+            <div class="stat-sep"></div>
+            <div class="stat-item warn">
+              <WarningOutlined class="stat-icon" />
+              <span class="stat-num">{{ brokenProjects }}</span>
+              <span class="stat-label">{{ t('globalList.summaryBroken') }}</span>
+            </div>
+          </template>
         </div>
-
-        <!-- summary -->
-        <div class="summary-strip">
-          <div class="sum-item">
-            <FolderOutlined class="sum-icon" />
-            <span class="sum-val">{{ projects.length }}</span>
-            <span class="sum-lbl">{{ t('globalList.summaryProjects') }}</span>
-          </div>
-          <div class="sum-sep"></div>
-          <div class="sum-item">
-            <span class="sum-val">{{ totalRepos }}</span>
-            <span class="sum-lbl">{{ t('globalList.summaryRepos') }}</span>
-          </div>
-          <div class="sum-sep" v-if="brokenProjects > 0"></div>
-          <div class="sum-item" v-if="brokenProjects > 0">
-            <WarningOutlined class="sum-icon warn" />
-            <span class="sum-val warn">{{ brokenProjects }}</span>
-            <span class="sum-lbl">{{ t('globalList.summaryBroken') }}</span>
-          </div>
+        <div class="head-actions">
+          <a-button size="small" danger @click="openCleanup">
+            <template #icon><DeleteOutlined /></template>
+            {{ t('globalList.cleanup') }}
+          </a-button>
+          <a-button size="small" @click="loadProjects" :loading="loading">
+            <template #icon><ReloadOutlined /></template>
+            {{ t('common.refresh') }}
+          </a-button>
         </div>
       </div>
 
@@ -425,10 +422,24 @@ function switchTo(p) {
   overflow: hidden;
 }
 .list-main-head {
-  flex-shrink: 0;
-  padding: var(--spacing-lg);
+  height: var(--navbar-height);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: 0 var(--spacing-md);
   border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
 }
+.head-stats { display: flex; align-items: center; gap: var(--spacing-sm); }
+.stat-item { display: flex; align-items: center; gap: 5px; }
+.stat-icon { font-size: 14px; color: var(--color-text-tertiary); }
+.stat-item.warn .stat-icon { color: var(--color-warning); }
+.stat-num { font-size: 15px; font-weight: 700; color: var(--color-text); line-height: 1; }
+.stat-item.warn .stat-num { color: var(--color-warning); }
+.stat-label { font-size: 11px; color: var(--color-text-tertiary); }
+.stat-sep { width: 1px; height: 16px; background: var(--color-border); }
+.head-actions { margin-left: auto; display: flex; gap: var(--spacing-sm); }
+
 .list-scroll {
   flex: 1;
   overflow-y: auto;
@@ -437,28 +448,6 @@ function switchTo(p) {
 }
 .list-scroll::-webkit-scrollbar { width: 8px; }
 .list-scroll::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
-
-.page-header {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: var(--spacing-md);
-}
-.page-header h2 { font-size: 20px; font-weight: 600; color: var(--color-text); margin: 0; }
-.header-actions { display: flex; gap: var(--spacing-sm); }
-
-/* summary */
-.summary-strip {
-  display: flex; align-items: center; gap: var(--spacing-md);
-  padding: 14px 18px;
-  background: var(--bg-elevated); border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-}
-.sum-item { display: flex; align-items: center; gap: 8px; }
-.sum-icon { font-size: 16px; color: var(--color-text-tertiary); }
-.sum-icon.warn { color: var(--color-warning); }
-.sum-val { font-size: 20px; font-weight: 700; color: var(--color-text); }
-.sum-val.warn { color: var(--color-warning); }
-.sum-lbl { font-size: 12px; color: var(--color-text-tertiary); }
-.sum-sep { width: 1px; height: 28px; background: var(--color-border); }
 
 /* group headers */
 .group-head {
