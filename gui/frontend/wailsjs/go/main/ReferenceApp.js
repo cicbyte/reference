@@ -130,6 +130,10 @@ export function PickFolder(arg1) {
   return window['go']['main']['ReferenceApp']['PickFolder'](arg1);
 }
 
+export function PickImageFile() {
+  return window['go']['main']['ReferenceApp']['PickImageFile']();
+}
+
 export function PickProjectFolder() {
   return window['go']['main']['ReferenceApp']['PickProjectFolder']();
 }
@@ -184,6 +188,26 @@ export function SwitchProject(arg1) {
 
 export function UpdateRepo(arg1) {
   return window['go']['main']['ReferenceApp']['UpdateRepo'](arg1);
+}
+
+export function WallpaperDataDir() {
+  return window['go']['main']['ReferenceApp']['WallpaperDataDir']();
+}
+
+export function WallpaperDataURL(arg1) {
+  return window['go']['main']['ReferenceApp']['WallpaperDataURL'](arg1);
+}
+
+export function WallpaperDelete(arg1) {
+  return window['go']['main']['ReferenceApp']['WallpaperDelete'](arg1);
+}
+
+export function WallpaperList() {
+  return window['go']['main']['ReferenceApp']['WallpaperList']();
+}
+
+export function WallpaperUpload(arg1) {
+  return window['go']['main']['ReferenceApp']['WallpaperUpload'](arg1);
 }
 
 export function WikiStatus() {

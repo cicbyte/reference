@@ -66,6 +66,8 @@ export function OpenInExplorer(arg1:string):Promise<void>;
 
 export function PickFolder(arg1:string):Promise<string>;
 
+export function PickImageFile():Promise<string>;
+
 export function PickProjectFolder():Promise<string>;
 
 export function PurgeCachedRepo(arg1:string):Promise<void>;
@@ -93,6 +95,16 @@ export function SetProxy(arg1:string):Promise<void>;
 export function SwitchProject(arg1:string):Promise<main.ProjectInfo>;
 
 export function UpdateRepo(arg1:string):Promise<void>;
+
+export function WallpaperDataDir():Promise<string>;
+
+export function WallpaperDataURL(arg1:string):Promise<string>;
+
+export function WallpaperDelete(arg1:string):Promise<void>;
+
+export function WallpaperList():Promise<Array<string>>;
+
+export function WallpaperUpload(arg1:string):Promise<string>;
 
 export function WikiStatus():Promise<Record<string, any>>;
 

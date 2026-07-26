@@ -70,12 +70,15 @@ export const useWallpaperStore = defineStore('wallpaper', () => {
     }
   }
 
-  /** 当前激活壁纸 URL（enabled && activeName && 已缓存时） */
+  /** 当前激活壁纸 URL（enabled && activeName && 已缓存时；AppLayout 据此渲染壁纸层） */
   const activeUrl = computed(() => {
     if (!enabled.value || !activeName.value) return null
     return urlCache.value[activeName.value] ?? null
   })
-  const hasWallpaper = computed(() => !!activeUrl.value)
+  /** 是否有可选壁纸——独立于 enabled，避免「enabled=false → activeUrl=null → hasWallpaper=false
+   *  → 开关 disabled → 无法重新开启」的循环依赖。仅看是否有选中项（init 已校验文件存在），
+   *  用于开关 / 滑块的 disabled 判断；渲染层用 activeUrl。 */
+  const hasWallpaper = computed(() => !!activeName.value)
 
   /** 遮罩层背景色：深色压暗（黑）、浅色压亮（白），跟随当前明暗 */
   const maskColor = computed(() => {
