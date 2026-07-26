@@ -152,7 +152,7 @@ async function recloneRepo(name) {
 </template>
 
 <style scoped>
-.repo-view { display: flex; height: 100%; width: 100%; overflow: hidden; }
+.repo-view { display: flex; height: calc(100% + 2 * var(--spacing-lg)); overflow: hidden; margin: calc(-1 * var(--spacing-lg)); }
 
 /* placeholder */
 .repo-placeholder { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: var(--color-text-tertiary); font-size: 14px; }

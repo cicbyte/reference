@@ -209,9 +209,9 @@ async function purge(repo) {
 <style scoped>
 .cache-view {
   display: flex;
-  height: 100%;
-  width: 100%;
+  height: calc(100% + 2 * var(--spacing-lg));
   overflow: hidden;
+  margin: calc(-1 * var(--spacing-lg));
 }
 
 /* ---- placeholder ---- */
