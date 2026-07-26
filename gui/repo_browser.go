@@ -509,6 +509,33 @@ func (a *ReferenceApp) GetCacheSize(cachePath string) (int64, error) {
 	return walkDirSize(cachePath), nil
 }
 
+// GetCacheSizes returns {cachePath: bytes} for the given paths in one call.
+// Walks all directories in parallel (goroutines, same idea as GetCacheTopN) so
+// the frontend fetches all sizes with a single IPC instead of N separate
+// GetCacheSize calls. The caller passes the paths it already got from
+// ListCachedRepos, so we don't re-run the DB query here. Returns 0 for paths
+// that no longer exist on disk (walkDirSize tolerates missing dirs).
+func (a *ReferenceApp) GetCacheSizes(paths []string) (map[string]int64, error) {
+	results := make(map[string]int64, len(paths))
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	for _, p := range paths {
+		if p == "" {
+			continue
+		}
+		wg.Add(1)
+		go func(path string) {
+			defer wg.Done()
+			size := walkDirSize(path)
+			mu.Lock()
+			results[path] = size
+			mu.Unlock()
+		}(p)
+	}
+	wg.Wait()
+	return results, nil
+}
+
 // CacheTopItem is one entry in the cache-size Top-N ranking.
 type CacheTopItem struct {
 	Name string `json:"name"`

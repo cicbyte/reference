@@ -4,9 +4,9 @@
  * platform → namespace. The right pane is the shared CodeBrowser wired to the
  * BrowseCacheByPath* backend API for the currently selected cache path.
  *
- * The browser/tree/search/highlight/markdown logic lives entirely in the
- * shared CodeBrowser component — this view only supplies the API adapter and
- * calls `browserRef.loadRoot()` whenever the selected cache path changes.
+ * Sizes are loaded in a single batched follow-up call (GetCacheSizes) right
+ * after the list renders: the list appears instantly (loading ends), then all
+ * sizes fill in via one re-render — instead of N per-repo IPC round-trips.
  */
 import { ref, computed, onMounted, watch } from 'vue'
 import { message } from 'ant-design-vue'
@@ -39,27 +39,22 @@ async function loadRepos() {
   loading.value = true
   try {
     if (app) {
+      // 列表秒出（size=0）：loading 不等 size，先结束
       repos.value = await app.ListCachedRepos()
-      // async-load sizes for each repo
-      repos.value.forEach((r) => { fetchSize(r) })
     }
   } catch (e) {
     message.error(t('cache.loadFailed') + ': ' + e)
   } finally {
     loading.value = false
   }
-}
-
-async function fetchSize(repo) {
-  try {
-    if (app?.GetCacheSize) {
-      const size = await app.GetCacheSize(repo.cachePath)
-      const idx = repos.value.findIndex((r) => r.cachePath === repo.cachePath)
-      if (idx >= 0) {
-        repos.value[idx] = { ...repos.value[idx], size }
-      }
-    }
-  } catch { /* leave as … */ }
+  // 后台批量取 size：一次 IPC + 一次合并（替代原 N 次逐仓库 GetCacheSize）
+  if (app?.GetCacheSizes && repos.value.length) {
+    try {
+      const paths = repos.value.map((r) => r.cachePath)
+      const sizes = await app.GetCacheSizes(paths)
+      repos.value = repos.value.map((r) => ({ ...r, size: sizes[r.cachePath] ?? 0 }))
+    } catch { /* size 取失败不影响列表展示 */ }
+  }
 }
 
 onMounted(loadRepos)

@@ -66,6 +66,10 @@ export function GetCacheSize(arg1) {
   return window['go']['main']['ReferenceApp']['GetCacheSize'](arg1);
 }
 
+export function GetCacheSizes(arg1) {
+  return window['go']['main']['ReferenceApp']['GetCacheSizes'](arg1);
+}
+
 export function GetCacheTopN(arg1) {
   return window['go']['main']['ReferenceApp']['GetCacheTopN'](arg1);
 }

@@ -8,7 +8,7 @@
  */
 import {
   ReloadOutlined,
-  SyncOutlined,
+  CloudSyncOutlined,
   ReadOutlined,
   CaretRightFilled,
   FileMarkdownOutlined,
@@ -52,7 +52,7 @@ function platformLabel(p) {
       <span>{{ t('wiki.title') }}</span>
       <div class="rail-actions">
         <button class="rail-btn" :title="t('wiki.syncTooltip')" :disabled="syncing" @click="emit('sync')">
-          <SyncOutlined :spin="syncing" />
+          <CloudSyncOutlined :spin="syncing" />
         </button>
         <button class="rail-btn" :title="t('common.refresh')" @click="emit('reload')">
           <ReloadOutlined />
