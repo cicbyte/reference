@@ -394,6 +394,14 @@ export default {
 
   settings: {
     title: '设置',
+    subTabs: {
+      general: '常规',
+      generalDesc: '界面语言与布局偏好。',
+      theme: '主题',
+      themeDesc: '明暗模式、预设与自定义配色。',
+      wallpaper: '壁纸',
+      wallpaperDesc: '窗口背景图与面板透明度。',
+    },
     display: {
       title: '显示',
       desc: '自定义应用的外观主题与布局行为。',

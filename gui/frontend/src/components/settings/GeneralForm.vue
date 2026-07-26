@@ -1,10 +1,14 @@
 <script setup>
+/**
+ * 常规设置（显示分组的子分类）：界面语言 + 布局偏好
+ *
+ * 从原 DisplayForm 抽出——显示分组拆为 常规/主题/壁纸 三个子分类后，
+ * 语言与布局归入「常规」，主题归 AppearanceForm，壁纸归 WallpaperSection。
+ */
 import { computed } from 'vue'
 import { message } from 'ant-design-vue'
-import { BgColorsOutlined, GlobalOutlined } from '@ant-design/icons-vue'
+import { GlobalOutlined } from '@ant-design/icons-vue'
 import { useI18n } from 'vue-i18n'
-import AppearanceForm from '@/components/settings/AppearanceForm.vue'
-import WallpaperSection from '@/components/settings/WallpaperSection.vue'
 import { useLayoutStore } from '@/stores/layout'
 import { useLocaleStore } from '@/stores/locale'
 
@@ -12,11 +16,14 @@ const { t } = useI18n()
 const layout = useLayoutStore()
 const locale = useLocaleStore()
 
+const currentLocale = computed({
+  get: () => locale.currentLocale,
+  set: (v) => locale.setLocale(v),
+})
 const railVisible = computed({
   get: () => layout.projectRailVisible,
   set: (v) => { layout.projectRailVisible = v },
 })
-
 const sidebarDefaultCollapsed = computed({
   get: () => localStorage.getItem('reference-sidebar-collapsed') === 'true',
   set: (v) => {
@@ -25,33 +32,17 @@ const sidebarDefaultCollapsed = computed({
     message.success(v ? t('settings.display.collapsed') : t('settings.display.expanded'))
   },
 })
-
-const currentLocale = computed({
-  get: () => locale.currentLocale,
-  set: (v) => locale.setLocale(v),
-})
 </script>
 
 <template>
   <div class="settings-form">
     <div class="form-header">
-      <div class="form-title"><BgColorsOutlined /> {{ t('settings.display.title') }}</div>
-      <div class="form-desc">{{ t('settings.display.desc') }}</div>
-    </div>
-
-    <div class="setting-group">
-      <div class="group-title">{{ t('settings.display.appearance') }}</div>
-      <AppearanceForm />
-    </div>
-
-    <div class="setting-group">
-      <div class="group-title">{{ t('wallpaper.title') }}</div>
-      <WallpaperSection />
+      <div class="form-title"><GlobalOutlined /> {{ t('settings.subTabs.general') }}</div>
+      <div class="form-desc">{{ t('settings.subTabs.generalDesc') }}</div>
     </div>
 
     <div class="setting-group">
       <div class="group-title">{{ t('settings.display.language') }}</div>
-
       <div class="setting-row">
         <div class="row-label">
           <div class="row-title"><GlobalOutlined /> {{ t('settings.display.language') }}</div>
@@ -66,7 +57,6 @@ const currentLocale = computed({
 
     <div class="setting-group">
       <div class="group-title">{{ t('settings.display.layout') }}</div>
-
       <div class="setting-row">
         <div class="row-label">
           <div class="row-title">{{ t('settings.display.showRail') }}</div>
@@ -74,7 +64,6 @@ const currentLocale = computed({
         </div>
         <a-switch v-model:checked="railVisible" />
       </div>
-
       <div class="setting-row">
         <div class="row-label">
           <div class="row-title">{{ t('settings.display.collapseSidebar') }}</div>

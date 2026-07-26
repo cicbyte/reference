@@ -11,7 +11,7 @@
  */
 import { ref, computed, watch } from 'vue'
 import { message } from 'ant-design-vue'
-import { DownloadOutlined, ImportOutlined } from '@ant-design/icons-vue'
+import { BgColorsOutlined, DownloadOutlined, ImportOutlined } from '@ant-design/icons-vue'
 import { useI18n } from 'vue-i18n'
 import { useThemeStore } from '@/stores/theme'
 import ThemePreviewCard from '@/components/settings/ThemePreviewCard.vue'
@@ -239,6 +239,11 @@ function onImportFile(e: Event) {
 
 <template>
   <div class="appearance-form">
+    <div class="form-header">
+      <div class="form-title"><BgColorsOutlined /> {{ t('settings.subTabs.theme') }}</div>
+      <div class="form-desc">{{ t('settings.subTabs.themeDesc') }}</div>
+    </div>
+
     <!-- 明暗模式 -->
     <div class="setting-row">
       <div class="row-label">

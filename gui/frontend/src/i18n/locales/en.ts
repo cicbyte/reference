@@ -393,6 +393,14 @@ export default {
 
   settings: {
     title: 'Settings',
+    subTabs: {
+      general: 'General',
+      generalDesc: 'Interface language and layout preferences.',
+      theme: 'Theme',
+      themeDesc: 'Color mode, presets and custom palette.',
+      wallpaper: 'Wallpaper',
+      wallpaperDesc: 'Window background image and panel opacity.',
+    },
     display: {
       title: 'Display',
       desc: 'Customize the appearance and layout behavior.',

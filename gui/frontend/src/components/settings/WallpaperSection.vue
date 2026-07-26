@@ -1,6 +1,6 @@
 <script setup>
 /**
- * 壁纸设置分区（外观页内，对齐 byte-stash WallpaperSection，适配 Wails）
+ * 壁纸设置（显示分组 · 壁纸子分类，对齐 byte-stash WallpaperSection，适配 Wails）
  *
  * - 上传图片（PickImageFile → WallpaperUpload → 复制到 wallpapers/）→ 自动设为当前
  * - 壁纸库缩略图网格：点选切换、hover 删除（缩略图走 base64 data URL 缓存）
@@ -10,7 +10,7 @@
  */
 import { ref, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue'
+import { PictureOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import { useI18n } from 'vue-i18n'
 import { useWallpaperStore } from '@/stores/wallpaper'
 
@@ -59,6 +59,11 @@ onMounted(async () => {
 
 <template>
   <div class="wallpaper-section">
+    <div class="form-header">
+      <div class="form-title"><PictureOutlined /> {{ t('settings.subTabs.wallpaper') }}</div>
+      <div class="form-desc">{{ t('settings.subTabs.wallpaperDesc') }}</div>
+    </div>
+
     <div class="wp-enable-row">
       <a-switch
         :checked="wallpaper.enabled"
@@ -165,6 +170,8 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+@import './settings-shared.css';
+
 .wallpaper-section {
   display: flex;
   flex-direction: column;
