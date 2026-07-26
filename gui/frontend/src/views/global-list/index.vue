@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import {
@@ -71,13 +71,6 @@ function toggleGroup(key) {
   expandedGroups.value = next
 }
 
-// auto-expand all on first load
-watch(groupedProjects, (groups) => {
-  if (expandedGroups.value.size === 0 && groups.length) {
-    expandedGroups.value = new Set(groups.map((g) => g.key))
-  }
-}, { once: true })
-
 const totalRepos = computed(() =>
   projects.value.reduce((s, p) => s + (p.repoCount || 0), 0),
 )
@@ -87,9 +80,7 @@ const brokenProjects = computed(() =>
   projects.value.filter((p) => !p.exists || p.brokenCount > 0).length,
 )
 
-onMounted(loadProjects)
-
-// 清理弹窗：勾选要清理的失效项目（目录已不存在的引用记录）
+// ---- cleanup modal: pick which invalid projects to remove ----
 const cleanupOpen = ref(false)
 const cleanupSelected = ref([])
 
@@ -113,6 +104,49 @@ async function doCleanup() {
   await project.loadProjects()
 }
 
+// ---- scroll anchoring: left directory rail ↔ right project groups ----
+const scrollRef = ref(null)
+const groupEls = ref({})
+const activeGroup = ref('')
+
+function setGroupEl(key, el) {
+  if (el) groupEls.value[key] = el
+}
+/** 缩短目录显示：取最后两段（title 仍给全路径） */
+function shortDir(key) {
+  if (key === '/' || !key) return '/'
+  const parts = key.split('/').filter(Boolean)
+  return parts.slice(-2).join('/') || key
+}
+function scrollToGroup(key) {
+  const container = scrollRef.value
+  const el = groupEls.value[key]
+  if (!container || !el) return
+  container.scrollTo({ top: el.offsetTop - 8, behavior: 'smooth' })
+}
+function onMainScroll() {
+  const container = scrollRef.value
+  if (!container || !groupedProjects.value.length) return
+  // 找当前滚到顶部之上的最后一个分组（即视口顶部可见的分组）
+  let current = groupedProjects.value[0].key
+  for (const g of groupedProjects.value) {
+    const el = groupEls.value[g.key]
+    if (el && el.offsetTop <= container.scrollTop + 12) current = g.key
+  }
+  activeGroup.value = current
+}
+
+watch(groupedProjects, (groups) => {
+  if (!groups.length) return
+  // auto-expand all groups on first load
+  if (expandedGroups.value.size === 0) {
+    expandedGroups.value = new Set(groups.map((g) => g.key))
+  }
+  nextTick(() => onMainScroll())
+})
+
+onMounted(loadProjects)
+
 function switchTo(p) {
   project.switchTo(p.dir).then(() => {
     message.success(t('globalList.switchTo', { name: p.name }))
@@ -123,130 +157,162 @@ function switchTo(p) {
 
 <template>
   <div class="global-list">
-    <div class="page-header">
-      <h2>{{ t('sidebar.projectList') }}</h2>
-      <div class="header-actions">
-        <a-button danger @click="openCleanup">
-          <template #icon><DeleteOutlined /></template>
-          {{ t('globalList.cleanup') }}
-        </a-button>
-        <a-button @click="loadProjects" :loading="loading">
-          <template #icon><ReloadOutlined /></template>
-          {{ t('common.refresh') }}
-        </a-button>
+    <!-- left rail: directory list -->
+    <aside class="list-rail">
+      <div class="rail-head">
+        <span class="rail-title">{{ t('globalList.directory') }}</span>
+        <span class="rail-count">{{ groupedProjects.length }}</span>
       </div>
-    </div>
+      <div class="rail-scroll">
+        <div
+          v-for="g in groupedProjects"
+          :key="g.key"
+          class="rail-item"
+          :class="{ active: activeGroup === g.key }"
+          :title="g.key"
+          @click="scrollToGroup(g.key)"
+        >
+          <span class="rail-item-label">{{ shortDir(g.key) }}</span>
+          <span class="rail-item-count">{{ g.projects.length }}</span>
+        </div>
+        <div v-if="!loading && groupedProjects.length === 0" class="rail-empty">
+          {{ t('globalList.empty') }}
+        </div>
+      </div>
+    </aside>
 
-    <!-- summary -->
-    <div class="summary-strip">
-      <div class="sum-item">
-        <FolderOutlined class="sum-icon" />
-        <span class="sum-val">{{ projects.length }}</span>
-        <span class="sum-lbl">{{ t('globalList.summaryProjects') }}</span>
-      </div>
-      <div class="sum-sep"></div>
-      <div class="sum-item">
-        <span class="sum-val">{{ totalRepos }}</span>
-        <span class="sum-lbl">{{ t('globalList.summaryRepos') }}</span>
-      </div>
-      <div class="sum-sep"></div>
-      <div class="sum-item" v-if="brokenProjects > 0">
-        <WarningOutlined class="sum-icon warn" />
-        <span class="sum-val warn">{{ brokenProjects }}</span>
-        <span class="sum-lbl">{{ t('globalList.summaryBroken') }}</span>
-      </div>
-    </div>
-
-    <a-spin :spinning="loading">
-      <!-- grouped project cards -->
-      <div v-if="projects.length > 0">
-        <template v-for="group in groupedProjects" :key="group.key">
-          <div class="group-head" @click="toggleGroup(group.key)">
-            <CaretRightFilled class="group-caret" :class="{ open: expandedGroups.has(group.key) }" />
-            <span class="group-label">{{ group.key }}</span>
-            <span class="group-count">{{ group.projects.length }}</span>
+    <!-- right main: fixed header + scrollable project cards -->
+    <section class="list-main">
+      <div class="list-main-head">
+        <div class="page-header">
+          <h2>{{ t('sidebar.projectList') }}</h2>
+          <div class="header-actions">
+            <a-button danger @click="openCleanup">
+              <template #icon><DeleteOutlined /></template>
+              {{ t('globalList.cleanup') }}
+            </a-button>
+            <a-button @click="loadProjects" :loading="loading">
+              <template #icon><ReloadOutlined /></template>
+              {{ t('common.refresh') }}
+            </a-button>
           </div>
+        </div>
 
-          <div v-if="expandedGroups.has(group.key)" class="project-grid">
-            <a-dropdown
-              v-for="p in group.projects"
-              :key="p.dir"
-              :trigger="['contextmenu']"
-            >
-              <div
-                class="project-card"
-                :class="{ 'card-warn': !p.exists || p.brokenCount > 0, 'card-missing': !p.exists }"
-              >
-                <div class="card-bar" :class="!p.exists ? 'bar-red' : (p.brokenCount > 0 ? 'bar-orange' : 'bar-green')"></div>
-                <div class="card-body" @click="p.exists && switchTo(p)">
-                  <div class="card-head">
-                    <div class="card-icon" :class="!p.exists ? 'icon-missing' : ''">
-                      <WarningOutlined v-if="!p.exists" />
-                      <FolderOutlined v-else />
-                    </div>
-                    <div class="card-title-area">
-                      <div class="card-title">
-                        {{ p.name }}
-                        <span v-if="!p.exists" class="missing-tag">{{ t('footer.dirMissing') }}</span>
-                      </div>
-                      <div class="card-dir" :title="formatPath(p.dir)">{{ formatPath(p.dir) }}</div>
-                    </div>
-                  </div>
+        <!-- summary -->
+        <div class="summary-strip">
+          <div class="sum-item">
+            <FolderOutlined class="sum-icon" />
+            <span class="sum-val">{{ projects.length }}</span>
+            <span class="sum-lbl">{{ t('globalList.summaryProjects') }}</span>
+          </div>
+          <div class="sum-sep"></div>
+          <div class="sum-item">
+            <span class="sum-val">{{ totalRepos }}</span>
+            <span class="sum-lbl">{{ t('globalList.summaryRepos') }}</span>
+          </div>
+          <div class="sum-sep" v-if="brokenProjects > 0"></div>
+          <div class="sum-item" v-if="brokenProjects > 0">
+            <WarningOutlined class="sum-icon warn" />
+            <span class="sum-val warn">{{ brokenProjects }}</span>
+            <span class="sum-lbl">{{ t('globalList.summaryBroken') }}</span>
+          </div>
+        </div>
+      </div>
 
-                  <div class="card-stats">
-                    <div class="stat">
-                      <span class="stat-num">{{ p.repoCount }}</span>
-                      <span class="stat-label">{{ t('globalList.summaryRepos') }}</span>
-                    </div>
-                    <div class="stat" v-if="p.brokenCount > 0">
-                      <span class="stat-num warn">{{ p.brokenCount }}</span>
-                      <span class="stat-label">{{ t('globalList.summaryBroken') }}</span>
-                    </div>
-                    <div class="stat" v-if="p.agents && p.agents.length">
-                      <span class="stat-num">{{ p.agents.length }}</span>
-                      <span class="stat-label">{{ t('globalList.agentChip') }}</span>
-                    </div>
-                  </div>
-
-                  <div class="card-agents" v-if="p.agents && p.agents.length">
-                    <span v-for="a in p.agents" :key="a" class="agent-chip">{{ agentDisplayName(a) }}</span>
-                  </div>
-                </div>
+      <div ref="scrollRef" class="list-scroll" @scroll.passive="onMainScroll">
+        <a-spin :spinning="loading">
+          <!-- grouped project cards -->
+          <div v-if="projects.length > 0">
+            <template v-for="group in groupedProjects" :key="group.key">
+              <div class="group-head" :ref="(el) => setGroupEl(group.key, el)" @click="toggleGroup(group.key)">
+                <CaretRightFilled class="group-caret" :class="{ open: expandedGroups.has(group.key) }" />
+                <span class="group-label">{{ group.key }}</span>
+                <span class="group-count">{{ group.projects.length }}</span>
               </div>
-              <template #overlay>
-                <a-menu>
-                  <a-menu-item v-if="p.exists" @click="switchTo(p)">
-                    <SwapOutlined /> {{ t('globalList.switchToHere') }}
-                  </a-menu-item>
-                  <a-menu-divider v-if="p.exists" />
-                  <a-menu-item v-if="p.exists" @click="onDoctor(p)">
-                    <MedicineBoxOutlined /> {{ t('globalList.fixLinks') }}
-                  </a-menu-item>
-                  <a-menu-item v-if="p.exists" @click="app?.OpenInExplorer(p.dir)">
-                    <FolderOpenOutlined /> {{ t('common.openInExplorer') }}
-                  </a-menu-item>
-                  <a-menu-item @click="onCopyPath(p)">
-                    <CopyOutlined /> {{ t('common.copy') }}
-                  </a-menu-item>
-                  <a-menu-divider />
-                  <a-menu-item danger @click="onRemove(p, false)">
-                    <DeleteOutlined /> {{ t('globalList.removeProject') }}
-                  </a-menu-item>
-                  <a-menu-item danger @click="onRemove(p, true)">
-                    <DeleteOutlined /> {{ t('globalList.removeClean') }}
-                  </a-menu-item>
-                </a-menu>
-              </template>
-            </a-dropdown>
+
+              <div v-if="expandedGroups.has(group.key)" class="project-grid">
+                <a-dropdown
+                  v-for="p in group.projects"
+                  :key="p.dir"
+                  :trigger="['contextmenu']"
+                >
+                  <div
+                    class="project-card"
+                    :class="{ 'card-warn': !p.exists || p.brokenCount > 0, 'card-missing': !p.exists }"
+                  >
+                    <div class="card-bar" :class="!p.exists ? 'bar-red' : (p.brokenCount > 0 ? 'bar-orange' : 'bar-green')"></div>
+                    <div class="card-body" @click="p.exists && switchTo(p)">
+                      <div class="card-head">
+                        <div class="card-icon" :class="!p.exists ? 'icon-missing' : ''">
+                          <WarningOutlined v-if="!p.exists" />
+                          <FolderOutlined v-else />
+                        </div>
+                        <div class="card-title-area">
+                          <div class="card-title">
+                            {{ p.name }}
+                            <span v-if="!p.exists" class="missing-tag">{{ t('footer.dirMissing') }}</span>
+                          </div>
+                          <div class="card-dir" :title="formatPath(p.dir)">{{ formatPath(p.dir) }}</div>
+                        </div>
+                      </div>
+
+                      <div class="card-stats">
+                        <div class="stat">
+                          <span class="stat-num">{{ p.repoCount }}</span>
+                          <span class="stat-label">{{ t('globalList.summaryRepos') }}</span>
+                        </div>
+                        <div class="stat" v-if="p.brokenCount > 0">
+                          <span class="stat-num warn">{{ p.brokenCount }}</span>
+                          <span class="stat-label">{{ t('globalList.summaryBroken') }}</span>
+                        </div>
+                        <div class="stat" v-if="p.agents && p.agents.length">
+                          <span class="stat-num">{{ p.agents.length }}</span>
+                          <span class="stat-label">{{ t('globalList.agentChip') }}</span>
+                        </div>
+                      </div>
+
+                      <div class="card-agents" v-if="p.agents && p.agents.length">
+                        <span v-for="a in p.agents" :key="a" class="agent-chip">{{ agentDisplayName(a) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <template #overlay>
+                    <a-menu>
+                      <a-menu-item v-if="p.exists" @click="switchTo(p)">
+                        <SwapOutlined /> {{ t('globalList.switchToHere') }}
+                      </a-menu-item>
+                      <a-menu-divider v-if="p.exists" />
+                      <a-menu-item v-if="p.exists" @click="onDoctor(p)">
+                        <MedicineBoxOutlined /> {{ t('globalList.fixLinks') }}
+                      </a-menu-item>
+                      <a-menu-item v-if="p.exists" @click="app?.OpenInExplorer(p.dir)">
+                        <FolderOpenOutlined /> {{ t('common.openInExplorer') }}
+                      </a-menu-item>
+                      <a-menu-item @click="onCopyPath(p)">
+                        <CopyOutlined /> {{ t('common.copy') }}
+                      </a-menu-item>
+                      <a-menu-divider />
+                      <a-menu-item danger @click="onRemove(p, false)">
+                        <DeleteOutlined /> {{ t('globalList.removeProject') }}
+                      </a-menu-item>
+                      <a-menu-item danger @click="onRemove(p, true)">
+                        <DeleteOutlined /> {{ t('globalList.removeClean') }}
+                      </a-menu-item>
+                    </a-menu>
+                  </template>
+                </a-dropdown>
+              </div>
+            </template>
           </div>
-        </template>
+
+          <a-empty v-if="!loading && projects.length === 0" :description="t('globalList.empty')">
+            <template #image><FolderOutlined style="font-size: 48px; color: var(--color-text-tertiary); opacity: 0.3;" /></template>
+          </a-empty>
+        </a-spin>
       </div>
+    </section>
 
-      <a-empty v-if="!loading && projects.length === 0" :description="t('globalList.empty')">
-        <template #image><FolderOutlined style="font-size: 48px; color: var(--color-text-tertiary); opacity: 0.3;" /></template>
-      </a-empty>
-    </a-spin>
-
+    <!-- cleanup modal -->
     <a-modal
       v-model:open="cleanupOpen"
       :title="t('globalList.cleanup')"
@@ -277,11 +343,104 @@ function switchTo(p) {
 </template>
 
 <style scoped>
-.global-list { width: 100%; }
+.global-list {
+  display: flex;
+  height: calc(100% + 2 * var(--spacing-lg));
+  overflow: hidden;
+  margin: calc(-1 * var(--spacing-lg));
+}
+
+/* ---- left rail: directory list ---- */
+.list-rail {
+  width: 200px;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
+  flex-shrink: 0;
+}
+.rail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  height: var(--navbar-height);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+.rail-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-tertiary);
+}
+.rail-count {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  background: var(--color-surface-raised);
+  padding: 0 6px;
+  border-radius: 999px;
+}
+.rail-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-sm);
+}
+.rail-scroll::-webkit-scrollbar { width: 5px; }
+.rail-scroll::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+.rail-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-bottom: 1px;
+}
+.rail-item:hover { background: var(--color-hover); }
+.rail-item.active { background: var(--color-primary-bg); }
+.rail-item-label {
+  flex: 1;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-family: 'Cascadia Code', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rail-item.active .rail-item-label { color: var(--color-primary); }
+.rail-item-count { font-size: 10px; color: var(--color-text-tertiary); flex-shrink: 0; }
+.rail-empty { padding: 24px 12px; text-align: center; font-size: 12px; color: var(--color-text-tertiary); }
+
+/* ---- right main ---- */
+.list-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.list-main-head {
+  flex-shrink: 0;
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+}
+.list-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-lg);
+  position: relative;
+}
+.list-scroll::-webkit-scrollbar { width: 8px; }
+.list-scroll::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
 
 .page-header {
   display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
 }
 .page-header h2 { font-size: 20px; font-weight: 600; color: var(--color-text); margin: 0; }
 .header-actions { display: flex; gap: var(--spacing-sm); }
@@ -290,8 +449,8 @@ function switchTo(p) {
 .summary-strip {
   display: flex; align-items: center; gap: var(--spacing-md);
   padding: 14px 18px;
-  background: var(--color-surface); border: 1px solid var(--color-border);
-  border-radius: var(--radius-md); margin-bottom: var(--spacing-lg);
+  background: var(--bg-elevated); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 .sum-item { display: flex; align-items: center; gap: 8px; }
 .sum-icon { font-size: 16px; color: var(--color-text-tertiary); }
@@ -329,7 +488,7 @@ function switchTo(p) {
   gap: var(--spacing-md);
 }
 .project-card {
-  background: var(--color-surface);
+  background: var(--bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -386,23 +545,9 @@ function switchTo(p) {
 .card-agents { display: flex; flex-wrap: wrap; gap: 4px; }
 .agent-chip {
   font-size: 10px; font-weight: 600; padding: 1px 7px;
-  border-radius: 999px; background: rgba(168, 85, 247, 0.1);
-  color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: 999px; background: var(--color-primary-bg);
+  color: var(--color-primary); border: 1px solid var(--color-primary-border);
 }
-
-/* card actions */
-.card-actions {
-  display: flex; flex-direction: column; gap: 2px;
-  padding: 8px 6px; border-left: 1px solid var(--color-border-light);
-  flex-shrink: 0;
-}
-.card-btn {
-  display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px; border: none; background: transparent;
-  color: var(--color-text-tertiary); cursor: pointer;
-  border-radius: var(--radius-xs); transition: all var(--transition-fast);
-}
-.card-btn:hover { background: var(--color-hover); color: var(--color-primary); }
 
 /* cleanup modal */
 .cleanup-hint { margin: 0 0 12px; color: var(--color-text-secondary); font-size: 13px; }

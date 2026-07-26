@@ -321,6 +321,7 @@ export default {
 
   globalList: {
     title: '全局项目',
+    directory: '目录',
     summaryProjects: '项目',
     summaryRepos: '引用',
     summaryBroken: '断裂',

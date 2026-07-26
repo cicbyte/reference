@@ -320,6 +320,7 @@ export default {
 
   globalList: {
     title: 'Global Projects',
+    directory: 'Directory',
     summaryProjects: 'Projects',
     summaryRepos: 'Refs',
     summaryBroken: 'Broken',
