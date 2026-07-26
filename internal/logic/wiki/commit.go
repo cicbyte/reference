@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/cicbyte/reference/internal/log"
+	"github.com/cicbyte/reference/internal/utils"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"go.uber.org/zap"
@@ -87,6 +88,7 @@ func Push(wikiDir string) error {
 func gitExec(wikiDir string, args ...string) (string, error) {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = wikiDir
+	utils.HideWindow(cmd)
 	output, err := cmd.CombinedOutput()
 	return string(output), err
 }

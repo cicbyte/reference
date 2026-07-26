@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/cicbyte/reference/internal/log"
+	"github.com/cicbyte/reference/internal/utils"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -73,6 +74,7 @@ func cloneViaGitCmd(opts CloneOptions) error {
 	args = append(args, opts.URL, opts.Path)
 
 	cmd := exec.Command("git", args...)
+	utils.HideWindow(cmd)
 	// Apply the configured proxy to the git subprocess too — SetupGitProxy only
 	// covers go-git's transport; when we fall back to system git it would
 	// otherwise connect directly and hang on restricted networks.
@@ -127,6 +129,7 @@ func pullViaGitCmd(opts CloneOptions) error {
 	if _, err := os.Stat(filepath.Join(opts.Path, ".git", "shallow")); err == nil {
 		log.Info("检测到浅克隆，执行 unshallow", zap.String("path", opts.Path))
 		unshallow := exec.Command("git", "-C", opts.Path, "fetch", "--unshallow", "origin")
+		utils.HideWindow(unshallow)
 		applyProxyToCmd(unshallow, opts.Proxy)
 		if out, err := unshallow.CombinedOutput(); err != nil {
 			return fmt.Errorf("unshallow 失败: %s\n%s", err, string(out))
@@ -134,12 +137,14 @@ func pullViaGitCmd(opts CloneOptions) error {
 	}
 
 	fetch := exec.Command("git", "-C", opts.Path, "fetch", "origin")
+	utils.HideWindow(fetch)
 	applyProxyToCmd(fetch, opts.Proxy)
 	if out, err := fetch.CombinedOutput(); err != nil {
 		return fmt.Errorf("fetch 失败: %s\n%s", err, string(out))
 	}
 
 	reset := exec.Command("git", "-C", opts.Path, "reset", "--hard", "origin/"+branch)
+	utils.HideWindow(reset)
 	if out, err := reset.CombinedOutput(); err != nil {
 		return fmt.Errorf("reset 失败: %s\n%s", err, string(out))
 	}

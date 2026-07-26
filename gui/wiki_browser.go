@@ -51,7 +51,7 @@ func resolveWikiRoot(source string) (string, error) {
 // Possible codes: "M" (modified), "A" (staged-new), "??" (untracked), "D" (deleted).
 // Files NOT in the map are clean (committed, no changes).
 func wikiGitStatusMap(wikiRoot string) map[string]string {
-	out, err := exec.Command("git", "-C", wikiRoot, "status", "--porcelain").CombinedOutput()
+	out, err := utils.HideWindow(exec.Command("git", "-C", wikiRoot, "status", "--porcelain")).CombinedOutput()
 	if err != nil {
 		return nil // not a git repo or git unavailable — leave all as committed
 	}

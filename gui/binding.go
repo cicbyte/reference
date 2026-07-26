@@ -237,6 +237,7 @@ func (a *ReferenceApp) OpenInExplorer(dir string) error {
 	default:
 		cmd = exec.Command("xdg-open", dir)
 	}
+	utils.HideWindow(cmd)
 	return cmd.Start()
 }
 

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/cicbyte/reference/internal/log"
+	"github.com/cicbyte/reference/internal/utils"
 	"go.uber.org/zap"
 )
 
@@ -29,7 +30,7 @@ func CreateLink(target, linkPath string) error {
 
 		cmdArgs := []string{"/c", "mklink", "/J", wLink, wTarget}
 		log.Debug("创建 Junction", zap.Strings("cmd", cmdArgs))
-		out, err := exec.Command("cmd", cmdArgs...).CombinedOutput()
+		out, err := utils.HideWindow(exec.Command("cmd", cmdArgs...)).CombinedOutput()
 		if err != nil {
 			return fmt.Errorf("创建 Junction 失败: %s\n%s", err, string(out))
 		}
@@ -49,7 +50,7 @@ func RemoveLink(linkPath string) error {
 
 func removeLink(linkPath string) error {
 	if runtime.GOOS == "windows" {
-		out, err := exec.Command("cmd", "/c", "rmdir", toWindowsPath(linkPath)).CombinedOutput()
+		out, err := utils.HideWindow(exec.Command("cmd", "/c", "rmdir", toWindowsPath(linkPath))).CombinedOutput()
 		if err != nil {
 			return fmt.Errorf("删除 Junction 失败: %s\n%s", err, string(out))
 		}
@@ -71,7 +72,7 @@ func removeLink(linkPath string) error {
 func ReadLink(linkPath string) (string, error) {
 	if runtime.GOOS == "windows" {
 		linkPath, _ = filepath.Abs(linkPath)
-		out, err := exec.Command("cmd", "/c", "fsutil", "reparsepoint", "query", toWindowsPath(linkPath)).CombinedOutput()
+		out, err := utils.HideWindow(exec.Command("cmd", "/c", "fsutil", "reparsepoint", "query", toWindowsPath(linkPath))).CombinedOutput()
 		if err != nil {
 			return "", fmt.Errorf("读取链接目标失败: %w", err)
 		}
