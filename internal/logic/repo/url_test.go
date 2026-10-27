@@ -17,7 +17,7 @@ func TestParseGitURL_HTTPS(t *testing.T) {
 	assert(t, "memos-cli", info.RepoName)
 	assert(t, true, info.IsKnown)
 	assert(t, "github/cicbyte/memos-cli", info.WikiSubPath)
-	assert(t, "github.com-cicbyte-memos-cli", info.LinkName)
+	assert(t, "github-cicbyte-memos-cli", info.LinkName)
 }
 
 func TestParseGitURL_SSH(t *testing.T) {

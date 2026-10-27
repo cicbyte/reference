@@ -146,21 +146,21 @@ func TestResolveLocalRefName_Conflict(t *testing.T) {
 func TestResolveLocalWikiSubPath_NoConflict(t *testing.T) {
 	wikiBase := t.TempDir()
 	subPath := resolveLocalWikiSubPath(wikiBase, filepath.Join("home", "user", "project-a"))
-	if subPath != "local/project-a" {
-		t.Errorf("got %q, want %q", subPath, "local/project-a")
+	if subPath != "project-a" {
+		t.Errorf("got %q, want %q", subPath, "project-a")
 	}
 }
 
 func TestResolveLocalWikiSubPath_Conflict(t *testing.T) {
 	wikiBase := t.TempDir()
-	os.MkdirAll(filepath.Join(wikiBase, "local", "project-a"), 0755)
+	os.MkdirAll(filepath.Join(wikiBase, "project-a"), 0755)
 
 	subPath := resolveLocalWikiSubPath(wikiBase, filepath.Join("home", "user", "project-a"))
-	if subPath == "local/project-a" {
+	if subPath == "project-a" {
 		t.Errorf("expected hashed path on conflict, got %q", subPath)
 	}
-	if subPath[:6] != "local/" {
-		t.Errorf("expected local/ prefix, got %q", subPath)
+	if len(subPath) <= len("x-project-a") || subPath[len(subPath)-len("-project-a"):] != "-project-a" {
+		t.Errorf("expected hashed path with dir name suffix, got %q", subPath)
 	}
 }
 
