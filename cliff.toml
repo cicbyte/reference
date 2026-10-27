@@ -1,0 +1,33 @@
+# git-cliff 配置：从中文 conventional commits 自动生成 changelog 与版本推导。
+# 不自定义 body 模板——内置默认模板自带「按 tag 分组 + 日期」结构，同一份配置
+# 同时服务两个场景：Tag Release 全量再生 CHANGELOG.md，Release 的 --latest
+# 发版说明。chore(release) 的版本 bump 提交不入 changelog。
+
+[changelog]
+header = """
+# Changelog
+
+本文件由 git-cliff 自动生成（Tag Release 工作流维护）。\n
+"""
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+split_commits = false
+protect_env = false
+tag_pattern = "v[0-9].*"
+sort_commits = "newest"
+
+commit_parsers = [
+  { message = "^feat", group = "新增" },
+  { message = "^fix", group = "修复" },
+  { message = "^perf", group = "性能" },
+  { message = "^refactor", group = "重构" },
+  { message = "^doc", group = "文档" },
+  { message = "^style", group = "格式" },
+  { message = "^test", group = "测试" },
+  { message = "^ci", group = "持续集成" },
+  { message = "^chore\\(release\\)", skip = true },
+  { message = "^chore", group = "杂务" },
+]

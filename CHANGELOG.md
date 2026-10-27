@@ -5,6 +5,7 @@
 ## [Unreleased]
 
 ### Added
+- CI 重构为一键发版流水线：新增 `Tag Release` 工作流（git-cliff 按提交语义自动推导版本、自动维护 `VERSION` 与 `CHANGELOG.md`、自动打 tag 并触发发布）；`Release` 工作流增加测试前置、git-cliff 自动发版说明与 sha256 校验、新增 macOS arm64 产物；新增 push/PR 的 `CI` 检查工作流（vet + test）
 - 新增 4 个 AI 助手适配：Gemini CLI（`--agent gemini`，`.gemini/agents/` + `.gemini/skills/`）、Qwen Code（`--agent qwen`，`.qwen/agents/` + `.qwen/skills/`）、Kimi CLI（`--agent kimi`，仅注入 `.kimi/skills/`）、iFlow CLI（`--agent iflow`，`.iflow/agents/`）
 - 注入时自动转换 frontmatter：Gemini/Qwen 的 `tools` 转为原生 snake_case 工具名 YAML 列表，iFlow 重写为 `agentType`/`systemPrompt`/`whenToUse`/`allowedTools` 格式
 - `repo add` 新增 `--update` / `-u` 标志，缓存已存在时强制 git pull 更新

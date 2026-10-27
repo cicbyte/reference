@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      # gui 包 go:embed 依赖 frontend/dist（CI 不构建前端），vet/test 均排除
+      - name: Vet
+        run: go vet ./cmd/... ./internal/... ./pkg/... .
+      - name: Test
+        run: go test ./cmd/... ./internal/... ./pkg/... .

@@ -1,0 +1,84 @@
+name: Tag Release
+
+# 一键发版入口（借鉴 byte-code-cli tag.yml）：无需本地查 tag/打 tag/改 VERSION/
+# 手写 CHANGELOG——版本号由 git-cliff 按提交语义自动推导（有 feat → minor，
+# 仅 fix/chore → patch），VERSION 与 CHANGELOG.md 由本工作流自动提交维护，
+# tag 推送后显式 dispatch Release 完成构建与发布。
+# 前置约定：提交遵循 conventional commits（feat/fix/chore/...）。
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '版本号：留空=自动推导；或填 patch/minor/major 强制档位；或直接给完整版本号如 0.2.0（不带 v）'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  actions: write  # gh workflow run dispatch Release 需要（仅 contents 不够）
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # cliff 推导需要全历史与全部 tag
+          fetch-tags: true
+          persist-credentials: true
+
+      - name: Install git-cliff
+        uses: taiki-e/install-action@v2
+        with:
+          tool: git-cliff
+
+      - name: Resolve next version
+        id: ver
+        run: |
+          INPUT="${{ github.event.inputs.version }}"
+          if [ -z "$INPUT" ]; then
+            # 按提交语义自动推导
+            V=$(git-cliff --bumped-version 2>/dev/null | tr -d '[:space:]')
+          elif echo "$INPUT" | grep -qE '^(patch|minor|major)$'; then
+            V=$(git-cliff --bump "$INPUT" --bumped-version | tr -d '[:space:]')
+          else
+            V="$INPUT"
+          fi
+          if [ -z "$V" ]; then
+            echo "无法确定版本号（可能是首个 tag，请显式填写 version）" && exit 1
+          fi
+          # git-cliff 部分版本输出带 v 前缀，统一剥掉防拼出 vv*
+          V=${V#v}
+          # 防 dedup：目标 tag 已存在则拒绝
+          if git rev-parse "v$V" >/dev/null 2>&1; then
+            echo "tag v$V 已存在，拒绝重复发版" && exit 1
+          fi
+          echo "VERSION=$V" >> $GITHUB_OUTPUT
+          echo "下一版本：v$V"
+
+      # VERSION 是版本唯一来源（build.py / 发版注入都读它），先提交 bump 与
+      # 自动再生的 CHANGELOG.md 再打 tag，tag 指向 bump 提交。
+      - name: Bump VERSION, regenerate CHANGELOG and tag
+        run: |
+          V="${{ steps.ver.outputs.VERSION }}"
+          echo "$V" > VERSION
+          # 全量再生 CHANGELOG.md（cliff.toml 控制分组与格式），替代手写维护
+          git-cliff --output CHANGELOG.md
+          git config user.name "release-bot"
+          git config user.email "release-bot@users.noreply.github.com"
+          git commit -am "chore(release): bump version to $V"
+          git push origin HEAD:master
+          git tag -a "v$V" -m "release v$V"
+          git push origin "v$V"
+
+      # GITHUB_TOKEN 推送的 tag 不会触发其他工作流（防递归限制，workflow_dispatch 除外）
+      # ——必须在此显式 dispatch Release
+      - name: Trigger Release workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sleep 5  # 等 tag 推送传播
+          gh workflow run Release --ref master \
+            -f tag="v${{ steps.ver.outputs.VERSION }}" \
+            -f version="${{ steps.ver.outputs.VERSION }}"
+          echo "Release 工作流已触发（v${{ steps.ver.outputs.VERSION }}）"
