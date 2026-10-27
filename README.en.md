@@ -58,9 +58,9 @@ reference          # First run: interactive assistant selection (multi-select su
   Select your coding assistants (multiple allowed, comma-separated):
     [1] Claude Code
     [2] Codex
-    [3] OpenCode
-    [4] ZCode
-    [5] MiMo Code
+    [3] MiMo Code
+    [4] OpenCode
+    [5] ZCode
     [6] None (repository management only)
 
   Enter option: 1,2

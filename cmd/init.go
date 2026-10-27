@@ -30,8 +30,9 @@ func getInitCommand() *cobra.Command {
 首次交互式引导请直接运行无参数的 reference 命令。`,
 		RunE: runInit,
 	}
+	agentChoices := strings.Join(append(logicrepo.ListAgentIDs(), "none"), " | ")
 	cmd.Flags().StringVar(&initAgent, "agent", "",
-		"编程助手类型，多个用逗号分隔: claude | codex | opencode | zcode | mimocode | none（默认 none）")
+		"编程助手类型，多个用逗号分隔: "+agentChoices+"（默认 none）")
 	cmd.Flags().StringVar(&initProjectDir, "project", "",
 		"目标项目目录路径（默认当前目录）")
 	return cmd

@@ -58,9 +58,9 @@ reference          # 首次运行：交互式选择编程助手（支持多选�
   请选择你的编程助手（可多选，用逗号分隔）：
     [1] Claude Code
     [2] Codex
-    [3] OpenCode
-    [4] ZCode
-    [5] MiMo Code
+    [3] MiMo Code
+    [4] OpenCode
+    [5] ZCode
     [6] 无（仅使用仓库引用管理功能）
 
   请输入选项: 1,2

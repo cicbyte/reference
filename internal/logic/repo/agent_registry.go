@@ -2,6 +2,7 @@ package repo
 
 import (
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -93,12 +94,13 @@ func IsAgentRegistered(id string) bool {
 	return ok
 }
 
-// ListAgentIDs 返回所有已注册的 agent ID 列表
+// ListAgentIDs 返回所有已注册的 agent ID 列表（按 ID 字母序，保证菜单与提示顺序稳定）
 func ListAgentIDs() []string {
 	ids := make([]string, 0, len(AgentRegistry))
 	for id := range AgentRegistry {
 		ids = append(ids, id)
 	}
+	sort.Strings(ids)
 	return ids
 }
 
