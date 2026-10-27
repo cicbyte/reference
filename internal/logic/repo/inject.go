@@ -208,6 +208,10 @@ func (p *InjectProcessor) injectAgentFiles(agentID, baseDir string, files []Agen
 			data = transformMimocodeFrontmatter(data)
 		case "opencode":
 			data = transformOpencodeFrontmatter(data)
+		case "gemini", "qwen":
+			data = transformNativeToolsFrontmatter(data, nativeToolNames)
+		case "iflow":
+			data = transformIflowFrontmatter(data)
 		}
 		if err := os.WriteFile(dst, data, 0644); err != nil {
 			log.Warn("注入文件失败", zap.String("file", f.DestPath), zap.Error(err))
@@ -360,6 +364,121 @@ func transformOpencodeFrontmatter(data []byte) []byte {
 	}
 	b.WriteString("---\n")
 
+	return []byte(b.String() + body)
+}
+
+// nativeToolNames maps canonical Claude-style tool names to the snake_case
+// identifiers registered by Gemini CLI and Qwen Code (both share the same
+// native tool ids; Qwen additionally accepts Claude aliases in permission
+// rules, but the native names are authoritative in agent definitions).
+var nativeToolNames = map[string]string{
+	"Read":  "read_file",
+	"Grep":  "grep_search",
+	"Glob":  "glob",
+	"Bash":  "run_shell_command",
+	"Write": "write_file",
+}
+
+// transformNativeToolsFrontmatter rewrites the comma-separated `tools:` line
+// of the canonical template into a YAML list of platform-native tool ids, as
+// expected by Gemini CLI (`.gemini/agents/`) and Qwen Code (`.qwen/agents/`):
+//
+//	tools: Read, Grep, Glob, Bash, Write
+//
+// becomes
+//
+//	tools:
+//	  - read_file
+//	  - grep_search
+//	  - glob
+//	  - run_shell_command
+//	  - write_file
+//
+// All other frontmatter fields (name, description) pass through unchanged —
+// both platforms require exactly those two fields.
+func transformNativeToolsFrontmatter(data []byte, nameMap map[string]string) []byte {
+	content := string(data)
+	end := strings.Index(content[3:], "\n---")
+	if !strings.HasPrefix(content, "---") || end < 0 {
+		return data
+	}
+	fmEnd := 3 + end + 4
+	fm := content[:fmEnd]
+	body := content[fmEnd:]
+
+	var newFm []string
+	for _, line := range strings.Split(fm, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if !strings.HasPrefix(trimmed, "tools:") {
+			newFm = append(newFm, line)
+			continue
+		}
+		newFm = append(newFm, "tools:")
+		for _, p := range strings.Split(strings.TrimPrefix(trimmed, "tools:"), ",") {
+			name := strings.TrimSpace(p)
+			if name == "" {
+				continue
+			}
+			if mapped, ok := nameMap[name]; ok {
+				name = mapped
+			} else {
+				name = strings.ToLower(name)
+			}
+			newFm = append(newFm, "  - "+name)
+		}
+	}
+	return []byte(strings.Join(newFm, "\n") + body)
+}
+
+// transformIflowFrontmatter rewrites the canonical Claude-style frontmatter
+// into iFlow CLI's custom-agent format (`.iflow/agents/*.md`). iFlow requires
+// agentType / systemPrompt / whenToUse and keeps Claude-style tool names in
+// allowedTools; the markdown body carries the full agent prompt.
+func transformIflowFrontmatter(data []byte) []byte {
+	content := string(data)
+	end := strings.Index(content[3:], "\n---")
+	if !strings.HasPrefix(content, "---") || end < 0 {
+		return data
+	}
+	fmEnd := 3 + end + 4
+	fm := content[:fmEnd]
+	body := content[fmEnd:]
+
+	name, desc := "", ""
+	var tools []string
+	for _, line := range strings.Split(fm, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "name:") {
+			name = strings.TrimSpace(strings.TrimPrefix(trimmed, "name:"))
+		}
+		if strings.HasPrefix(trimmed, "description:") {
+			desc = strings.TrimSpace(strings.TrimPrefix(trimmed, "description:"))
+		}
+		if strings.HasPrefix(trimmed, "tools:") {
+			for _, p := range strings.Split(strings.TrimPrefix(trimmed, "tools:"), ",") {
+				if t := strings.TrimSpace(p); t != "" {
+					tools = append(tools, t)
+				}
+			}
+		}
+	}
+	if name == "" || desc == "" {
+		return data
+	}
+
+	var b strings.Builder
+	b.WriteString("---\n")
+	fmt.Fprintf(&b, "agentType: %q\n", name)
+	fmt.Fprintf(&b, "systemPrompt: %q\n", desc)
+	fmt.Fprintf(&b, "whenToUse: %q\n", desc)
+	if len(tools) > 0 {
+		b.WriteString("allowedTools:\n")
+		for _, t := range tools {
+			fmt.Fprintf(&b, "  - %s\n", t)
+		}
+	}
+	b.WriteString("proactive: true\n")
+	b.WriteString("---\n")
 	return []byte(b.String() + body)
 }
 

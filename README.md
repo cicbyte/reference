@@ -26,7 +26,7 @@
 - **零延迟查阅** — 源码在本地磁盘，AI 直接 Grep/Glob/Read，无网络请求
 - **知识可复用** — 探索结果沉淀为 Markdown 知识文件，一次探索，所有项目受益
 - **不污染上下文** — 双子代理架构：探索在子代理中完成，主 Agent 只加载知识文件
-- **多 AI 助手兼容** — 支持 Claude Code、ZCode、MiMo Code、OpenCode、Codex（自动注入子代理 + Skill），兼容 Cursor、Copilot、Windsurf 等
+- **多 AI 助手兼容** — 支持 Claude Code、Codex、Gemini CLI、Qwen Code、Kimi CLI、iFlow CLI、OpenCode、ZCode、MiMo Code（自动注入子代理 + Skill），兼容 Cursor、Copilot、Windsurf 等
 - **纯本地** — 不依赖任何在线 API 或付费服务，不受网络波动影响
 - **本地仓库引用** — 复用你之前在其他项目中实现过的代码
 
@@ -58,10 +58,14 @@ reference          # 首次运行：交互式选择编程助手（支持多选�
   请选择你的编程助手（可多选，用逗号分隔）：
     [1] Claude Code
     [2] Codex
-    [3] MiMo Code
-    [4] OpenCode
-    [5] ZCode
-    [6] 无（仅使用仓库引用管理功能）
+    [3] Gemini CLI
+    [4] iFlow CLI
+    [5] Kimi CLI
+    [6] MiMo Code
+    [7] OpenCode
+    [8] Qwen Code
+    [9] ZCode
+    [10] 无（仅使用仓库引用管理功能）
 
   请输入选项: 1,2
   已配置: Claude Code, Codex
@@ -159,6 +163,10 @@ flowchart LR
 |:---|:---|:---|:---|
 | **Claude Code** | `.claude/agents/` | `.claude/skills/` | Markdown |
 | **Codex** | `.codex/agents/` | `.codex/skills/` | TOML |
+| **Gemini CLI** | `.gemini/agents/` | `.gemini/skills/` | Markdown |
+| **Qwen Code** | `.qwen/agents/` | `.qwen/skills/` | Markdown |
+| **Kimi CLI** | —（内置子代理类型） | `.kimi/skills/` | 仅注入 Skill |
+| **iFlow CLI** | `.iflow/agents/` | —（智能调度） | Markdown |
 | **OpenCode** | `.opencode/agents/` | `.opencode/skills/` | Markdown |
 | **ZCode** | `.zcode/cli/agents/` | `.zcode/skills/` | Markdown |
 | **MiMo Code** | `.mimocode/agents/` | `.mimocode/skills/` | Markdown |

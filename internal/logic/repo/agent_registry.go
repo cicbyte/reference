@@ -72,6 +72,48 @@ var AgentRegistry = map[string]AgentConfig{
 			{EmbedPath: "prompts/skills/reference/SKILL.md", DestPath: filepath.Join("skills", "reference", "SKILL.md")},
 		},
 	},
+	"gemini": {
+		ID:          "gemini",
+		DisplayName: "Gemini CLI",
+		BaseDir:     ".gemini",
+		Files: []AgentFile{
+			{EmbedPath: "prompts/agents/reference-explorer.md", DestPath: filepath.Join("agents", "reference-explorer.md")},
+			{EmbedPath: "prompts/agents/reference-analyzer.md", DestPath: filepath.Join("agents", "reference-analyzer.md")},
+			{EmbedPath: "prompts/skills/reference/SKILL.md", DestPath: filepath.Join("skills", "reference", "SKILL.md")},
+		},
+	},
+	"qwen": {
+		ID:          "qwen",
+		DisplayName: "Qwen Code",
+		BaseDir:     ".qwen",
+		Files: []AgentFile{
+			{EmbedPath: "prompts/agents/reference-explorer.md", DestPath: filepath.Join("agents", "reference-explorer.md")},
+			{EmbedPath: "prompts/agents/reference-analyzer.md", DestPath: filepath.Join("agents", "reference-analyzer.md")},
+			{EmbedPath: "prompts/skills/reference/SKILL.md", DestPath: filepath.Join("skills", "reference", "SKILL.md")},
+		},
+	},
+	// kimi 仅注入 Skill：kimi-cli 的子代理是内置类型系统（coder/explore/plan，
+	// YAML 类型定义），未提供项目级自定义子代理目录；`.kimi/skills/` 为已确认
+	// 的项目级技能发现路径，SKILL 会引导主代理用内置 explore 类型完成探索。
+	"kimi": {
+		ID:          "kimi",
+		DisplayName: "Kimi CLI",
+		BaseDir:     ".kimi",
+		Files: []AgentFile{
+			{EmbedPath: "prompts/skills/reference/SKILL.md", DestPath: filepath.Join("skills", "reference", "SKILL.md")},
+		},
+	},
+	// iflow 仅注入 agents：iFlow 通过 frontmatter 的 whenToUse 智能调度子代理，
+	// 无需 Skill 文件；自定义 Agent 目录 `.iflow/agents/` 已确认。
+	"iflow": {
+		ID:          "iflow",
+		DisplayName: "iFlow CLI",
+		BaseDir:     ".iflow",
+		Files: []AgentFile{
+			{EmbedPath: "prompts/agents/reference-explorer.md", DestPath: filepath.Join("agents", "reference-explorer.md")},
+			{EmbedPath: "prompts/agents/reference-analyzer.md", DestPath: filepath.Join("agents", "reference-analyzer.md")},
+		},
+	},
 }
 
 // GetAgentConfig 根据 ID 获取 agent 配置

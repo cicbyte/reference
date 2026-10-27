@@ -5,6 +5,8 @@
 ## [Unreleased]
 
 ### Added
+- 新增 4 个 AI 助手适配：Gemini CLI（`--agent gemini`，`.gemini/agents/` + `.gemini/skills/`）、Qwen Code（`--agent qwen`，`.qwen/agents/` + `.qwen/skills/`）、Kimi CLI（`--agent kimi`，仅注入 `.kimi/skills/`）、iFlow CLI（`--agent iflow`，`.iflow/agents/`）
+- 注入时自动转换 frontmatter：Gemini/Qwen 的 `tools` 转为原生 snake_case 工具名 YAML 列表，iFlow 重写为 `agentType`/`systemPrompt`/`whenToUse`/`allowedTools` 格式
 - `repo add` 新增 `--update` / `-u` 标志，缓存已存在时强制 git pull 更新
 - `wiki` 新增 `--local` / `-l` 持久化标志，支持操作独立的本地知识库（localwiki）
 - 本地仓库知识文件自动存储到 `~/.cicbyte/reference/localwiki/`，与公共 wiki 隔离

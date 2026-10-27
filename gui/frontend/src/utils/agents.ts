@@ -6,6 +6,10 @@
 export const agentNameMap: Record<string, string> = {
   claude: 'Claude',
   codex: 'Codex',
+  gemini: 'Gemini CLI',
+  iflow: 'iFlow CLI',
+  kimi: 'Kimi CLI',
+  qwen: 'Qwen Code',
   zcode: 'ZCode',
   mimocode: 'MiMo',
   opencode: 'OpenCode',

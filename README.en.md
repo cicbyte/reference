@@ -26,7 +26,7 @@ English | [简体中文](README.md)
 - **Zero-latency access** — Source code lives on your local disk. AI reads it directly via Grep/Glob/Read with no network requests.
 - **Reusable knowledge** — Exploration results are saved as Markdown knowledge files. One exploration benefits all projects.
 - **Clean context** — Dual-agent architecture: exploration happens in sub-agents, the main Agent only loads lightweight knowledge files.
-- **Multi-AI compatible** — Supports Claude Code, ZCode, MiMo Code, OpenCode, Codex (auto-injects subagents + Skill); works with Cursor, Copilot, Windsurf, and more.
+- **Multi-AI compatible** — Supports Claude Code, Codex, Gemini CLI, Qwen Code, Kimi CLI, iFlow CLI, OpenCode, ZCode, MiMo Code (auto-injects subagents + Skill); works with Cursor, Copilot, Windsurf, and more.
 - **Fully local** — No online APIs or paid services required. Works offline, unaffected by network issues.
 - **Local repository references** — Reuse code you've implemented in other projects.
 
@@ -58,10 +58,14 @@ reference          # First run: interactive assistant selection (multi-select su
   Select your coding assistants (multiple allowed, comma-separated):
     [1] Claude Code
     [2] Codex
-    [3] MiMo Code
-    [4] OpenCode
-    [5] ZCode
-    [6] None (repository management only)
+    [3] Gemini CLI
+    [4] iFlow CLI
+    [5] Kimi CLI
+    [6] MiMo Code
+    [7] OpenCode
+    [8] Qwen Code
+    [9] ZCode
+    [10] None (repository management only)
 
   Enter option: 1,2
   Configured: Claude Code, Codex
@@ -159,6 +163,10 @@ All files are pure Markdown + Mermaid. Generated once, reused across projects.
 |:---|:---|:---|:---|
 | **Claude Code** | `.claude/agents/` | `.claude/skills/` | Markdown |
 | **Codex** | `.codex/agents/` | `.codex/skills/` | TOML |
+| **Gemini CLI** | `.gemini/agents/` | `.gemini/skills/` | Markdown |
+| **Qwen Code** | `.qwen/agents/` | `.qwen/skills/` | Markdown |
+| **Kimi CLI** | — (built-in subagent types) | `.kimi/skills/` | Skill only |
+| **iFlow CLI** | `.iflow/agents/` | — (auto scheduling) | Markdown |
 | **OpenCode** | `.opencode/agents/` | `.opencode/skills/` | Markdown |
 | **ZCode** | `.zcode/cli/agents/` | `.zcode/skills/` | Markdown |
 | **MiMo Code** | `.mimocode/agents/` | `.mimocode/skills/` | Markdown |

@@ -1,11 +1,15 @@
 # AI 编程 Agent 平台适配调研报告
 
-> **实现状态（2026-07）**：本报告是历史调研文档。当前 `reference` 已实现完整子代理 + Skill 注入的平台有 5 个，按 `reference init --agent <name>` 选择：
+> **实现状态（2026-10）**：本报告是历史调研文档。当前 `reference` 已实现注入的平台有 9 个，按 `reference init --agent <name>` 选择：
 >
 > | 助手 | 配置值 | agents 目录 | skills 目录 | agent 格式 |
 > |:---|:---|:---|:---|:---|
 > | Claude Code | `claude` | `.claude/agents/` | `.claude/skills/` | Markdown（YAML frontmatter） |
 > | Codex | `codex` | `.codex/agents/` | `.codex/skills/` | TOML |
+> | Gemini CLI | `gemini` | `.gemini/agents/` | `.gemini/skills/` | Markdown（tools 转原生 snake_case 名） |
+> | Qwen Code | `qwen` | `.qwen/agents/` | `.qwen/skills/` | Markdown（同 Gemini，原生工具名） |
+> | Kimi CLI | `kimi` | —（子代理为内置类型系统） | `.kimi/skills/` | 仅注入 Skill（自定义子代理目录未获官方文档确认） |
+> | iFlow CLI | `iflow` | `.iflow/agents/` | —（whenToUse 智能调度，无需 Skill） | Markdown（agentType/systemPrompt/whenToUse/allowedTools） |
 > | OpenCode | `opencode` | `.opencode/agents/` | `.opencode/skills/` | Markdown |
 > | ZCode | `zcode` | `.zcode/cli/agents/` | `.zcode/skills/` | Markdown |
 > | MiMo Code | `mimocode` | `.mimocode/agents/` | `.mimocode/skills/` | Markdown（YAML frontmatter） |
